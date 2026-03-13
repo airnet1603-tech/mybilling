@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mikrotik – ISP Billing</title>
+    <title>Mikrotik  ISP Billing</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -17,7 +17,6 @@
         * { box-sizing: border-box; }
         body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
 
-        /* ===== SIDEBAR ===== */
         .sidebar {
             background: linear-gradient(180deg, var(--sidebar-bg-start) 0%, var(--sidebar-bg-end) 100%);
             min-height: 100vh;
@@ -91,20 +90,15 @@
 
         .sidebar-nav .logout-btn:hover { background: rgba(233,69,96,0.25); color: #fff; }
 
-        /* ===== MAIN ===== */
         .main-content { margin-left: var(--sidebar-width); padding: 20px 24px; }
-
         .card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
 
-        /* ===== MOBILE TOGGLE BUTTON (HAMBURGER MODERN) ===== */
         .mobile-menu-btn {
             display: none;
             position: fixed;
-            top: 16px;
-            left: 16px;
+            top: 16px; left: 16px;
             z-index: 1060;
-            width: 42px;
-            height: 42px;
+            width: 42px; height: 42px;
             background: linear-gradient(135deg, var(--sidebar-bg-start), var(--accent));
             border: none;
             border-radius: 12px;
@@ -118,53 +112,33 @@
             padding: 10px;
         }
 
-        .mobile-menu-btn:hover {
-            transform: scale(1.08);
-            box-shadow: 0 6px 20px rgba(233,69,96,0.5);
-        }
-
+        .mobile-menu-btn:hover { transform: scale(1.08); }
         .mobile-menu-btn .bar {
-            display: block;
-            width: 20px;
-            height: 2px;
-            background: white;
-            border-radius: 2px;
-            transition: all 0.3s ease;
-            transform-origin: center;
+            display: block; width: 20px; height: 2px;
+            background: white; border-radius: 2px;
+            transition: all 0.3s ease; transform-origin: center;
+        }
+        .mobile-menu-btn.is-open .bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        .mobile-menu-btn.is-open .bar:nth-child(2) { opacity: 0; transform: scaleX(0); }
+        .mobile-menu-btn.is-open .bar:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+        .form-label { margin-bottom: 3px; }
+        .section-divider {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #6c757d;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 4px;
+            margin: 10px 0 8px;
         }
 
-        /* Animasi X saat sidebar terbuka */
-        .mobile-menu-btn.is-open .bar:nth-child(1) {
-            transform: translateY(7px) rotate(45deg);
-        }
-        .mobile-menu-btn.is-open .bar:nth-child(2) {
-            opacity: 0;
-            transform: scaleX(0);
-        }
-        .mobile-menu-btn.is-open .bar:nth-child(3) {
-            transform: translateY(-7px) rotate(-45deg);
-        }
-
-        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                left: -230px;
-                top: 0;
-                height: 100vh;
-                z-index: 1050;
-                transition: left 0.3s ease;
-            }
+            .sidebar { position: fixed; left: -230px; top: 0; height: 100vh; z-index: 1050; transition: left 0.3s ease; }
             .sidebar.show { left: 0; }
             .main-content { margin-left: 0 !important; padding: 15px; padding-top: 72px; }
-            .sidebar-overlay {
-                display: none;
-                position: fixed;
-                inset: 0;
-                background: rgba(0,0,0,0.5);
-                z-index: 1040;
-                backdrop-filter: blur(2px);
-            }
+            .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1040; backdrop-filter: blur(2px); }
             .sidebar-overlay.show { display: block; }
             .mobile-menu-btn { display: flex !important; }
         }
@@ -172,7 +146,6 @@
 </head>
 <body>
 
-{{-- TOMBOL HAMBURGER MODERN --}}
 <button id="menuToggleBtn" class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle menu">
     <span class="bar"></span>
     <span class="bar"></span>
@@ -181,7 +154,7 @@
 
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-<!-- ===== SIDEBAR ===== -->
+<!-- SIDEBAR -->
 <div class="sidebar">
     <div class="sidebar-brand">
         <div class="brand-icon"><i class="fas fa-wifi"></i></div>
@@ -190,7 +163,6 @@
             <span class="brand-sub">Management System</span>
         </div>
     </div>
-
     <nav class="sidebar-nav">
         <ul class="nav flex-column mb-0">
             <li class="nav-item"><a href="/admin/dashboard" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
@@ -201,9 +173,7 @@
             <li class="nav-item"><a href="/admin/laporan" class="nav-link"><i class="fas fa-chart-bar"></i> Laporan</a></li>
             <li class="nav-item"><a href="/admin/mikrotik" class="nav-link active"><i class="fas fa-network-wired"></i> Mikrotik</a></li>
         </ul>
-
         <div class="sidebar-divider"></div>
-
         <ul class="nav flex-column">
             <li class="nav-item"><a href="/admin/setting" class="nav-link"><i class="fas fa-cog"></i> Pengaturan</a></li>
             <li class="nav-item">
@@ -218,18 +188,12 @@
     </nav>
 </div>
 
-<!-- ===== MAIN CONTENT ===== -->
+<!-- MAIN CONTENT -->
 <div class="main-content">
 
-    {{-- HEADER --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h5 class="fw-bold mb-0">Manajemen Router Mikrotik</h5>
-            <small class="text-muted">Kelola koneksi router</small>
-        </div>
-        <a href="/admin/mikrotik/monitoring" class="btn btn-primary btn-sm">
-            <i class="fas fa-desktop me-1"></i> Monitoring Live
-        </a>
+    <div class="mb-4">
+        <h5 class="fw-bold mb-0">Manajemen Router Mikrotik</h5>
+        <small class="text-muted">Kelola koneksi router</small>
     </div>
 
     @if(session('success'))
@@ -248,13 +212,16 @@
 
     <div class="row g-3">
 
-        {{-- FORM TAMBAH ROUTER --}}
+        <!-- FORM TAMBAH ROUTER -->
         <div class="col-md-4">
             <div class="card">
                 <div class="card-body">
                     <h6 class="fw-bold mb-3"><i class="fas fa-plus me-2 text-primary"></i>Tambah Router</h6>
                     <form method="POST" action="/admin/mikrotik">
                         @csrf
+
+                        <div class="section-divider">Koneksi API</div>
+
                         <div class="mb-2">
                             <label class="form-label small fw-semibold">Nama Router</label>
                             <input type="text" name="nama" class="form-control form-control-sm" placeholder="Contoh: Router Utama" required>
@@ -271,10 +238,40 @@
                             <label class="form-label small fw-semibold">Username</label>
                             <input type="text" name="username" class="form-control form-control-sm" placeholder="admin" required>
                         </div>
-                        <div class="mb-3">
+                        <div class="mb-2">
                             <label class="form-label small fw-semibold">Password</label>
                             <input type="password" name="password" class="form-control form-control-sm" required>
                         </div>
+
+                        <div class="section-divider">Setting PPPoE Profile</div>
+
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">
+                                Local Address
+                                <span class="text-muted fw-normal">(gateway PPPoE)</span>
+                            </label>
+                            <input type="text" name="local_address" class="form-control form-control-sm"
+                                placeholder="Contoh: 103.x.x.1">
+                            <div class="form-text" style="font-size:0.7rem;">IP publik gateway router ini</div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">
+                                Remote Address
+                                <span class="text-muted fw-normal">(nama pool)</span>
+                            </label>
+                            <input type="text" name="remote_address" class="form-control form-control-sm"
+                                placeholder="Contoh: pool-pppoe">
+                            <div class="form-text" style="font-size:0.7rem;">Nama IP Pool yang sudah dibuat di Mikrotik</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">
+                                DNS Server
+                            </label>
+                            <input type="text" name="dns_server" class="form-control form-control-sm"
+                                placeholder="Contoh: 8.8.8.8,8.8.4.4">
+                            <div class="form-text" style="font-size:0.7rem;">Pisahkan dengan koma jika lebih dari satu</div>
+                        </div>
+
                         <button type="submit" class="btn btn-primary btn-sm w-100">
                             <i class="fas fa-save me-1"></i> Simpan Router
                         </button>
@@ -283,7 +280,7 @@
             </div>
         </div>
 
-        {{-- DAFTAR ROUTER --}}
+        <!-- DAFTAR ROUTER -->
         <div class="col-md-8">
             <div class="card">
                 <div class="card-body p-0">
@@ -292,7 +289,8 @@
                             <tr>
                                 <th class="ps-3 small">Nama</th>
                                 <th class="small">IP Address</th>
-                                <th class="small">Port</th>
+                                <th class="small">PPPoE Setting</th>
+                                <th class="small">Monitor</th>
                                 <th class="small">Status</th>
                                 <th class="small">Aksi</th>
                             </tr>
@@ -300,9 +298,36 @@
                         <tbody>
                             @forelse($routers as $router)
                             <tr>
-                                <td class="ps-3"><div class="fw-semibold small">{{ $router->nama }}</div></td>
+                                <td class="ps-3">
+                                    <div class="fw-semibold small">{{ $router->nama }}</div>
+                                    <small class="text-muted">Port: {{ $router->port }}</small>
+                                </td>
                                 <td><code class="small">{{ $router->ip_address }}</code></td>
-                                <td><small>{{ $router->port }}</small></td>
+                                <td>
+                                    <div style="font-size:0.72rem; line-height:1.6;">
+                                        @if($router->local_address)
+                                            <span class="text-muted">Local:</span> <code>{{ $router->local_address }}</code><br>
+                                        @endif
+                                        @if($router->remote_address)
+                                            <span class="text-muted">Pool:</span> <code>{{ $router->remote_address }}</code><br>
+                                        @endif
+                                        @if($router->dns_server)
+                                            <span class="text-muted">DNS:</span> <code>{{ $router->dns_server }}</code>
+                                        @endif
+                                        @if(!$router->local_address && !$router->remote_address && !$router->dns_server)
+                                            <span class="text-warning"><i class="fas fa-exclamation-triangle"></i> Belum diset</span>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="/admin/mikrotik/monitoring?router={{ $router->id }}"
+                                       class="btn btn-primary btn-sm py-0 px-1"
+                                       title="Monitoring Live {{ $router->nama }}"
+                                       target="_blank">
+                                        <i class="fas fa-desktop fa-xs me-1"></i>
+                                        <span style="font-size:0.72rem;">Live</span>
+                                    </a>
+                                </td>
                                 <td>
                                     @if($router->is_active)
                                         <span class="badge bg-success">Aktif</span>
@@ -316,6 +341,14 @@
                                             class="btn btn-sm btn-info text-white py-0 px-2" title="Test Koneksi">
                                             <i class="fas fa-plug fa-xs"></i>
                                         </button>
+                                        <button onclick="editRouter({{ $router->id }}, '{{ $router->nama }}', '{{ $router->local_address }}', '{{ $router->remote_address }}', '{{ $router->dns_server }}')"
+                                            class="btn btn-sm btn-warning py-0 px-2" title="Edit Setting PPPoE">
+                                            <i class="fas fa-edit fa-xs"></i>
+                                        </button>
+                                        <button onclick="importDariRB({{ $router->id }}, '{{ $router->nama }}')"
+                                            class="btn btn-sm btn-success py-0 px-2" title="Import Setting dari RB">
+                                            <i class="fas fa-download fa-xs"></i>
+                                        </button>
                                         <form method="POST" action="/admin/mikrotik/{{ $router->id }}"
                                               onsubmit="return confirm('Hapus router ini?')">
                                             @csrf @method('DELETE')
@@ -328,7 +361,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-4 small">
+                                <td colspan="6" class="text-center text-muted py-4 small">
                                     Belum ada router. Tambahkan router di form kiri.
                                 </td>
                             </tr>
@@ -342,7 +375,7 @@
 
 </div>
 
-{{-- MODAL TEST KONEKSI --}}
+<!-- MODAL TEST KONEKSI -->
 <div class="modal fade" id="testModal" tabindex="-1">
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
@@ -358,8 +391,204 @@
     </div>
 </div>
 
+<!-- MODAL EDIT SETTING PPPoE -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Setting PPPoE Router</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="editForm">
+                @csrf
+                @method('PATCH')
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">Router: <strong id="editRouterNama"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Local Address (gateway PPPoE)</label>
+                        <input type="text" name="local_address" id="editLocalAddress" class="form-control form-control-sm" placeholder="Contoh: 103.x.x.1">
+                        <div class="form-text" style="font-size:0.7rem;">IP publik gateway router ini</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Remote Address (nama pool)</label>
+                        <input type="text" name="remote_address" id="editRemoteAddress" class="form-control form-control-sm" placeholder="Contoh: pool-pppoe">
+                        <div class="form-text" style="font-size:0.7rem;">Nama IP Pool yang sudah dibuat di Mikrotik</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">DNS Server</label>
+                        <input type="text" name="dns_server" id="editDnsServer" class="form-control form-control-sm" placeholder="Contoh: 8.8.8.8,8.8.4.4">
+                        <div class="form-text" style="font-size:0.7rem;">Pisahkan dengan koma jika lebih dari satu</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-save me-1"></i> Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL IMPORT DARI RB -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title"><i class="fas fa-download me-2 text-success"></i>Import Setting dari RB</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">Router: <strong id="importRouterNama"></strong></p>
+
+                <!-- Loading -->
+                <div id="importLoading" class="text-center py-3">
+                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                    <p class="mt-2 small">Membaca setting dari RB...</p>
+                </div>
+
+                <!-- Hasil Import -->
+                <div id="importResult" style="display:none;">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Local Address</label>
+                        <input type="text" id="importLocalAddress"
+                            class="form-control form-control-sm" placeholder="Kosong jika tidak ada">
+                        <div class="form-text" style="font-size:0.7rem;">Diambil dari PPP Profile RB</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Remote Address (Pool)</label>
+                        <select id="importRemoteAddress" class="form-select form-select-sm">
+                            <option value="">-- Pilih Pool --</option>
+                        </select>
+                        <div class="form-text" style="font-size:0.7rem;">Pool yang tersedia di RB</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">DNS Server</label>
+                        <input type="text" id="importDnsServer"
+                            class="form-control form-control-sm" placeholder="Diambil dari IP DNS RB">
+                        <div class="form-text" style="font-size:0.7rem;">Diambil dari IP ? DNS RB</div>
+                    </div>
+
+                    <div class="alert alert-info py-2" style="font-size:0.78rem;">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Setting ini hanya disimpan di billing. <strong>Tidak ada perubahan apapun di RB.</strong>
+                    </div>
+                </div>
+
+                <!-- Error -->
+                <div id="importError" style="display:none;" class="text-center py-2">
+                    <i class="fas fa-times-circle fa-2x text-danger"></i>
+                    <p class="mt-2 small fw-semibold text-danger" id="importErrorMsg">Gagal konek ke RB</p>
+                </div>
+            </div>
+            <div class="modal-footer" id="importFooter" style="display:none;">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-success btn-sm" id="btnSimpanImport" onclick="simpanImport()">
+                    <i class="fas fa-save me-1"></i> Simpan Setting
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// Simpan router ID aktif untuk import
+let currentImportRouterId = null;
+
+function importDariRB(id, nama) {
+    currentImportRouterId = id;
+
+    document.getElementById('importRouterNama').textContent = nama;
+    document.getElementById('importLoading').style.display = 'block';
+    document.getElementById('importResult').style.display = 'none';
+    document.getElementById('importError').style.display = 'none';
+    document.getElementById('importFooter').style.display = 'none';
+
+    const modal = new bootstrap.Modal(document.getElementById('importModal'));
+    modal.show();
+
+    fetch('/admin/mikrotik/' + id + '/import-setting')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('importLoading').style.display = 'none';
+            if (!data.status) {
+                document.getElementById('importError').style.display = 'block';
+                document.getElementById('importErrorMsg').textContent = data.message || 'Gagal konek ke RB';
+                return;
+            }
+
+            // Isi local address
+            document.getElementById('importLocalAddress').value = data.local_address || '';
+
+            // Isi DNS
+            document.getElementById('importDnsServer').value = data.dns || '';
+
+            // Isi dropdown pool
+            const select = document.getElementById('importRemoteAddress');
+            select.innerHTML = '<option value="">-- Pilih Pool --</option>';
+            (data.pools || []).forEach(pool => {
+                const opt = document.createElement('option');
+                opt.value = pool.name;
+                opt.textContent = pool.name + ' (' + pool.ranges + ')';
+                select.appendChild(opt);
+            });
+
+            document.getElementById('importResult').style.display = 'block';
+            document.getElementById('importFooter').style.display = 'flex';
+        })
+        .catch(() => {
+            document.getElementById('importLoading').style.display = 'none';
+            document.getElementById('importError').style.display = 'block';
+            document.getElementById('importErrorMsg').textContent = 'Gagal konek ke RB';
+        });
+}
+
+function simpanImport() {
+    const btn = document.getElementById('btnSimpanImport');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Menyimpan...';
+
+    const token = document.querySelector('meta[name="csrf-token"]') 
+        ? document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        : '{{ csrf_token() }}';
+
+    const formData = new FormData();
+    formData.append('_token', token);
+    formData.append('_method', 'PATCH');
+    formData.append('local_address', document.getElementById('importLocalAddress').value);
+    formData.append('remote_address', document.getElementById('importRemoteAddress').value);
+    formData.append('dns_server', document.getElementById('importDnsServer').value);
+
+    fetch('/admin/mikrotik/' + currentImportRouterId + '/pppoe-setting', {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': token },
+        body: formData,
+    })
+    .then(res => {
+        if (res.ok || res.redirected) {
+            bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
+            window.location.reload();
+        } else {
+            res.text().then(t => {
+                console.error('Error response:', t);
+                alert('Gagal menyimpan setting. Status: ' + res.status);
+            });
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save me-1"></i> Simpan Setting';
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Gagal menyimpan setting. Coba lagi.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save me-1"></i> Simpan Setting';
+    });
+}
+
 function testKoneksi(id, nama) {
     const modal = new bootstrap.Modal(document.getElementById('testModal'));
     document.getElementById('testResult').innerHTML = '<i class="fas fa-spinner fa-spin fa-2x text-primary"></i><p class="mt-2 mb-0 small">Menghubungkan ke ' + nama + '...</p>';
@@ -375,14 +604,23 @@ function testKoneksi(id, nama) {
         });
 }
 
+function editRouter(id, nama, local, remote, dns) {
+    document.getElementById('editRouterNama').textContent = nama;
+    document.getElementById('editLocalAddress').value = local || '';
+    document.getElementById('editRemoteAddress').value = remote || '';
+    document.getElementById('editDnsServer').value = dns || '';
+    document.getElementById('editForm').action = '/admin/mikrotik/' + id + '/pppoe-setting';
+    const modal = new bootstrap.Modal(document.getElementById('editModal'));
+    modal.show();
+}
+
 function toggleSidebar() {
     const sidebar = document.querySelector(".sidebar");
     const overlay = document.getElementById("sidebarOverlay");
     const btn     = document.getElementById("menuToggleBtn");
-
     sidebar.classList.toggle("show");
     overlay.classList.toggle("show");
-    btn.classList.toggle("is-open"); // hamburger ? X
+    btn.classList.toggle("is-open");
 }
 
 document.addEventListener("touchstart", e => window._touchStartX = e.touches[0].clientX);

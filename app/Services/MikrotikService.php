@@ -16,7 +16,7 @@ class MikrotikService
         $this->api = new \RouterosAPI();
         $this->api->connect($ip, $username, $password, $port);
         $this->connected = true;
-        return $this;
+        return $this->api;
     }
 
     public function disconnect()
@@ -164,23 +164,90 @@ class MikrotikService
         }
     }
 
-    public function syncProfile($nama, $download, $upload)
+    /**
+     * Sync PPPoE profile ke Mikrotik dengan setting per router
+     * $router = object Router (bisa null jika tidak ada)
+     */
+    public function syncProfile($nama, $download, $upload, $router = null)
     {
         try {
             $rateLimit = $upload . "M/" . $download . "M";
+
+            $params = [
+                "name"       => $nama,
+                "rate-limit" => $rateLimit,
+            ];
+
+            // Tambahkan local-address jika ada di router
+            if ($router && !empty($router->local_address)) {
+                $params['local-address'] = $router->local_address;
+            }
+
+            // Tambahkan remote-address (pool) jika ada di router
+            if ($router && !empty($router->remote_address)) {
+                $params['remote-address'] = $router->remote_address;
+            }
+
+            // Tambahkan DNS server jika ada di router
+            if ($router && !empty($router->dns_server)) {
+                $params['dns-server'] = $router->dns_server;
+            }
+
             $all = $this->api->comm("/ppp/profile/print");
             $existing = null;
             foreach ($all as $p) {
                 if (($p["name"] ?? "") === $nama) { $existing = $p; break; }
             }
+
             if ($existing) {
-                $this->api->comm("/ppp/profile/set", [".id" => $existing[".id"], "rate-limit" => $rateLimit]);
+                $updateParams = $params;
+                unset($updateParams['name']);
+                $updateParams['.id'] = $existing['.id'];
+                $this->api->comm("/ppp/profile/set", $updateParams);
             } else {
-                $this->api->comm("/ppp/profile/add", ["name" => $nama, "rate-limit" => $rateLimit]);
+                $this->api->comm("/ppp/profile/add", $params);
             }
+
             return ["status" => true, "message" => "Profile $nama berhasil disync"];
         } catch (\Exception $e) {
             return ["status" => false, "message" => $e->getMessage()];
+        }
+    }
+
+    public function deletePppoeUser($username)
+    {
+        try {
+            $all = $this->api->comm('/ppp/secret/print');
+            $existing = null;
+            foreach ($all as $user) {
+                if (($user['name'] ?? '') === $username) { $existing = $user; break; }
+            }
+            if (!$existing) return ['status' => true, 'message' => "User tidak ditemukan di Mikrotik"];
+
+            // Putus sesi aktif dulu
+            $active = $this->api->comm('/ppp/active/print');
+            foreach ($active as $a) {
+                if (($a['name'] ?? '') === $username) {
+                    $this->api->comm('/ppp/active/remove', ['.id' => $a['.id']]);
+                    break;
+                }
+            }
+
+            // Hapus secret PPPoE
+            $this->api->comm('/ppp/secret/remove', ['.id' => $existing['.id']]);
+
+            // Hapus queue jika ada
+            $queues = $this->api->comm('/queue/simple/print');
+            foreach ($queues as $q) {
+                if (($q['name'] ?? '') === $username) {
+                    $this->api->comm('/queue/simple/remove', ['.id' => $q['.id']]);
+                    break;
+                }
+            }
+
+            return ['status' => true, 'message' => "User PPPoE $username berhasil dihapus dari Mikrotik"];
+        } catch (Exception $e) {
+            return ['status' => false, 'message' => $e->getMessage()];
         }
     }
 
@@ -197,6 +264,65 @@ class MikrotikService
             return ["status" => true, "message" => "Profile $nama dihapus"];
         } catch (\Exception $e) {
             return ["status" => false, "message" => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Ambil semua IP Pool dari RB
+     */
+    public function getIpPools()
+    {
+        try {
+            $result = $this->api->comm('/ip/pool/print');
+            $pools = [];
+            foreach ($result as $p) {
+                $pools[] = [
+                    'name'      => $p['name']    ?? '-',
+                    'ranges'    => $p['ranges']  ?? '-',
+                ];
+            }
+            return ['status' => true, 'data' => $pools];
+        } catch (Exception $e) {
+            return ['status' => false, 'data' => [], 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Ambil DNS Server dari RB (IP ? DNS)
+     */
+    public function getDnsServer()
+    {
+        try {
+            $result = $this->api->comm('/ip/dns/print');
+            $dns = $result[0]['servers'] ?? '';
+            return ['status' => true, 'dns' => $dns];
+        } catch (Exception $e) {
+            return ['status' => false, 'dns' => '', 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Ambil Local Address PPPoE dari RB (dari profile default atau interface PPPoE server)
+     */
+    public function getPppoeLocalAddress()
+    {
+        try {
+            $result = $this->api->comm('/ppp/profile/print');
+            // Cari profile default dulu
+            foreach ($result as $p) {
+                if (($p['name'] ?? '') === 'default' && !empty($p['local-address'])) {
+                    return ['status' => true, 'local_address' => $p['local-address']];
+                }
+            }
+            // Kalau default kosong, cari profile lain yang ada local-address
+            foreach ($result as $p) {
+                if (!empty($p['local-address'])) {
+                    return ['status' => true, 'local_address' => $p['local-address']];
+                }
+            }
+            return ['status' => true, 'local_address' => ''];
+        } catch (Exception $e) {
+            return ['status' => false, 'local_address' => '', 'message' => $e->getMessage()];
         }
     }
 

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Router extends Model
 {
     protected $fillable = [
-        'nama', 'ip_address', 'port', 'username', 'password', 'is_active'
+        'nama', 'ip_address', 'port', 'username', 'password', 'is_active', 'local_address', 'remote_address', 'dns_server'
     ];
 
     protected $casts = [

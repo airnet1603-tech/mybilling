@@ -17,10 +17,10 @@ class PaketController extends Controller
         foreach ($routers as $router) {
             try {
                 $mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
-                $mikrotik->syncProfile($nama, $download, $upload);
+                // Kirim object $router supaya local_address, remote_address, dns_server dipakai
+                $mikrotik->syncProfile($nama, $download, $upload, $router);
                 $mikrotik->disconnect();
             } catch (\Exception $e) {
-                // log saja, jangan stop proses
                 \Log::warning("Gagal sync profile ke router {$router->nama}: " . $e->getMessage());
             }
         }
@@ -76,7 +76,6 @@ class PaketController extends Controller
             'is_active'          => $request->has('is_active') ? true : false,
         ]);
 
-        // Sync ke Mikrotik
         if ($request->jenis === 'pppoe') {
             $this->syncKeSemuaRouter($paket->nama_paket, $paket->kecepatan_download, $paket->kecepatan_upload);
         }
@@ -115,9 +114,7 @@ class PaketController extends Controller
             'is_active'          => $request->has('is_active') ? true : false,
         ]);
 
-        // Sync ke Mikrotik
         if ($request->jenis === 'pppoe') {
-            // Kalau nama berubah, hapus yang lama dulu
             if ($nameLama !== $request->nama_paket) {
                 $this->deleteFromSemuaRouter($nameLama);
             }
@@ -129,15 +126,18 @@ class PaketController extends Controller
 
     public function destroy(Paket $paket)
     {
+        // Cek pelanggan aktif (bukan soft-deleted)
         if ($paket->pelanggan()->count() > 0) {
-            return back()->with('error', 'Paket tidak bisa dihapus karena masih dipakai pelanggan!');
+            return back()->with('error', 'Paket tidak bisa dihapus karena masih dipakai pelanggan aktif!');
         }
+
+        // Hapus permanen pelanggan yang sudah soft-deleted
+        $paket->pelanggan()->withTrashed()->forceDelete();
 
         $nama = $paket->nama_paket;
         $jenis = $paket->jenis;
         $paket->delete();
 
-        // Hapus profile dari Mikrotik
         if ($jenis === 'pppoe') {
             $this->deleteFromSemuaRouter($nama);
         }

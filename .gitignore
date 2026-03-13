@@ -22,3 +22,9 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+# Sensitive files
+storage/bri_private_key.pem
+storage/bri_public_key.pem
+connect();
+*.bak
+database/backups/
