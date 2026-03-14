@@ -69,6 +69,8 @@ Route::prefix('admin/mikrotik')->middleware(['auth', 'role:admin,operator'])->gr
     Route::post('/pelanggan/{pelanggan}/aktifkan', [App\Http\Controllers\Admin\MikrotikController::class, 'aktifkan'])->name('mikrotik.aktifkan');
     Route::post('/pelanggan/{pelanggan}/suspend',  [App\Http\Controllers\Admin\MikrotikController::class, 'suspend'])->name('mikrotik.suspend');
     Route::post('/pelanggan/{pelanggan}/nonaktif', [App\Http\Controllers\Admin\MikrotikController::class, 'nonaktif'])->name('mikrotik.nonaktif');
+    Route::get('/{router}/pppoe-list',     [App\Http\Controllers\Admin\MikrotikController::class, 'previewImportPppoe'])->name('mikrotik.pppoe-list');
+    Route::post('/{router}/import-pppoe',  [App\Http\Controllers\Admin\MikrotikController::class, 'doImportPppoe'])->name('mikrotik.import-pppoe');
     Route::post('/pelanggan/{pelanggan}/sync',     [App\Http\Controllers\Admin\MikrotikController::class, 'syncPelanggan'])->name('mikrotik.sync');
 });
 // BRI Payment (Portal Pelanggan)

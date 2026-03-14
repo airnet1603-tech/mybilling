@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard – ISP Billing</title>
+    <title>Pengaturan – ISP Billing</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -93,54 +93,34 @@
 
         .sidebar-nav .logout-btn:hover { background: rgba(233,69,96,0.25); color: #fff; }
 
-        /* ===== MAIN ===== */
+        /* ===== MAIN CONTENT ===== */
         .main-content { margin-left: var(--sidebar-width); padding: 20px 24px; }
-
-        /* ===== TOPBAR ===== */
-        .topbar {
-            background: white;
-            padding: 12px 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
-            margin-bottom: 20px;
-        }
-
-        /* ===== STAT CARDS ===== */
-        .stat-card {
-            border: none;
-            border-radius: 12px;
-            padding: 18px 20px;
-            color: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.12);
-        }
-
-        .stat-card.pelanggan  { background: linear-gradient(135deg, #667eea, #764ba2); }
-        .stat-card.aktif      { background: linear-gradient(135deg, #11998e, #38ef7d); }
-        .stat-card.tagihan    { background: linear-gradient(135deg, #f093fb, #f5576c); }
-        .stat-card.pendapatan { background: linear-gradient(135deg, #4facfe, #00f2fe); }
-
-        .stat-card .icon { font-size: 2rem; opacity: 0.25; }
-        .stat-card .stat-number { font-size: 1.8rem; font-weight: 700; line-height: 1; }
-        .stat-card .stat-label  { font-size: 0.8rem; opacity: 0.85; margin-top: 4px; }
 
         /* ===== CARDS ===== */
         .card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
 
-        /* ===== STATUS BADGES ===== */
-        .badge-aktif    { background: #d4edda; color: #155724; }
-        .badge-isolir   { background: #f8d7da; color: #721c24; }
-        .badge-suspend  { background: #fff3cd; color: #856404; }
-        .badge-nonaktif { background: #e2e3e5; color: #383d41; }
-        .badge-status { font-size: 0.72rem; font-weight: 600; padding: 3px 9px; }
-
-        /* ===== OVERDUE ITEM ===== */
-        .overdue-item {
-            padding: 10px 16px;
-            border-bottom: 1px solid #f0f2f5;
-            transition: background 0.15s;
+        .info-label {
+            font-size: 0.7rem;
+            color: #6c757d;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 4px;
         }
-        .overdue-item:last-child { border-bottom: none; }
-        .overdue-item:hover { background: #fafafa; }
+
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6c757d;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f0f2f5;
+        }
+
+        .nav-tabs .nav-link { color: #6c757d; border: none; padding: 10px 20px; font-size: 0.88rem; }
+        .nav-tabs .nav-link.active { color: var(--accent); border-bottom: 2px solid var(--accent); font-weight: 600; background: none; }
 
         /* ===== MOBILE TOGGLE BUTTON (HAMBURGER MODERN) ===== */
         .mobile-menu-btn {
@@ -216,7 +196,6 @@
         }
     </style>
 </head>
-
 <body>
 
 {{-- TOMBOL HAMBURGER MODERN --}}
@@ -241,7 +220,7 @@
     <nav class="sidebar-nav">
         <ul class="nav flex-column mb-0">
             <li class="nav-item">
-                <a href="/admin/dashboard" class="nav-link active">
+                <a href="/admin/dashboard" class="nav-link">
                     <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
             </li>
@@ -275,14 +254,13 @@
                     <i class="fas fa-network-wired"></i> Mikrotik
                 </a>
             </li>
-
         </ul>
 
         <div class="sidebar-divider"></div>
 
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a href="/admin/setting" class="nav-link">
+                <a href="/admin/setting" class="nav-link active">
                     <i class="fas fa-cog"></i> Pengaturan
                 </a>
             </li>
@@ -301,177 +279,164 @@
 <!-- ===== MAIN CONTENT ===== -->
 <div class="main-content">
 
-    {{-- TOPBAR --}}
-    <div class="topbar d-flex justify-content-between align-items-center">
+    {{-- HEADER --}}
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h5 class="mb-0 fw-bold">Dashboard</h5>
-            <small class="text-muted">{{ now()->isoFormat('dddd, D MMMM Y') }}</small>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            @if(auth()->user()->isAdmin())
-            <a href="/admin/users" style="display:flex;align-items:center;gap:6px;color:#444;font-size:0.82rem;text-decoration:none;font-weight:500;">
-                <i class="fas fa-user-cog" style="font-size:1rem;"></i> Kelola User
-            </a>
-            @else
-            <span style="display:flex;align-items:center;gap:6px;color:#bbb;font-size:0.82rem;font-weight:500;cursor:not-allowed;">
-                <i class="fas fa-user-cog" style="font-size:1rem;"></i> Kelola User
-            </span>
-            @endif
-            <span style="color:#ccc;font-size:1rem;">|</span>
-            <div class="d-flex align-items-center justify-content-center rounded-circle bg-secondary text-white"
-                 style="width:36px;height:36px;font-size:1rem;">
-                <i class="fas fa-user"></i>
-            </div>
-            <div>
-                <div class="fw-semibold small">{{ auth()->user()->name }}</div>
-                <small class="text-muted">Administrator</small>
-            </div>
+            <h5 class="fw-bold mb-0">Pengaturan Sistem</h5>
+            <small class="text-muted">Konfigurasi sistem billing ISP</small>
         </div>
     </div>
 
-    {{-- STAT CARDS --}}
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="stat-card pelanggan">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="stat-number">{{ $totalPelanggan }}</div>
-                        <div class="stat-label">Total Pelanggan</div>
-                    </div>
-                    <i class="fas fa-users icon"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card aktif">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="stat-number">{{ $pelangganAktif }}</div>
-                        <div class="stat-label">Pelanggan Aktif</div>
-                    </div>
-                    <i class="fas fa-check-circle icon"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card tagihan">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="stat-number">{{ $tagihanUnpaid }}</div>
-                        <div class="stat-label">Tagihan Belum Bayar</div>
-                    </div>
-                    <i class="fas fa-file-invoice icon"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card pendapatan">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="fw-bold" style="font-size:1.1rem;line-height:1.2;">
-                            Rp {{ number_format($pendapatanBulanIni, 0, ',', '.') }}
-                        </div>
-                        <div class="stat-label">Pendapatan Bulan Ini</div>
-                    </div>
-                    <i class="fas fa-wallet icon"></i>
-                </div>
-            </div>
-        </div>
+    @if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
+    @endif
 
-    {{-- TABEL + OVERDUE --}}
-    <div class="row g-3">
+    <form method="POST" action="/admin/setting">
+        @csrf
+        @method('PUT')
 
-        {{-- PELANGGAN TERBARU --}}
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-white border-0 pt-3 pb-2 d-flex justify-content-between align-items-center">
-                    <h6 class="fw-bold mb-0">
-                        <i class="fas fa-users me-2 text-primary"></i>Pelanggan Terbaru
-                    </h6>
-                    <a href="/admin/pelanggan" class="btn btn-outline-primary btn-sm py-0 px-2" style="font-size:0.75rem;">
-                        Lihat Semua
-                    </a>
-                </div>
-                <div class="card-body p-0">
-                    <table class="table table-hover table-sm mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="ps-3 small">ID</th>
-                                <th class="small">Nama</th>
-                                <th class="small">Paket</th>
-                                <th class="small">Status</th>
-                                <th class="small">Expired</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($pelangganTerbaru as $p)
-                            <tr>
-                                <td class="ps-3">
-                                    <small class="text-muted">{{ $p->id_pelanggan }}</small>
-                                </td>
-                                <td>
-                                    <div class="fw-semibold small">{{ $p->nama }}</div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-primary" style="font-size:0.7rem;">
-                                        {{ $p->paket->nama_paket ?? '-' }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge badge-{{ $p->status }} badge-status rounded-pill">
-                                        {{ ucfirst($p->status) }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <small class="{{ $p->tgl_expired && $p->tgl_expired < now() ? 'text-danger fw-bold' : '' }}">
-                                        {{ $p->tgl_expired?->format('d/m/Y') ?? '-' }}
-                                    </small>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="5" class="text-center text-muted py-4 small">
-                                    Belum ada pelanggan
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        <ul class="nav nav-tabs mb-4" id="settingTab">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#umum">
+                    <i class="fas fa-building me-1"></i> Umum
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#billing">
+                    <i class="fas fa-file-invoice me-1"></i> Billing
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#whatsapp">
+                    <i class="fab fa-whatsapp me-1"></i> WhatsApp
+                </a>
+            </li>
+        </ul>
 
-        {{-- TAGIHAN OVERDUE --}}
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header bg-white border-0 pt-3 pb-2">
-                    <h6 class="fw-bold mb-0">
-                        <i class="fas fa-exclamation-circle me-2 text-danger"></i>Tagihan Overdue
-                    </h6>
-                </div>
-                <div class="card-body p-0">
-                    @forelse($tagihanOverdue as $t)
-                    <div class="overdue-item">
-                        <div class="fw-semibold small">{{ $t->pelanggan->nama ?? '-' }}</div>
-                        <div class="d-flex justify-content-between align-items-center mt-1">
-                            <small class="text-danger fw-semibold">
-                                Rp {{ number_format($t->total, 0, ',', '.') }}
-                            </small>
-                            <small class="text-muted">{{ $t->tgl_jatuh_tempo?->format('d/m/Y') }}</small>
+        <div class="tab-content">
+
+            <div class="tab-pane fade show active" id="umum">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="section-title"><i class="fas fa-building me-1"></i> Informasi ISP</div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="info-label">Nama ISP</div>
+                                <input type="text" name="nama_isp" class="form-control form-control-sm"
+                                       value="{{ $settings['nama_isp'] ?? '' }}" placeholder="Contoh: AirNet ISP">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-label">No. HP Admin</div>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">+62</span>
+                                    <input type="text" name="no_admin" class="form-control"
+                                           value="{{ $settings['no_admin'] ?? '' }}" placeholder="812xxxxxxxx">
+                                </div>
+                                <div class="form-text small text-muted">Untuk pemberitahuan & kontak pelanggan</div>
+                            </div>
+                            <div class="col-12">
+                                <div class="info-label">Alamat ISP</div>
+                                <textarea name="alamat_isp" class="form-control form-control-sm" rows="2"
+                                          placeholder="Alamat kantor ISP">{{ $settings['alamat_isp'] ?? '' }}</textarea>
+                            </div>
+                            <div class="col-12">
+                                <div class="info-label">Info Pembayaran</div>
+                                <textarea name="info_pembayaran" class="form-control form-control-sm" rows="3"
+                                          placeholder="Contoh: BCA 1234567890 a/n Nama ISP">{{ $settings['info_pembayaran'] ?? '' }}</textarea>
+                                <div class="form-text small text-muted">Ditampilkan di pesan WA tagihan pelanggan</div>
+                            </div>
                         </div>
                     </div>
-                    @empty
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-check-circle fa-2x text-success mb-2 d-block"></i>
-                        <small>Semua tagihan lunas!</small>
-                    </div>
-                    @endforelse
                 </div>
             </div>
+
+            <div class="tab-pane fade" id="billing">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="section-title"><i class="fas fa-file-invoice me-1"></i> Pengaturan Billing Otomatis</div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="info-label">Tanggal Jatuh Tempo</div>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" name="hari_jatuh_tempo" class="form-control"
+                                           value="{{ $settings['hari_jatuh_tempo'] ?? '10' }}" min="1" max="28">
+                                    <span class="input-group-text">setiap bulan</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-label">Denda Keterlambatan</div>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="number" name="denda_terlambat" class="form-control"
+                                           value="{{ $settings['denda_terlambat'] ?? '10000' }}" min="0">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="info-label">Hari Sebelum Isolir</div>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" name="hari_isolir" class="form-control"
+                                           value="{{ $settings['hari_isolir'] ?? '3' }}" min="1">
+                                    <span class="input-group-text">hari setelah JT</span>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="alert alert-info small">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Cara kerja auto billing:</strong> Setiap tanggal 1 sistem otomatis buat tagihan semua pelanggan aktif.
+                                    Setiap hari sistem cek jatuh tempo dan isolir pelanggan yang belum bayar.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="whatsapp">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="section-title"><i class="fab fa-whatsapp me-1"></i> Konfigurasi WhatsApp Gateway</div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="info-label">Gateway WA</div>
+                                <select name="wa_gateway" class="form-select form-select-sm">
+                                    <option value="fonnte"   {{ ($settings['wa_gateway'] ?? '') == 'fonnte'   ? 'selected':'' }}>Fonnte</option>
+                                    <option value="wablas"   {{ ($settings['wa_gateway'] ?? '') == 'wablas'   ? 'selected':'' }}>WABLAS</option>
+                                    <option value="ultramsg" {{ ($settings['wa_gateway'] ?? '') == 'ultramsg' ? 'selected':'' }}>UltraMsg</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-label">Token / API Key</div>
+                                <input type="text" name="wa_token" class="form-control form-control-sm"
+                                       value="{{ $settings['wa_token'] ?? '' }}" placeholder="Token dari provider gateway">
+                            </div>
+                            <div class="col-12">
+                                <div class="info-label">Base URL (khusus WABLAS)</div>
+                                <input type="text" name="wa_base_url" class="form-control form-control-sm"
+                                       value="{{ $settings['wa_base_url'] ?? '' }}" placeholder="https://app.wablas.com">
+                            </div>
+                            <div class="col-12">
+                                <div class="alert alert-warning small">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>WA Otomatis dikirim saat:</strong> Tagihan dibuat, H-3 & H-1 sebelum jatuh tempo, saat isolir, dan konfirmasi pembayaran.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
-    </div>
+        <div class="d-flex justify-content-end mt-4">
+            <button type="submit" class="btn btn-primary btn-sm px-4">
+                <i class="fas fa-save me-1"></i> Simpan Semua Pengaturan
+            </button>
+        </div>
+
+    </form>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

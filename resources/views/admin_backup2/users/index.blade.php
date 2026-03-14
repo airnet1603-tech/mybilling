@@ -12,14 +12,14 @@
         .sidebar{background:linear-gradient(180deg,var(--sidebar-bg-start) 0%,var(--sidebar-bg-end) 100%);min-height:100vh;width:var(--sidebar-width);position:fixed;top:0;left:0;z-index:100;display:flex;flex-direction:column}
         .sidebar-brand{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;gap:10px}
         .brand-icon{width:34px;height:34px;background:rgba(233,69,96,0.25);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:1rem}
-        .brand-text{line-height:1.2}.brand-title{color:#fff;font-weight:700;font-size:0.9rem;display:block}.brand-sub{color:rgba(255,255,255,0.45);font-size:0.7rem}
+        .brand-title{color:#fff;font-weight:700;font-size:0.9rem;display:block}.brand-sub{color:rgba(255,255,255,0.45);font-size:0.7rem}
         .sidebar-nav{padding:8px 0;flex:1}
-        .sidebar-nav .nav-link{display:flex;align-items:center;gap:9px;padding:8px 14px;border-radius:7px;margin:1px 8px;color:rgba(255,255,255,0.65);font-size:0.83rem;text-decoration:none;transition:background 0.2s,color 0.2s;white-space:nowrap}
-        .sidebar-nav .nav-link i{width:16px;font-size:0.82rem;flex-shrink:0}
+        .sidebar-nav .nav-link{display:flex;align-items:center;gap:10px;padding:9px 18px;color:rgba(255,255,255,0.65);font-size:0.82rem;text-decoration:none;transition:.15s}
+        .sidebar-nav .nav-link i{width:16px}
         .sidebar-nav .nav-link:hover,.sidebar-nav .nav-link.active{background:rgba(233,69,96,0.25);color:#fff}
         .sidebar-nav .nav-link.active{background:rgba(233,69,96,0.35)}
         .sidebar-divider{border-top:1px solid rgba(255,255,255,0.08);margin:6px 14px}
-        .logout-btn{display:flex;align-items:center;gap:9px;padding:8px 14px;border-radius:7px;margin:1px 8px;color:rgba(255,255,255,0.65);font-size:0.83rem;background:none;border:none;width:calc(100% - 16px);text-align:left;cursor:pointer;transition:background 0.2s,color 0.2s}
+        .logout-btn{display:flex;align-items:center;gap:10px;padding:9px 18px;color:rgba(255,255,255,0.5);font-size:0.82rem;background:none;border:none;width:100%;cursor:pointer;transition:.15s}
         .logout-btn:hover{background:rgba(233,69,96,0.25);color:#fff}
         .main-content{margin-left:var(--sidebar-width);padding:20px 24px}
         .topbar{background:#fff;border-radius:12px;padding:14px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
@@ -31,33 +31,24 @@
 <div class="sidebar">
     <div class="sidebar-brand">
         <div class="brand-icon"><i class="fas fa-wifi"></i></div>
-        <div class="brand-text">
-            <span class="brand-title">ISP Billing</span>
-            <span class="brand-sub">Management System</span>
-        </div>
+        <div><span class="brand-title">ISP BILLING</span><span class="brand-sub">Management System</span></div>
     </div>
     <nav class="sidebar-nav">
-        <ul class="nav flex-column mb-0">
-            <li class="nav-item"><a href="/admin/dashboard" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li class="nav-item"><a href="/admin/pelanggan" class="nav-link"><i class="fas fa-users"></i> Pelanggan</a></li>
-            <li class="nav-item"><a href="/admin/paket" class="nav-link"><i class="fas fa-box"></i> Paket Internet</a></li>
-            <li class="nav-item"><a href="/admin/tagihan" class="nav-link"><i class="fas fa-file-invoice-dollar"></i> Tagihan</a></li>
-            <li class="nav-item"><a href="/admin/pembayaran" class="nav-link"><i class="fas fa-money-bill-wave"></i> Pembayaran</a></li>
-            <li class="nav-item"><a href="/admin/laporan" class="nav-link"><i class="fas fa-chart-bar"></i> Laporan</a></li>
-            <li class="nav-item"><a href="/admin/mikrotik" class="nav-link"><i class="fas fa-network-wired"></i> Mikrotik</a></li>
-        </ul>
+        <a href="/admin/dashboard" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        <a href="/admin/pelanggan" class="nav-link"><i class="fas fa-users"></i> Pelanggan</a>
+        <a href="/admin/paket" class="nav-link"><i class="fas fa-box"></i> Paket Internet</a>
+        <a href="/admin/tagihan" class="nav-link"><i class="fas fa-file-invoice"></i> Tagihan</a>
+        <a href="/admin/pembayaran" class="nav-link"><i class="fas fa-money-bill-wave"></i> Pembayaran</a>
+        <a href="/admin/laporan" class="nav-link"><i class="fas fa-chart-bar"></i> Laporan</a>
+        <a href="/admin/mikrotik" class="nav-link"><i class="fas fa-router"></i> Mikrotik</a>
         <div class="sidebar-divider"></div>
-        <ul class="nav flex-column">
-            <li class="nav-item"><a href="/admin/setting" class="nav-link"><i class="fas fa-cog"></i> Pengaturan</a></li>
-            <li class="nav-item">
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="logout-btn">
-                        <i class="fas fa-sign-out-alt" style="width:16px;font-size:0.82rem;"></i> Logout
-                    </button>
-                </form>
-            </li>
-        </ul>
+        <a href="/admin/users" class="nav-link active"><i class="fas fa-user-cog"></i> Kelola User</a>
+        <a href="/admin/setting" class="nav-link"><i class="fas fa-cog"></i> Pengaturan</a>
+        <div class="sidebar-divider"></div>
+        <form action="{{ route('logout') }}" method="POST">
+            @csrf
+            <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </form>
     </nav>
 </div>
 <div class="main-content">

@@ -214,6 +214,37 @@ class MikrotikService
         }
     }
 
+    public function getPppoeSecrets()
+    {
+        try {
+            $secrets = $this->api->comm('/ppp/secret/print');
+            $actives = $this->api->comm('/ppp/active/print');
+            $activeNames = [];
+            foreach ($actives as $a) {
+                $activeNames[$a['name'] ?? ''] = [
+                    'address' => $a['address'] ?? '',
+                    'uptime'  => $a['uptime']  ?? '',
+                ];
+            }
+            $result = [];
+            foreach ($secrets as $s) {
+                if (($s['service'] ?? '') !== 'pppoe') continue;
+                $name = $s['name'] ?? '';
+                $result[] = [
+                    'username' => $name,
+                    'password' => $s['password'] ?? '',
+                    'profile'  => $s['profile']  ?? 'default',
+                    'disabled' => ($s['disabled'] ?? 'false') === 'true',
+                    'online'   => isset($activeNames[$name]),
+                    'address'  => $activeNames[$name]['address'] ?? '',
+                ];
+            }
+            return ['status' => true, 'data' => $result];
+        } catch (Exception $e) {
+            return ['status' => false, 'data' => [], 'message' => $e->getMessage()];
+        }
+    }
+
     public function deletePppoeUser($username)
     {
         try {

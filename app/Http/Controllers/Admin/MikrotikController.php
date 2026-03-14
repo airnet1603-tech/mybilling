@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Router;
 use App\Models\Pelanggan;
+use App\Models\Paket;
 use App\Services\MikrotikService;
 use Illuminate\Http\Request;
 
@@ -48,9 +49,6 @@ class MikrotikController extends Controller
         return back()->with('success', 'Router berhasil ditambahkan');
     }
 
-    /**
-     * Import setting dari RB (pool, dns) ? return JSON untuk ditampilkan di modal
-     */
     public function importSetting(Router $router)
     {
         try {
@@ -71,9 +69,6 @@ class MikrotikController extends Controller
         }
     }
 
-    /**
-     * Simpan setting PPPoE hasil import dari RB
-     */
     public function updatePppoeSetting(Request $request, Router $router)
     {
         $router->update([
@@ -158,6 +153,92 @@ class MikrotikController extends Controller
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()]);
         }
+    }
+
+    public function previewImportPppoe(Router $router)
+    {
+        try {
+            $this->mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
+            $result = $this->mikrotik->getPppoeSecrets();
+            $this->mikrotik->disconnect();
+
+            if (!$result['status']) {
+                return response()->json(['status' => false, 'message' => $result['message'] ?? 'Gagal ambil data']);
+            }
+
+            $existing = Pelanggan::pluck('username')->toArray();
+            $pakets   = Paket::all();
+
+            $data = array_map(function($s) use ($existing, $pakets) {
+                $matchPaket = $pakets->first(fn($p) => strtolower($p->nama_paket) === strtolower($s['profile']));
+                return [
+                    'username'   => $s['username'],
+                    'password'   => $s['password'],
+                    'profile'    => $s['profile'],
+                    'online'     => $s['online'],
+                    'address'    => $s['address'],
+                    'disabled'   => $s['disabled'],
+                    'exists'     => in_array($s['username'], $existing),
+                    'paket_id'   => $matchPaket ? $matchPaket->id : null,
+                    'paket_nama' => $matchPaket ? $matchPaket->nama_paket : null,
+                ];
+            }, $result['data']);
+
+            return response()->json([
+                'status' => true,
+                'data'   => $data,
+                'pakets' => $pakets->map(fn($p) => ['id' => $p->id, 'nama' => $p->nama_paket]),
+                'router' => ['id' => $router->id, 'nama' => $router->nama],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function doImportPppoe(Request $request, Router $router)
+    {
+        $items    = $request->input('items', []);
+        $paketId  = $request->input('paket_id');
+        $imported = 0;
+        $skipped  = 0;
+
+        foreach ($items as $item) {
+            $username = $item['username'] ?? '';
+            if (!$username) continue;
+            if (Pelanggan::where('username', $username)->exists()) {
+                $skipped++;
+                continue;
+            }
+            $usePaketId = $item['paket_id'] ?? $paketId;
+            if (!$usePaketId) { $skipped++; continue; }
+
+            $lastId      = Pelanggan::max('id') ?? 0;
+            $idPelanggan = 'AR-' . date('Y') . str_pad($lastId + 1, 4, '0', STR_PAD_LEFT);
+
+            Pelanggan::create([
+                'id_pelanggan'   => $idPelanggan,
+                'nama'           => $username,
+                'username'       => $username,
+                'password'       => bcrypt($item['password'] ?? $username),
+                'password_pppoe' => $item['password'] ?? $username,
+                'paket_id'       => $usePaketId,
+                'router_id'      => $router->id,
+                'router_name'    => $router->nama,
+                'tgl_daftar'     => now()->toDateString(),
+                'tgl_expired'    => !empty($item['tgl_expired']) ? $item['tgl_expired'] : now()->addDays(30)->toDateString(),
+                'ip_address'     => $item['address'] ?? null,
+                'status'         => ($item['disabled'] ?? false) ? 'isolir' : 'aktif',
+                'jenis_layanan'  => 'pppoe',
+            ]);
+            $imported++;
+        }
+
+        return response()->json([
+            'status'   => true,
+            'imported' => $imported,
+            'skipped'  => $skipped,
+            'message'  => "Berhasil import {$imported} pelanggan, {$skipped} dilewati (sudah ada).",
+        ]);
     }
 
     public function isolir(Pelanggan $pelanggan)

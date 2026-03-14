@@ -213,7 +213,6 @@
     <div class="row g-3">
 
         <!-- FORM TAMBAH ROUTER -->
-        @if(auth()->user()->isAdmin())
         <div class="col-md-4">
             <div class="card">
                 <div class="card-body">
@@ -280,10 +279,9 @@
                 </div>
             </div>
         </div>
-        @endif
 
         <!-- DAFTAR ROUTER -->
-        <div class="{{ auth()->user()->isAdmin() ? 'col-md-8' : 'col-md-12' }}">
+        <div class="col-md-8">
             <div class="card">
                 <div class="card-body p-0">
                     <table class="table table-hover table-sm mb-0">
@@ -338,12 +336,7 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if(auth()->user()->isAdmin())
                                     <div class="d-flex gap-1">
-                                        <button onclick="importPppoe({{ $router->id }}, '{{ $router->nama }}')"
-                                            class="btn btn-sm btn-secondary py-0 px-2" title="Import PPPoE ke Billing">
-                                            <i class="fas fa-file-import fa-xs"></i>
-                                        </button>
                                         <button onclick="testKoneksi({{ $router->id }}, '{{ $router->nama }}')"
                                             class="btn btn-sm btn-info text-white py-0 px-2" title="Test Koneksi">
                                             <i class="fas fa-plug fa-xs"></i>
@@ -364,9 +357,6 @@
                                             </button>
                                         </form>
                                     </div>
-                                    @else
-                                    <span class="text-muted small"><i class="fas fa-eye fa-xs"></i> View only</span>
-                                    @endif
                                 </td>
                             </tr>
                             @empty
@@ -504,85 +494,6 @@
     </div>
 </div>
 
-<!-- MODAL IMPORT PPPoE -->
-<div class="modal fade" id="importPppoeModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h6 class="modal-title"><i class="fas fa-file-import me-2 text-secondary"></i>Import User PPPoE dari Mikrotik</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted small mb-3">Router: <strong id="importPppoeRouterNama"></strong></p>
-
-                <!-- Loading -->
-                <div id="importPppoeLoading" class="text-center py-4">
-                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
-                    <p class="mt-2 small">Mengambil data PPPoE dari Mikrotik...</p>
-                </div>
-
-                <!-- Error -->
-                <div id="importPppoeError" style="display:none;" class="alert alert-danger py-2">
-                    <i class="fas fa-times-circle me-1"></i>
-                    <span id="importPppoeErrorMsg"></span>
-                </div>
-
-                <!-- Hasil -->
-                <div id="importPppoeResult" style="display:none;">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="d-flex gap-2 align-items-center flex-wrap">
-                            <span class="small text-muted">Aktif sampai:</span>
-                            <select id="globalDurasi" class="form-select form-select-sm" style="width:auto;" onchange="updateAllExpired()">
-                                <option value="30">1 Bulan</option>
-                                <option value="60">2 Bulan</option>
-                                <option value="90">3 Bulan</option>
-                                <option value="180">6 Bulan</option>
-                                <option value="365">1 Tahun</option>
-                            </select>
-                            <span class="text-muted small">|</span>
-                            <span class="small text-muted">Paket default:</span>
-                            <select id="defaultPaketId" class="form-select form-select-sm" style="width:auto;">
-                                <option value="">-- Pilih Paket --</option>
-                            </select>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-outline-secondary" onclick="toggleSelectAll()">
-                                <i class="fas fa-check-square me-1"></i> Pilih Semua
-                            </button>
-                            <span class="badge bg-success" id="countOnline">0 Online</span>
-                            <span class="badge bg-secondary" id="countOffline">0 Offline</span>
-                            <span class="badge bg-warning text-dark" id="countExists">0 Sudah Ada</span>
-                        </div>
-                    </div>
-                    <div class="table-responsive" style="max-height:400px;overflow-y:auto;">
-                        <table class="table table-sm table-hover">
-                            <thead class="table-light sticky-top">
-                                <tr>
-                                    <th><input type="checkbox" id="checkAll" onchange="toggleAll(this)"></th>
-                                    <th class="small">Username</th>
-                                    <th class="small">Profile/Paket</th>
-                                    <th class="small">IP Address</th>
-                                    <th class="small">Status</th>
-                                    <th class="small">Paket Billing</th>
-                                    <th class="small">Aktif Sampai</th>
-                                </tr>
-                            </thead>
-                            <tbody id="importPppoeTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer" id="importPppoeFooter" style="display:none;">
-                <span class="text-muted small me-auto" id="importPppoeInfo"></span>
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-primary btn-sm" onclick="doImportPppoe()">
-                    <i class="fas fa-file-import me-1"></i> Import Terpilih
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // Simpan router ID aktif untuk import
@@ -701,180 +612,6 @@ function editRouter(id, nama, local, remote, dns) {
     document.getElementById('editForm').action = '/admin/mikrotik/' + id + '/pppoe-setting';
     const modal = new bootstrap.Modal(document.getElementById('editModal'));
     modal.show();
-}
-
-let currentImportPppoeRouterId = null;
-let pppoeData = [];
-let paketData = [];
-
-function importPppoe(id, nama) {
-    currentImportPppoeRouterId = id;
-    document.getElementById('importPppoeRouterNama').textContent = nama;
-    document.getElementById('importPppoeLoading').style.display = 'block';
-    document.getElementById('importPppoeResult').style.display = 'none';
-    document.getElementById('importPppoeError').style.display = 'none';
-    document.getElementById('importPppoeFooter').style.display = 'none';
-
-    new bootstrap.Modal(document.getElementById('importPppoeModal')).show();
-
-    fetch('/admin/mikrotik/' + id + '/pppoe-list')
-        .then(r => r.json())
-        .then(data => {
-            document.getElementById('importPppoeLoading').style.display = 'none';
-            if (!data.status) {
-                document.getElementById('importPppoeError').style.display = 'block';
-                document.getElementById('importPppoeErrorMsg').textContent = data.message || 'Gagal ambil data';
-                return;
-            }
-
-            pppoeData = data.data;
-            paketData = data.pakets;
-
-            // Isi dropdown paket default
-            const sel = document.getElementById('defaultPaketId');
-            sel.innerHTML = '<option value="">-- Pilih Paket --</option>';
-            paketData.forEach(p => {
-                sel.innerHTML += `<option value="${p.id}">${p.nama}</option>`;
-            });
-
-            // Hitung stats
-            let online = 0, offline = 0, exists = 0;
-            pppoeData.forEach(s => {
-                if (s.online) online++;
-                else offline++;
-                if (s.exists) exists++;
-            });
-            document.getElementById('countOnline').textContent = online + ' Online';
-            document.getElementById('countOffline').textContent = offline + ' Offline';
-            document.getElementById('countExists').textContent = exists + ' Sudah Ada';
-
-            // Render tabel
-            const tbody = document.getElementById('importPppoeTableBody');
-            tbody.innerHTML = '';
-            pppoeData.forEach((s, i) => {
-                let paketOptions = '<option value="">-- Pilih --</option>';
-                paketData.forEach(p => {
-                    paketOptions += `<option value="${p.id}" ${s.paket_id == p.id ? 'selected' : ''}>${p.nama}</option>`;
-                });
-                tbody.innerHTML += `
-                <tr class="${s.exists ? 'table-warning' : ''}">
-                    <td><input type="checkbox" class="pppoe-check" data-index="${i}" ${s.exists ? 'disabled' : 'checked'}></td>
-                    <td class="small fw-semibold">${s.username}</td>
-                    <td><code class="small">${s.profile}</code></td>
-                    <td class="small">${s.address || '-'}</td>
-                    <td>
-                        ${s.exists ? '<span class="badge bg-warning text-dark">Sudah Ada</span>' :
-                          s.online ? '<span class="badge bg-success">Online</span>' :
-                          s.disabled ? '<span class="badge bg-danger">Disabled</span>' :
-                          '<span class="badge bg-secondary">Offline</span>'}
-                    </td>
-                    <td>
-                        ${s.exists ? '<span class="text-muted small">-</span>' :
-                          `<select class="form-select form-select-sm paket-select" data-index="${i}" style="min-width:100px;">${paketOptions}</select>`}
-                    </td>
-                    <td>
-                        ${s.exists ? '<span class="text-muted small">-</span>' :
-                          `<span class="small text-muted expired-label" data-index="${i}">-</span><input type="hidden" class="expired-input" data-index="${i}">`}
-                    </td>
-                </tr>`;
-            });
-
-            updateInfo();
-            setTimeout(initAllExpired, 50);
-            document.getElementById('importPppoeResult').style.display = 'block';
-            document.getElementById('importPppoeFooter').style.display = 'flex';
-        })
-        .catch(() => {
-            document.getElementById('importPppoeLoading').style.display = 'none';
-            document.getElementById('importPppoeError').style.display = 'block';
-            document.getElementById('importPppoeErrorMsg').textContent = 'Gagal konek ke server';
-        });
-}
-
-function updateInfo() {
-    const checks = document.querySelectorAll('.pppoe-check:not(:disabled):checked');
-    document.getElementById('importPppoeInfo').textContent = checks.length + ' user dipilih untuk diimport';
-}
-
-function toggleAll(el) {
-    document.querySelectorAll('.pppoe-check:not(:disabled)').forEach(c => c.checked = el.checked);
-    updateInfo();
-}
-
-let allSelected = false;
-function toggleSelectAll() {
-    allSelected = !allSelected;
-    document.querySelectorAll('.pppoe-check:not(:disabled)').forEach(c => c.checked = allSelected);
-    document.getElementById('checkAll').checked = allSelected;
-    updateInfo();
-}
-
-document.addEventListener('change', function(e) {
-    if (e.target.classList.contains('pppoe-check')) updateInfo();
-});
-
-function calcExpired(days) {
-    const d = new Date();
-    d.setDate(d.getDate() + parseInt(days));
-    return d.toISOString().split('T')[0];
-}
-
-function updateAllExpired() {
-    const days = document.getElementById('globalDurasi').value;
-    const tgl  = calcExpired(days);
-    document.querySelectorAll('.expired-label').forEach(el => el.textContent = tgl);
-    document.querySelectorAll('.expired-input').forEach(el => el.value = tgl);
-}
-
-function initAllExpired() { updateAllExpired(); }
-
-function doImportPppoe() {
-    const defaultPaket = document.getElementById('defaultPaketId').value;
-    const items = [];
-
-    document.querySelectorAll('.pppoe-check:not(:disabled):checked').forEach(c => {
-        const i = c.dataset.index;
-        const s = pppoeData[i];
-        const paketSel = document.querySelector(`.paket-select[data-index="${i}"]`);
-        const paketId  = paketSel ? paketSel.value : null;
-        const expiredInput = document.querySelector(`.expired-input[data-index="${i}"]`);
-        items.push({
-            username: s.username,
-            password: s.password,
-            profile:  s.profile,
-            address:  s.address,
-            disabled: s.disabled,
-            paket_id: paketId || defaultPaket || null,
-            tgl_expired: expiredInput ? expiredInput.value : null,
-        });
-    });
-
-    if (!items.length) { alert('Pilih minimal 1 user!'); return; }
-
-    const hasNoPaket = items.some(i => !i.paket_id);
-    if (hasNoPaket) { alert('Beberapa user belum dipilih paketnya!'); return; }
-
-    const btn = document.querySelector('#importPppoeFooter .btn-primary');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Mengimport...';
-
-    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    fetch('/admin/mikrotik/' + currentImportPppoeRouterId + '/import-pppoe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
-        body: JSON.stringify({ items, paket_id: defaultPaket }),
-    })
-    .then(r => r.json())
-    .then(data => {
-        bootstrap.Modal.getInstance(document.getElementById('importPppoeModal')).hide();
-        alert(data.message);
-        if (data.imported > 0) window.location.href = '/admin/pelanggan';
-    })
-    .catch(() => {
-        alert('Gagal import. Coba lagi.');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-file-import me-1"></i> Import Terpilih';
-    });
 }
 
 function toggleSidebar() {
