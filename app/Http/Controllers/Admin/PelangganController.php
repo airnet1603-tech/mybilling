@@ -89,6 +89,10 @@ class PelangganController extends Controller
             "alamat"         => $request->alamat,
             "paket_id"       => $request->paket_id,
             "wilayah"        => $request->wilayah,
+            "latitude"       => $request->latitude,
+            "longitude"      => $request->longitude,
+            "latitude"       => $request->latitude,
+            "longitude"      => $request->longitude,
             "router_name"    => $request->router_name,
             "ip_address"     => $request->ip_address,
             "tgl_daftar"     => now(),
@@ -219,4 +223,74 @@ class PelangganController extends Controller
         $pelanggan->update(["status" => $request->status]);
         return redirect()->back()->with('success', 'Status pelanggan berhasil diubah!');
     }
+
+    public function bulkDelete(\Illuminate\Http\Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids)) {
+            return response()->json(['status' => false, 'message' => 'Tidak ada data dipilih.']);
+        }
+
+        $pelanggans = \App\Models\Pelanggan::whereIn('id', $ids)->get();
+        $mikrotik   = new \App\Services\MikrotikService();
+        $deleted    = 0;
+        $errors     = [];
+
+        foreach ($pelanggans as $p) {
+            try {
+                // Hapus dari Mikrotik jika ada router
+                if ($p->router) {
+                    $mikrotik->connect($p->router->ip_address, $p->router->username, $p->router->password, $p->router->port);
+                    $mikrotik->deletePppoeUser($p->username);
+                    $mikrotik->disconnect();
+                }
+            } catch (\Exception $e) {
+                $errors[] = $p->username . ': ' . $e->getMessage();
+            }
+
+            // Hapus dari DB (force delete termasuk soft deleted)
+            \App\Models\Pelanggan::withTrashed()->where('id', $p->id)->forceDelete();
+            $deleted++;
+        }
+
+        $msg = $deleted . ' pelanggan berhasil dihapus.';
+        if (count($errors)) $msg .= ' Gagal hapus dari Mikrotik: ' . implode(', ', $errors);
+
+        return response()->json(['status' => true, 'message' => $msg]);
+    }
+
+
+    public function peta()
+    {
+        $pelanggans = \App\Models\Pelanggan::with(['paket', 'router'])
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->get();
+
+        $allPelanggans = \App\Models\Pelanggan::count();
+        $total         = $allPelanggans;
+        $totalPeta     = $pelanggans->count();
+        $tanpaPeta     = $total - $totalPeta;
+
+        // Siapkan data untuk JS
+        $mapData = $pelanggans->map(function($p) {
+            return [
+                'id'       => $p->id,
+                'nama'     => $p->nama,
+                'username' => $p->username,
+                'status'   => $p->status,
+                'paket'    => optional($p->paket)->nama_paket ?? '-',
+                'router'   => optional($p->router)->nama ?? '-',
+                'expired'  => $p->tgl_expired ? $p->tgl_expired->format('d/m/Y') : '-',
+                'lat'      => (float)$p->latitude,
+                'lng'      => (float)$p->longitude,
+                'url'      => '/admin/pelanggan/' . $p->id,
+            ];
+        })->values()->toArray();
+
+        $mapDataJson = json_encode($mapData);
+
+        return view('admin.pelanggan.peta', compact('total', 'totalPeta', 'tanpaPeta', 'mapDataJson'));
+    }
+
 }

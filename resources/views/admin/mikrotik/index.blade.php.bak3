@@ -532,6 +532,15 @@
                 <div id="importPppoeResult" style="display:none;">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <div class="d-flex gap-2 align-items-center flex-wrap">
+                            <span class="small text-muted">Aktif sampai:</span>
+                            <select id="globalDurasi" class="form-select form-select-sm" style="width:auto;" onchange="updateAllExpired()">
+                                <option value="30">1 Bulan</option>
+                                <option value="60">2 Bulan</option>
+                                <option value="90">3 Bulan</option>
+                                <option value="180">6 Bulan</option>
+                                <option value="365">1 Tahun</option>
+                            </select>
+                            <span class="text-muted small">|</span>
                             <span class="small text-muted">Paket default:</span>
                             <select id="defaultPaketId" class="form-select form-select-sm" style="width:auto;">
                                 <option value="">-- Pilih Paket --</option>
@@ -556,13 +565,7 @@
                                     <th class="small">IP Address</th>
                                     <th class="small">Status</th>
                                     <th class="small">Paket Billing</th>
-                                    <th class="small">
-                                    Aktif Sampai
-                                    <div class="d-flex align-items-center gap-1 mt-1">
-                                        <input type="checkbox" id="applyGlobalDate" onchange="toggleGlobalDate(this)" title="Terapkan ke semua">
-                                        <input type="date" id="globalTglExpired" class="form-control form-control-sm" style="width:140px;font-size:0.75rem;" onchange="applyToAll()" disabled>
-                                    </div>
-                                </th>
+                                    <th class="small">Aktif Sampai</th>
                                 </tr>
                             </thead>
                             <tbody id="importPppoeTableBody"></tbody>
@@ -772,7 +775,7 @@ function importPppoe(id, nama) {
                     </td>
                     <td>
                         ${s.exists ? '<span class="text-muted small">-</span>' :
-                          `<input type="date" class="form-control form-control-sm expired-input" data-index="${i}" style="width:140px;font-size:0.75rem;">`}
+                          `<span class="small text-muted expired-label" data-index="${i}">-</span><input type="hidden" class="expired-input" data-index="${i}">`}
                     </td>
                 </tr>`;
             });
@@ -811,25 +814,20 @@ document.addEventListener('change', function(e) {
     if (e.target.classList.contains('pppoe-check')) updateInfo();
 });
 
-function toggleGlobalDate(el) {
-    document.getElementById('globalTglExpired').disabled = !el.checked;
-    if (el.checked) applyToAll();
+function calcExpired(days) {
+    const d = new Date();
+    d.setDate(d.getDate() + parseInt(days));
+    return d.toISOString().split('T')[0];
 }
 
-function applyToAll() {
-    const tgl = document.getElementById('globalTglExpired').value;
-    if (!tgl) return;
+function updateAllExpired() {
+    const days = document.getElementById('globalDurasi').value;
+    const tgl  = calcExpired(days);
+    document.querySelectorAll('.expired-label').forEach(el => el.textContent = tgl);
     document.querySelectorAll('.expired-input').forEach(el => el.value = tgl);
 }
 
-function initAllExpired() {
-    // Set default tanggal 1 bulan dari sekarang
-    const d = new Date();
-    d.setMonth(d.getMonth() + 1);
-    const defaultTgl = d.toISOString().split('T')[0];
-    document.getElementById('globalTglExpired').value = defaultTgl;
-    document.querySelectorAll('.expired-input').forEach(el => el.value = defaultTgl);
-}
+function initAllExpired() { updateAllExpired(); }
 
 function doImportPppoe() {
     const defaultPaket = document.getElementById('defaultPaketId').value;
@@ -862,11 +860,11 @@ function doImportPppoe() {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Mengimport...';
 
     const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    const bulanVal = 1;
+    const bulanVal = Math.round(parseInt(document.getElementById('globalDurasi').value) / 30);
     fetch('/admin/mikrotik/' + currentImportPppoeRouterId + '/import-pppoe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
-        body: JSON.stringify({ items, paket_id: defaultPaket, bulan: 1 }),
+        body: JSON.stringify({ items, paket_id: defaultPaket, bulan: bulanVal }),
     })
     .then(r => r.json())
     .then(data => {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Pelanggan – ISP Billing</title>
+    <title>Edit Pelanggan ï¿½ ISP Billing</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -210,6 +210,7 @@
             .mobile-menu-btn { display: flex !important; }
         }
     </style>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC33huzSRZbZ02tihkJmqqrGhP9Kml32uM&libraries=places&callback=initMap" async defer></script>
 </head>
 <body>
 
@@ -298,7 +299,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h5 class="fw-bold mb-0">Edit Pelanggan</h5>
-            <small class="text-muted">{{ $pelanggan->id_pelanggan }} – {{ $pelanggan->nama }}</small>
+            <small class="text-muted">{{ $pelanggan->id_pelanggan }} ï¿½ {{ $pelanggan->nama }}</small>
         </div>
         <a href="/admin/pelanggan/{{ $pelanggan->id }}" class="btn btn-secondary btn-sm">
             <i class="fas fa-arrow-left me-1"></i> Kembali
@@ -357,6 +358,36 @@
                             <div class="col-12">
                                 <label class="form-label small fw-semibold">Alamat</label>
                                 <textarea name="alamat" class="form-control form-control-sm" rows="2">{{ old('alamat', $pelanggan->alamat) }}</textarea>
+                                <div class="mt-2">
+                                    <label class="form-label small fw-semibold">
+                                        <i class="fas fa-map-marker-alt me-1 text-danger"></i>Lokasi di Peta
+                                        <span class="text-muted fw-normal">(opsional - klik peta atau GPS)</span>
+                                    </label>
+                                    <div class="d-flex gap-2 mb-2">
+                                        <input type="number" step="any" name="latitude" id="lat_input"
+                                               class="form-control form-control-sm" placeholder="Latitude"
+                                               value="{{ old('latitude', $pelanggan->latitude) }}">
+                                        <input type="number" step="any" name="longitude" id="lng_input"
+                                               class="form-control form-control-sm" placeholder="Longitude"
+                                               value="{{ old('longitude', $pelanggan->longitude) }}">
+                                        <button type="button" class="btn btn-sm btn-outline-primary text-nowrap" onclick="getGPS()">
+                                            <i class="fas fa-crosshairs me-1"></i>GPS
+                                        </button>
+                                    </div>
+                                    <div class="d-flex gap-1 mb-1">
+                                        <div class="input-group input-group-sm flex-grow-1">
+                                        <input type="text" id="mapSearch" class="form-control form-control-sm"
+                                               placeholder="Cari lokasi... (contoh: Jl. Merdeka Malang)">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="searchLocation()">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-dark" onclick="toggleFullscreen()" title="Fullscreen">
+                                            <i class="fas fa-expand" id="fsIcon"></i>
+                                        </button>
+                                    </div>
+                                    <div id="mapWrapper" style="width:100%;overflow:hidden;border-radius:8px;"><div id="mapContainer" style="height:280px;width:100%;border-radius:8px;border:1px solid #dee2e6;position:relative;"></div></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -495,5 +526,205 @@
         }
     });
 </script>
+
+
+<script>
+var gmap = null;
+var gmarker = null;
+
+function initMap() {
+    var lat = parseFloat(document.getElementById('lat_input').value) || -7.9;
+    var lng = parseFloat(document.getElementById('lng_input').value) || 112.6;
+    var zoom = (parseFloat(document.getElementById('lat_input').value)) ? 17 : 13;
+
+    gmap = new google.maps.Map(document.getElementById('mapContainer'), {
+        center: { lat: lat, lng: lng },
+        zoom: zoom,
+        mapTypeId: 'hybrid',
+        gestureHandling: 'greedy',
+        scrollwheel: true,
+        draggable: true,
+        mapTypeControl: true,
+        streetViewControl: true,
+        fullscreenControl: false,
+    });
+
+    if (parseFloat(document.getElementById('lat_input').value)) {
+        setPin(lat, lng);
+    }
+
+    gmap.addListener('click', function(e) {
+        setPin(e.latLng.lat(), e.latLng.lng());
+    });
+
+    // Search autocomplete
+    var input = document.getElementById('mapSearch');
+    if (input) {
+        var autocomplete = new google.maps.places.Autocomplete(input, {
+            componentRestrictions: { country: 'id' }
+        });
+        autocomplete.addListener('place_changed', function() {
+            var place = autocomplete.getPlace();
+            if (!place.geometry) return;
+            var la = place.geometry.location.lat();
+            var ln = place.geometry.location.lng();
+            setPin(la, ln);
+            gmap.setCenter({ lat: la, lng: ln });
+            gmap.setZoom(17);
+        });
+    }
+}
+
+function setPin(lat, lng) {
+    if (gmarker) gmarker.setMap(null);
+    gmarker = new google.maps.Marker({
+        position: { lat: parseFloat(lat), lng: parseFloat(lng) },
+        map: gmap,
+        draggable: true,
+        animation: google.maps.Animation.DROP,
+    });
+    gmarker.addListener('dragend', function(e) {
+        document.getElementById('lat_input').value = e.latLng.lat().toFixed(8);
+        document.getElementById('lng_input').value = e.latLng.lng().toFixed(8);
+    });
+    document.getElementById('lat_input').value = parseFloat(lat).toFixed(8);
+    document.getElementById('lng_input').value = parseFloat(lng).toFixed(8);
+    gmap.setCenter({ lat: parseFloat(lat), lng: parseFloat(lng) });
+}
+
+function getGPS() {
+    if (!navigator.geolocation) { alert('Browser tidak support GPS'); return; }
+    navigator.geolocation.getCurrentPosition(
+        function(pos) {
+            setPin(pos.coords.latitude, pos.coords.longitude);
+            gmap.setZoom(18);
+        },
+        function() { alert('Gagal ambil lokasi GPS'); }
+    );
+}
+
+function searchLocation() {
+    var q = document.getElementById('mapSearch').value.trim();
+    if (!q) return;
+    var geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: q, region: 'id' }, function(results, status) {
+        if (status === 'OK') {
+            var loc = results[0].geometry.location;
+            setPin(loc.lat(), loc.lng());
+            gmap.setZoom(17);
+        } else {
+            alert('Lokasi tidak ditemukan.');
+        }
+    });
+}
+
+document.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && document.activeElement.id === 'mapSearch') {
+        e.preventDefault();
+        searchLocation();
+    }
+});
+
+document.getElementById('lat_input').addEventListener('change', function() {
+    var la = parseFloat(this.value), ln = parseFloat(document.getElementById('lng_input').value);
+    if (la && ln && gmap) setPin(la, ln);
+});
+document.getElementById('lng_input').addEventListener('change', function() {
+    var la = parseFloat(document.getElementById('lat_input').value), ln = parseFloat(this.value);
+    if (la && ln && gmap) setPin(la, ln);
+});
+
+var isFullscreen = false;
+function toggleFullscreen() {
+    var el = document.getElementById('mapContainer');
+    var icon = document.getElementById('fsIcon');
+    if (!isFullscreen) {
+        el.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;border-radius:0;';
+        icon.className = 'fas fa-compress';
+        isFullscreen = true;
+        gmap.setOptions({streetViewControl:true,mapTypeControl:true,scaleControl:true,zoomControl:true});
+
+        // Tambah search box fullscreen
+        var fsBox = document.createElement('div');
+        fsBox.id = 'fsSearchBox';
+        fsBox.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:10001;width:420px;max-width:85vw;display:flex;gap:6px;';
+        fsBox.innerHTML = '<input id="fsSearchInput" type="text" placeholder="Cari lokasi, nama jalan, tempat..." '
+            + 'style="flex:1;padding:10px 16px;border-radius:24px;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.4);font-size:14px;outline:none;">'
+            + '<button onclick="fsSearch()" style="padding:10px 16px;border-radius:24px;border:none;background:#1a73e8;color:white;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.4);">'
+            + '<i class=\'fas fa-search\'></i></button>'
+            + '<button onclick="toggleFullscreen()" style="padding:10px 14px;border-radius:24px;border:none;background:rgba(0,0,0,0.6);color:white;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.4);">'
+            + '<i class=\'fas fa-compress\'></i></button>';
+        document.body.appendChild(fsBox);
+
+        // Autocomplete untuk fullscreen search
+        var fsAc = new google.maps.places.Autocomplete(
+            document.getElementById('fsSearchInput'),
+            {componentRestrictions: {country: 'id'}}
+        );
+        // Paksa dropdown autocomplete tampil di atas map
+        var style = document.createElement('style');
+        style.id = 'pacStyle';
+        style.innerHTML = '.pac-container { z-index: 10002 !important; }';
+        document.head.appendChild(style);
+        fsAc.addListener('place_changed', function() {
+            var place = fsAc.getPlace();
+            if (!place.geometry) return;
+            setPin(place.geometry.location.lat(), place.geometry.location.lng());
+            gmap.setZoom(18);
+        });
+        document.getElementById('fsSearchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); fsSearch(); }
+        });
+    } else {
+        icon.className = 'fas fa-expand';
+        isFullscreen = false;
+        var fsBox = document.getElementById('fsSearchBox');
+        if (fsBox) fsBox.remove();
+        var pacStyle = document.getElementById('pacStyle');
+        if (pacStyle) pacStyle.remove();
+        // Reset semua style saat ESC
+        el.style.cssText = 'height:280px;width:100%;border-radius:8px;border:1px solid #dee2e6;position:relative;';
+    }
+    setTimeout(function() {
+        google.maps.event.trigger(gmap, 'resize');
+        setTimeout(function() {
+            google.maps.event.trigger(gmap, 'resize');
+            if (gmarker) {
+                gmap.setCenter(gmarker.getPosition());
+            } else {
+                gmap.setCenter({lat: -7.9, lng: 112.6});
+            }
+        }, 200);
+    }, 150);
+}
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && isFullscreen) toggleFullscreen();
+});
+
+function fsSearch() {
+    var q = document.getElementById('fsSearchInput') ? document.getElementById('fsSearchInput').value.trim() : '';
+    if (!q) return;
+    new google.maps.Geocoder().geocode({address: q, region: 'id'}, function(r, s) {
+        if (s === 'OK') { setPin(r[0].geometry.location.lat(), r[0].geometry.location.lng()); gmap.setZoom(17); }
+        else alert('Lokasi tidak ditemukan.');
+    });
+}
+
+function fsSearch() {
+    var q = document.getElementById('fsSearchInput') ? document.getElementById('fsSearchInput').value.trim() : '';
+    if (!q) return;
+    var geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: q, region: 'id' }, function(results, status) {
+        if (status === 'OK') {
+            var loc = results[0].geometry.location;
+            setPin(loc.lat(), loc.lng());
+            gmap.setZoom(18);
+        } else {
+            alert('Lokasi tidak ditemukan.');
+        }
+    });
+}
+</script>
+
 </body>
 </html>

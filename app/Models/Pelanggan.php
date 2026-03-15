@@ -18,7 +18,9 @@ class Pelanggan extends Authenticatable
         'no_hp', 'email', 'alamat', 'paket_id',
         'tgl_daftar', 'tgl_expired', 'ip_address',
         'router_name', 'status', 'jenis_layanan',
-        'wilayah', 'pin', 'fcm_token',
+        'wilayah',
+        'latitude',
+        'longitude', 'pin', 'fcm_token',
         'router_id', 'password_pppoe',
     ];
 

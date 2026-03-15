@@ -33,7 +33,9 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     Route::get('/', function () { return redirect('/admin/dashboard'); });
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
     Route::get('pelanggan/export', [PelangganController::class, 'export'])->name('pelanggan.export');
+    Route::get('pelanggan/peta', [PelangganController::class, 'peta'])->name('pelanggan.peta');
     Route::resource('pelanggan', PelangganController::class);
+    Route::post('pelanggan/bulk-delete', [PelangganController::class, 'bulkDelete'])->name('pelanggan.bulk-delete');
     Route::post('pelanggan/{pelanggan}/status', [PelangganController::class, 'ubahStatus'])->name('pelanggan.status');
     Route::resource('tagihan', TagihanController::class);
     Route::post('tagihan/generate', [TagihanController::class, 'generateMassal'])->name('tagihan.generate');
@@ -89,4 +91,12 @@ Route::post('/webhook/bri', [BriPaymentController::class, 'webhook'])->name('web
 Route::get('/test-bri', function() {
     $svc = app(App\Services\BriApiService::class);
     return $svc->getAccessToken();
+});
+
+// CSV Import
+Route::prefix('admin/csv')->middleware(['auth', 'role:admin,operator'])->group(function () {
+    Route::get('/template/{type}',        [App\Http\Controllers\Admin\CsvImportController::class, 'template'])->name('csv.template');
+    Route::post('/pelanggan/preview',     [App\Http\Controllers\Admin\CsvImportController::class, 'previewPelanggan'])->name('csv.pelanggan.preview');
+    Route::post('/pelanggan/import',      [App\Http\Controllers\Admin\CsvImportController::class, 'importPelanggan'])->name('csv.pelanggan.import');
+    Route::post('/paket/import',          [App\Http\Controllers\Admin\CsvImportController::class, 'importPaket'])->name('csv.paket.import');
 });

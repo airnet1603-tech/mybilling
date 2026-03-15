@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tambah Pelanggan � ISP Billing</title>
+    <title>Edit Pelanggan � ISP Billing</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -126,30 +126,16 @@
             margin-bottom: 10px;
             cursor: pointer;
             transition: border-color 0.2s, background 0.2s;
-            display: block;
         }
 
         .paket-option:hover { border-color: #adb5bd; }
-        .paket-option.selected { border-color: #0d6efd; background: #f0f5ff; }
+
+        .paket-option.selected {
+            border-color: #0d6efd;
+            background: #f0f5ff;
+        }
+
         .paket-option input[type="radio"] { display: none; }
-
-        .info-box {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 14px 16px;
-        }
-
-        .info-box .info-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.8rem;
-            color: #6c757d;
-            margin-bottom: 6px;
-        }
-
-        .info-box .info-item:last-child { margin-bottom: 0; }
-        .info-box .info-item i { color: #28a745; font-size: 0.7rem; width: 14px; }
 
         /* ===== MOBILE TOGGLE BUTTON (HAMBURGER MODERN) ===== */
         .mobile-menu-btn {
@@ -224,7 +210,7 @@
             .mobile-menu-btn { display: flex !important; }
         }
     </style>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC33huzSRZbZ02tihkJmqqrGhP9Kml32uM&libraries=places" defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC33huzSRZbZ02tihkJmqqrGhP9Kml32uM&libraries=places&callback=initMap" async defer></script>
 </head>
 <body>
 
@@ -312,10 +298,10 @@
     {{-- HEADER --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h5 class="fw-bold mb-0">Tambah Pelanggan Baru</h5>
-            <small class="text-muted">Isi data pelanggan dengan lengkap</small>
+            <h5 class="fw-bold mb-0">Edit Pelanggan</h5>
+            <small class="text-muted">{{ $pelanggan->id_pelanggan }} � {{ $pelanggan->nama }}</small>
         </div>
-        <a href="/admin/pelanggan" class="btn btn-secondary btn-sm">
+        <a href="/admin/pelanggan/{{ $pelanggan->id }}" class="btn btn-secondary btn-sm">
             <i class="fas fa-arrow-left me-1"></i> Kembali
         </a>
     </div>
@@ -323,19 +309,17 @@
     {{-- ERRORS --}}
     @if($errors->any())
     <div class="alert alert-danger alert-dismissible fade show">
-        <i class="fas fa-exclamation-circle me-2"></i>
-        <strong>Ada kesalahan:</strong>
-        <ul class="mb-0 mt-1 small">
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
+        <ul class="mb-0 small">
+            @foreach($errors->all() as $e)
+                <li>{{ $e }}</li>
             @endforeach
         </ul>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     @endif
 
-    <form method="POST" action="/admin/pelanggan">
-        @csrf
+    <form method="POST" action="/admin/pelanggan/{{ $pelanggan->id }}">
+        @csrf @method('PUT')
 
         <div class="row g-3">
 
@@ -351,41 +335,29 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
-                                <input type="text" name="nama"
-                                       class="form-control form-control-sm @error('nama') is-invalid @enderror"
-                                       value="{{ old('nama') }}"
-                                       placeholder="Contoh: Budi Santoso" required>
+                                <input type="text" name="nama" class="form-control form-control-sm @error('nama') is-invalid @enderror"
+                                       value="{{ old('nama', $pelanggan->nama) }}" required>
                                 @error('nama')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-semibold">No. HP / WhatsApp <span class="text-danger">*</span></label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text">+62</span>
-                                    <input type="text" name="no_hp"
-                                           class="form-control @error('no_hp') is-invalid @enderror"
-                                           value="{{ old('no_hp') }}"
-                                           placeholder="812xxxxxxxx" required>
-                                    @error('no_hp')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                </div>
+                                <label class="form-label small fw-semibold">No. HP <span class="text-danger">*</span></label>
+                                <input type="text" name="no_hp" class="form-control form-control-sm @error('no_hp') is-invalid @enderror"
+                                       value="{{ old('no_hp', $pelanggan->no_hp) }}" required>
+                                @error('no_hp')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold">Email</label>
-                                <input type="email" name="email"
-                                       class="form-control form-control-sm"
-                                       value="{{ old('email') }}"
-                                       placeholder="email@contoh.com">
+                                <input type="email" name="email" class="form-control form-control-sm"
+                                       value="{{ old('email', $pelanggan->email) }}">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold">Wilayah</label>
-                                <input type="text" name="wilayah"
-                                       class="form-control form-control-sm"
-                                       value="{{ old('wilayah') }}"
-                                       placeholder="Contoh: Kelurahan Sukamaju">
+                                <input type="text" name="wilayah" class="form-control form-control-sm"
+                                       value="{{ old('wilayah', $pelanggan->wilayah) }}">
                             </div>
                             <div class="col-12">
                                 <label class="form-label small fw-semibold">Alamat</label>
-                                <textarea name="alamat" class="form-control form-control-sm" rows="2"
-                                          placeholder="Alamat lengkap pelanggan">{{ old('alamat') }}</textarea>
+                                <textarea name="alamat" class="form-control form-control-sm" rows="2">{{ old('alamat', $pelanggan->alamat) }}</textarea>
                                 <div class="mt-2">
                                     <label class="form-label small fw-semibold">
                                         <i class="fas fa-map-marker-alt me-1 text-danger"></i>Lokasi di Peta
@@ -394,10 +366,10 @@
                                     <div class="d-flex gap-2 mb-2">
                                         <input type="number" step="any" name="latitude" id="lat_input"
                                                class="form-control form-control-sm" placeholder="Latitude"
-                                               value="{{ old('latitude') }}">
+                                               value="{{ old('latitude', $pelanggan->latitude) }}">
                                         <input type="number" step="any" name="longitude" id="lng_input"
                                                class="form-control form-control-sm" placeholder="Longitude"
-                                               value="{{ old('longitude') }}">
+                                               value="{{ old('longitude', $pelanggan->longitude) }}">
                                         <button type="button" class="btn btn-sm btn-outline-primary text-nowrap" onclick="getGPS()">
                                             <i class="fas fa-crosshairs me-1"></i>GPS
                                         </button>
@@ -430,46 +402,44 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold">Username PPPoE <span class="text-danger">*</span></label>
-                                <input type="text" name="username"
-                                       class="form-control form-control-sm @error('username') is-invalid @enderror"
-                                       value="{{ old('username') }}"
-                                       placeholder="Contoh: plg001" required>
-                                <div class="form-text">Username untuk login PPPoE/Hotspot</div>
+                                <input type="text" name="username" class="form-control form-control-sm @error('username') is-invalid @enderror"
+                                       value="{{ old('username', $pelanggan->username) }}" required>
                                 @error('username')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-semibold">Password PPPoE <span class="text-danger">*</span></label>
-                                <input type="text" name="password"
-                                       class="form-control form-control-sm @error('password') is-invalid @enderror"
-                                       value="{{ old('password') }}"
-                                       placeholder="Minimal 6 karakter" required>
-                                @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                <label class="form-label small fw-semibold">Password Baru</label>
+                                <input type="text" name="password" class="form-control form-control-sm"
+                                       placeholder="Kosongkan jika tidak diubah">
+                                <div class="form-text">Isi hanya jika ingin mengubah password.</div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-semibold">Jenis Layanan</label>
-                                <select name="jenis_layanan" class="form-select form-select-sm">
-                                    <option value="pppoe"   {{ old('jenis_layanan')=='pppoe'   ? 'selected':'' }}>PPPoE</option>
-                                    <option value="hotspot" {{ old('jenis_layanan')=='hotspot' ? 'selected':'' }}>Hotspot</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-semibold">IP Address <span class="text-muted fw-normal">(opsional)</span></label>
-                                <input type="text" name="ip_address"
-                                       class="form-control form-control-sm"
-                                       value="{{ old('ip_address') }}"
-                                       placeholder="Contoh: 192.168.1.100">
-                                <div class="form-text">Kosongkan jika IP dinamis</div>
+                                <label class="form-label small fw-semibold">IP Address</label>
+                                <input type="text" name="ip_address" class="form-control form-control-sm"
+                                       value="{{ old('ip_address', $pelanggan->ip_address) }}"
+                                       placeholder="Kosongkan jika dinamis">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold">Router</label>
                                 <select name="router_id" class="form-select form-select-sm">
                                     <option value="">-- Pilih Router --</option>
                                     @foreach($routers as $router)
-                                        <option value="{{ $router->id }}" {{ old('router_id') == $router->id ? 'selected' : '' }}>
+                                        <option value="{{ $router->id }}" {{ (old('router_id', $pelanggan->router_id) == $router->id) ? 'selected' : '' }}>
                                             {{ $router->nama }} ({{ $router->ip_address }})
                                         </option>
                                     @endforeach
                                 </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Jenis Layanan</label>
+                                <select name="jenis_layanan" class="form-select form-select-sm">
+                                    <option value="pppoe"   {{ old('jenis_layanan', $pelanggan->jenis_layanan)=='pppoe'   ? 'selected':'' }}>PPPoE</option>
+                                    <option value="hotspot" {{ old('jenis_layanan', $pelanggan->jenis_layanan)=='hotspot' ? 'selected':'' }}>Hotspot</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Tanggal Expired</label>
+                                <input type="date" name="tgl_expired" class="form-control form-control-sm"
+                                       value="{{ old('tgl_expired', $pelanggan->tgl_expired?->format('Y-m-d')) }}">
                             </div>
                         </div>
                     </div>
@@ -486,53 +456,38 @@
                         <div class="section-title">
                             <i class="fas fa-box me-1"></i> Paket Internet
                         </div>
-
-                        @forelse($pakets as $paket)
-                        <label class="paket-option {{ old('paket_id') == $paket->id ? 'selected' : '' }}"
+                        @foreach($pakets as $paket)
+                        <label class="paket-option d-block {{ old('paket_id', $pelanggan->paket_id) == $paket->id ? 'selected' : '' }}"
                                for="paket{{ $paket->id }}">
                             <input type="radio" name="paket_id" id="paket{{ $paket->id }}"
                                    value="{{ $paket->id }}"
-                                   {{ old('paket_id') == $paket->id ? 'checked' : '' }} required>
+                                   {{ old('paket_id', $pelanggan->paket_id) == $paket->id ? 'checked' : '' }}>
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <div class="fw-bold small">{{ $paket->nama_paket }}</div>
                                     <small class="text-muted">
-                                        <i class="fas fa-arrow-down text-primary fa-xs"></i> {{ $paket->kecepatan_download }} Mbps &nbsp;
-                                        <i class="fas fa-arrow-up text-success fa-xs"></i> {{ $paket->kecepatan_upload }} Mbps
+                                        <i class="fas fa-arrow-down fa-xs"></i> {{ $paket->kecepatan_download }} Mbps &nbsp;
+                                        <i class="fas fa-arrow-up fa-xs"></i> {{ $paket->kecepatan_upload }} Mbps
                                     </small>
                                 </div>
-                                <div class="text-end">
-                                    <div class="text-success fw-bold small">Rp {{ number_format($paket->harga, 0, ',', '.') }}</div>
-                                    <div class="text-muted" style="font-size:0.7rem;">/bulan</div>
+                                <div class="text-success fw-bold small text-end">
+                                    Rp {{ number_format($paket->harga, 0, ',', '.') }}
+                                    <div class="text-muted fw-normal" style="font-size:0.7rem;">/bulan</div>
                                 </div>
                             </div>
                         </label>
-                        @empty
-                        <div class="alert alert-warning py-2 small">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Belum ada paket! <a href="/admin/paket/create">Tambah paket dulu</a>
-                        </div>
-                        @endforelse
+                        @endforeach
                     </div>
                 </div>
 
-                {{-- INFO OTOMATIS --}}
-                <div class="info-box mb-3">
-                    <div class="fw-semibold small mb-2 text-secondary">
-                        <i class="fas fa-info-circle me-1"></i> Diisi Otomatis
-                    </div>
-                    <div class="info-item"><i class="fas fa-check-circle"></i> ID Pelanggan dibuat otomatis</div>
-                    <div class="info-item"><i class="fas fa-check-circle"></i> Tanggal daftar = hari ini</div>
-                    <div class="info-item"><i class="fas fa-check-circle"></i> Expired = 30 hari ke depan</div>
-                    <div class="info-item"><i class="fas fa-check-circle"></i> PIN default = 123456</div>
-                </div>
-
-                {{-- TOMBOL --}}
+                {{-- TOMBOL AKSI --}}
                 <div class="d-grid gap-2">
                     <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-save me-2"></i> Simpan Pelanggan
+                        <i class="fas fa-save me-2"></i> Simpan Perubahan
                     </button>
-                    <a href="/admin/pelanggan" class="btn btn-outline-secondary btn-sm">Batal</a>
+                    <a href="/admin/pelanggan/{{ $pelanggan->id }}" class="btn btn-outline-secondary btn-sm">
+                        Batal
+                    </a>
                 </div>
 
             </div>
@@ -573,88 +528,108 @@
 </script>
 
 
-
 <script>
-var gmap = null, gmarker = null;
+var gmap = null;
+var gmarker = null;
 
-function initGoogleMap() {
+function initMap() {
     var lat = parseFloat(document.getElementById('lat_input').value) || -7.9;
     var lng = parseFloat(document.getElementById('lng_input').value) || 112.6;
-    var hasCoord = !!parseFloat(document.getElementById('lat_input').value);
+    var zoom = (parseFloat(document.getElementById('lat_input').value)) ? 17 : 13;
 
     gmap = new google.maps.Map(document.getElementById('mapContainer'), {
-        center: {lat: lat, lng: lng},
-        zoom: hasCoord ? 17 : 13,
+        center: { lat: lat, lng: lng },
+        zoom: zoom,
         mapTypeId: 'hybrid',
         gestureHandling: 'greedy',
-        draggable: true,
         scrollwheel: true,
-        fullscreenControl: false,
-        streetViewControl: true,
+        draggable: true,
         mapTypeControl: true,
+        streetViewControl: true,
+        fullscreenControl: false,
     });
 
-    if (hasCoord) setPin(lat, lng);
+    if (parseFloat(document.getElementById('lat_input').value)) {
+        setPin(lat, lng);
+    }
 
     gmap.addListener('click', function(e) {
         setPin(e.latLng.lat(), e.latLng.lng());
     });
 
-    // Autocomplete search
+    // Search autocomplete
     var input = document.getElementById('mapSearch');
-    var ac = new google.maps.places.Autocomplete(input, {componentRestrictions: {country: 'id'}});
-    ac.addListener('place_changed', function() {
-        var place = ac.getPlace();
-        if (!place.geometry) return;
-        setPin(place.geometry.location.lat(), place.geometry.location.lng());
-        gmap.setZoom(18);
-    });
+    if (input) {
+        var autocomplete = new google.maps.places.Autocomplete(input, {
+            componentRestrictions: { country: 'id' }
+        });
+        autocomplete.addListener('place_changed', function() {
+            var place = autocomplete.getPlace();
+            if (!place.geometry) return;
+            var la = place.geometry.location.lat();
+            var ln = place.geometry.location.lng();
+            setPin(la, ln);
+            gmap.setCenter({ lat: la, lng: ln });
+            gmap.setZoom(17);
+        });
+    }
 }
 
 function setPin(lat, lng) {
-    lat = parseFloat(lat); lng = parseFloat(lng);
     if (gmarker) gmarker.setMap(null);
     gmarker = new google.maps.Marker({
-        position: {lat: lat, lng: lng},
+        position: { lat: parseFloat(lat), lng: parseFloat(lng) },
         map: gmap,
         draggable: true,
-        animation: google.maps.Animation.DROP
+        animation: google.maps.Animation.DROP,
     });
     gmarker.addListener('dragend', function(e) {
         document.getElementById('lat_input').value = e.latLng.lat().toFixed(8);
         document.getElementById('lng_input').value = e.latLng.lng().toFixed(8);
     });
-    document.getElementById('lat_input').value = lat.toFixed(8);
-    document.getElementById('lng_input').value = lng.toFixed(8);
-    gmap.setCenter({lat: lat, lng: lng});
+    document.getElementById('lat_input').value = parseFloat(lat).toFixed(8);
+    document.getElementById('lng_input').value = parseFloat(lng).toFixed(8);
+    gmap.setCenter({ lat: parseFloat(lat), lng: parseFloat(lng) });
 }
 
 function getGPS() {
-    if (!navigator.geolocation) { alert('GPS tidak didukung'); return; }
+    if (!navigator.geolocation) { alert('Browser tidak support GPS'); return; }
     navigator.geolocation.getCurrentPosition(
-        function(p) { setPin(p.coords.latitude, p.coords.longitude); gmap.setZoom(18); },
-        function() { alert('Gagal ambil GPS'); }
+        function(pos) {
+            setPin(pos.coords.latitude, pos.coords.longitude);
+            gmap.setZoom(18);
+        },
+        function() { alert('Gagal ambil lokasi GPS'); }
     );
 }
 
 function searchLocation() {
     var q = document.getElementById('mapSearch').value.trim();
     if (!q) return;
-    new google.maps.Geocoder().geocode({address: q, region: 'id'}, function(r, s) {
-        if (s === 'OK') { setPin(r[0].geometry.location.lat(), r[0].geometry.location.lng()); gmap.setZoom(17); }
-        else alert('Lokasi tidak ditemukan.');
+    var geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: q, region: 'id' }, function(results, status) {
+        if (status === 'OK') {
+            var loc = results[0].geometry.location;
+            setPin(loc.lat(), loc.lng());
+            gmap.setZoom(17);
+        } else {
+            alert('Lokasi tidak ditemukan.');
+        }
     });
 }
 
 document.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter' && document.activeElement.id === 'mapSearch') { e.preventDefault(); searchLocation(); }
+    if (e.key === 'Enter' && document.activeElement.id === 'mapSearch') {
+        e.preventDefault();
+        searchLocation();
+    }
 });
 
-document.getElementById('lat_input') && document.getElementById('lat_input').addEventListener('change', function() {
+document.getElementById('lat_input').addEventListener('change', function() {
     var la = parseFloat(this.value), ln = parseFloat(document.getElementById('lng_input').value);
     if (la && ln && gmap) setPin(la, ln);
 });
-document.getElementById('lng_input') && document.getElementById('lng_input').addEventListener('change', function() {
+document.getElementById('lng_input').addEventListener('change', function() {
     var la = parseFloat(document.getElementById('lat_input').value), ln = parseFloat(this.value);
     if (la && ln && gmap) setPin(la, ln);
 });
@@ -664,63 +639,100 @@ function toggleFullscreen() {
     var el = document.getElementById('mapContainer');
     var icon = document.getElementById('fsIcon');
     if (!isFullscreen) {
-        el.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;border-radius:0;';
+        el.style.position = 'fixed';
+        el.style.top = '0';
+        el.style.left = '0';
+        el.style.width = '100vw';
+        el.style.height = '100vh';
+        el.style.zIndex = '9999';
+        el.style.borderRadius = '0';
         icon.className = 'fas fa-compress';
         isFullscreen = true;
-        gmap.setOptions({streetViewControl:true,mapTypeControl:true,scaleControl:true,zoomControl:true});
 
-        // Tambah search box fullscreen
-        var fsBox = document.createElement('div');
-        fsBox.id = 'fsSearchBox';
-        fsBox.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:10001;width:420px;max-width:85vw;display:flex;gap:6px;';
-        fsBox.innerHTML = '<input id="fsSearchInput" type="text" placeholder="Cari lokasi, nama jalan, tempat..." '
-            + 'style="flex:1;padding:10px 16px;border-radius:24px;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.4);font-size:14px;outline:none;">'
-            + '<button onclick="fsSearch()" style="padding:10px 16px;border-radius:24px;border:none;background:#1a73e8;color:white;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.4);">'
-            + '<i class=\'fas fa-search\'></i></button>'
-            + '<button onclick="toggleFullscreen()" style="padding:10px 14px;border-radius:24px;border:none;background:rgba(0,0,0,0.6);color:white;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.4);">'
-            + '<i class=\'fas fa-compress\'></i></button>';
-        document.body.appendChild(fsBox);
+        // Aktifkan semua tools Google Maps saat fullscreen
+        gmap.setOptions({
+            zoomControl: true,
+            mapTypeControl: true,
+            scaleControl: true,
+            streetViewControl: true,
+            rotateControl: true,
+            fullscreenControl: false,
+            mapTypeControlOptions: {
+                style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+                position: google.maps.ControlPosition.TOP_RIGHT,
+                mapTypeIds: ['roadmap', 'satellite', 'hybrid', 'terrain']
+            },
+            zoomControlOptions: {
+                position: google.maps.ControlPosition.RIGHT_CENTER
+            },
+            streetViewControlOptions: {
+                position: google.maps.ControlPosition.RIGHT_CENTER
+            },
+        });
 
-        // Autocomplete untuk fullscreen search
-        var fsAc = new google.maps.places.Autocomplete(
+        // Tambah search box di fullscreen
+        var searchBox = document.createElement('div');
+        searchBox.id = 'fsSearchBox';
+        searchBox.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:10001;width:400px;max-width:90vw;display:flex;gap:8px;';
+        searchBox.innerHTML = '<input id="fsSearchInput" type="text" placeholder="Cari lokasi..." style="flex:1;padding:10px 16px;border-radius:24px;border:none;box-shadow:0 2px 10px rgba(0,0,0,0.3);font-size:14px;outline:none;">'
+            + '<button onclick="fsSearch()" style="padding:10px 16px;border-radius:24px;border:none;background:#4285f4;color:white;font-size:14px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.3);white-space:nowrap;"><i class=\'fas fa-search\'></i></button>';
+        document.body.appendChild(searchBox);
+
+        document.getElementById('fsSearchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') fsSearch();
+        });
+
+        // Autocomplete untuk search fullscreen
+        var fsAutocomplete = new google.maps.places.Autocomplete(
             document.getElementById('fsSearchInput'),
-            {componentRestrictions: {country: 'id'}}
+            { componentRestrictions: { country: 'id' } }
         );
-        // Paksa dropdown autocomplete tampil di atas map
-        var style = document.createElement('style');
-        style.id = 'pacStyle';
-        style.innerHTML = '.pac-container { z-index: 10002 !important; }';
-        document.head.appendChild(style);
-        fsAc.addListener('place_changed', function() {
-            var place = fsAc.getPlace();
+        fsAutocomplete.addListener('place_changed', function() {
+            var place = fsAutocomplete.getPlace();
             if (!place.geometry) return;
-            setPin(place.geometry.location.lat(), place.geometry.location.lng());
+            var la = place.geometry.location.lat();
+            var ln = place.geometry.location.lng();
+            setPin(la, ln);
+            gmap.setCenter({ lat: la, lng: ln });
             gmap.setZoom(18);
         });
-        document.getElementById('fsSearchInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') { e.preventDefault(); fsSearch(); }
-        });
+
+        // Tambah tombol ESC hint
+        var hint = document.createElement('div');
+        hint.id = 'escHint';
+        hint.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:white;padding:8px 16px;border-radius:20px;font-size:13px;z-index:10000;pointer-events:none;';
+        hint.innerHTML = '<i class="fas fa-compress me-1"></i> Tekan ESC atau klik tombol untuk keluar fullscreen';
+        document.body.appendChild(hint);
+        setTimeout(function() { if(hint) hint.style.opacity='0'; hint.style.transition='opacity 1s'; }, 3000);
+
     } else {
+        el.style.position = 'relative';
+        el.style.top = '';
+        el.style.left = '';
+        el.style.width = '';
+        el.style.height = '280px';
+        el.style.zIndex = '';
+        el.style.borderRadius = '8px';
         icon.className = 'fas fa-expand';
         isFullscreen = false;
-        var fsBox = document.getElementById('fsSearchBox');
-        if (fsBox) fsBox.remove();
-        var pacStyle = document.getElementById('pacStyle');
-        if (pacStyle) pacStyle.remove();
-        // Reset semua style saat ESC
-        el.style.cssText = 'height:280px;width:100%;border-radius:8px;border:1px solid #dee2e6;position:relative;';
+
+        // Kembalikan tools minimal
+        gmap.setOptions({
+            zoomControl: true,
+            mapTypeControl: true,
+            scaleControl: false,
+            streetViewControl: true,
+            rotateControl: false,
+        });
+
+        var hint = document.getElementById('escHint');
+        if (hint) hint.remove();
+        var fsSearchBox = document.getElementById('fsSearchBox');
+        if (fsSearchBox) fsSearchBox.remove();
     }
     setTimeout(function() {
         google.maps.event.trigger(gmap, 'resize');
-        setTimeout(function() {
-            google.maps.event.trigger(gmap, 'resize');
-            if (gmarker) {
-                gmap.setCenter(gmarker.getPosition());
-            } else {
-                gmap.setCenter({lat: -7.9, lng: 112.6});
-            }
-        }, 200);
-    }, 150);
+    }, 100);
 }
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && isFullscreen) toggleFullscreen();
@@ -735,15 +747,20 @@ function fsSearch() {
     });
 }
 
-// Init setelah Google Maps API load
-window.addEventListener('load', function() {
-    var checkInterval = setInterval(function() {
-        if (typeof google !== 'undefined' && google.maps && google.maps.Map) {
-            clearInterval(checkInterval);
-            initGoogleMap();
+function fsSearch() {
+    var q = document.getElementById('fsSearchInput') ? document.getElementById('fsSearchInput').value.trim() : '';
+    if (!q) return;
+    var geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: q, region: 'id' }, function(results, status) {
+        if (status === 'OK') {
+            var loc = results[0].geometry.location;
+            setPin(loc.lat(), loc.lng());
+            gmap.setZoom(18);
+        } else {
+            alert('Lokasi tidak ditemukan.');
         }
-    }, 100);
-});
+    });
+}
 </script>
 
 </body>

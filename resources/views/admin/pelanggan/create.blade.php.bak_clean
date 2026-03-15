@@ -6,6 +6,7 @@
     <title>Tambah Pelanggan � ISP Billing</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <style>
         :root {
             --sidebar-width: 230px;
@@ -224,7 +225,6 @@
             .mobile-menu-btn { display: flex !important; }
         }
     </style>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC33huzSRZbZ02tihkJmqqrGhP9Kml32uM&libraries=places" defer></script>
 </head>
 <body>
 
@@ -414,7 +414,7 @@
                                             <i class="fas fa-expand" id="fsIcon"></i>
                                         </button>
                                     </div>
-                                    <div id="mapWrapper" style="width:100%;overflow:hidden;border-radius:8px;"><div id="mapContainer" style="height:280px;width:100%;border-radius:8px;border:1px solid #dee2e6;position:relative;"></div></div>
+                                    <div id="mapContainer" style="height:280px;border-radius:8px;border:1px solid #dee2e6;position:relative;"></div>
                                 </div>
                             </div>
                         </div>
@@ -572,179 +572,128 @@
     });
 </script>
 
-
-
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-var gmap = null, gmarker = null;
-
-function initGoogleMap() {
+var mapReady = false;
+function initMap() {
+    if (mapReady) return;
+    mapReady = true;
     var lat = parseFloat(document.getElementById('lat_input').value) || -7.9;
     var lng = parseFloat(document.getElementById('lng_input').value) || 112.6;
-    var hasCoord = !!parseFloat(document.getElementById('lat_input').value);
-
-    gmap = new google.maps.Map(document.getElementById('mapContainer'), {
-        center: {lat: lat, lng: lng},
-        zoom: hasCoord ? 17 : 13,
-        mapTypeId: 'hybrid',
-        gestureHandling: 'greedy',
-        draggable: true,
-        scrollwheel: true,
-        fullscreenControl: false,
-        streetViewControl: true,
-        mapTypeControl: true,
+    var mymap = L.map('mapContainer').setView([lat, lng], 13);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Esri, Maxar, Earthstar Geographics'
+    }).addTo(mymap);
+    // Tambah label jalan di atas satelit
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '', opacity: 0.8
+    }).addTo(mymap);
+    var marker = null;
+    function setPin(la, ln) {
+        if (marker) mymap.removeLayer(marker);
+        marker = L.marker([la, ln], {draggable: true}).addTo(mymap);
+        marker.on('dragend', function(e) {
+            var p = e.target.getLatLng();
+            document.getElementById('lat_input').value = p.lat.toFixed(8);
+            document.getElementById('lng_input').value = p.lng.toFixed(8);
+        });
+        document.getElementById('lat_input').value = parseFloat(la).toFixed(8);
+        document.getElementById('lng_input').value = parseFloat(ln).toFixed(8);
+        mymap.setView([la, ln], 16);
+    }
+    mymap.on('click', function(e) { setPin(e.latlng.lat, e.latlng.lng); });
+    var ol = parseFloat(document.getElementById('lat_input').value);
+    var og = parseFloat(document.getElementById('lng_input').value);
+    if (ol && og) setPin(ol, og);
+    document.getElementById('lat_input').addEventListener('change', function() {
+        var la = parseFloat(this.value), ln = parseFloat(document.getElementById('lng_input').value);
+        if (la && ln) setPin(la, ln);
     });
-
-    if (hasCoord) setPin(lat, lng);
-
-    gmap.addListener('click', function(e) {
-        setPin(e.latLng.lat(), e.latLng.lng());
-    });
-
-    // Autocomplete search
-    var input = document.getElementById('mapSearch');
-    var ac = new google.maps.places.Autocomplete(input, {componentRestrictions: {country: 'id'}});
-    ac.addListener('place_changed', function() {
-        var place = ac.getPlace();
-        if (!place.geometry) return;
-        setPin(place.geometry.location.lat(), place.geometry.location.lng());
-        gmap.setZoom(18);
+    document.getElementById('lng_input').addEventListener('change', function() {
+        var la = parseFloat(document.getElementById('lat_input').value), ln = parseFloat(this.value);
+        if (la && ln) setPin(la, ln);
     });
 }
-
-function setPin(lat, lng) {
-    lat = parseFloat(lat); lng = parseFloat(lng);
-    if (gmarker) gmarker.setMap(null);
-    gmarker = new google.maps.Marker({
-        position: {lat: lat, lng: lng},
-        map: gmap,
-        draggable: true,
-        animation: google.maps.Animation.DROP
-    });
-    gmarker.addListener('dragend', function(e) {
-        document.getElementById('lat_input').value = e.latLng.lat().toFixed(8);
-        document.getElementById('lng_input').value = e.latLng.lng().toFixed(8);
-    });
-    document.getElementById('lat_input').value = lat.toFixed(8);
-    document.getElementById('lng_input').value = lng.toFixed(8);
-    gmap.setCenter({lat: lat, lng: lng});
-}
-
 function getGPS() {
-    if (!navigator.geolocation) { alert('GPS tidak didukung'); return; }
+    if (!navigator.geolocation) { alert('Browser tidak support GPS'); return; }
     navigator.geolocation.getCurrentPosition(
-        function(p) { setPin(p.coords.latitude, p.coords.longitude); gmap.setZoom(18); },
-        function() { alert('Gagal ambil GPS'); }
+        function(pos) {
+            initMap();
+            document.getElementById('lat_input').value = pos.coords.latitude.toFixed(8);
+            document.getElementById('lng_input').value = pos.coords.longitude.toFixed(8);
+            document.getElementById('lat_input').dispatchEvent(new Event('change'));
+        },
+        function() { alert('Gagal ambil lokasi GPS'); }
     );
 }
-
-function searchLocation() {
-    var q = document.getElementById('mapSearch').value.trim();
-    if (!q) return;
-    new google.maps.Geocoder().geocode({address: q, region: 'id'}, function(r, s) {
-        if (s === 'OK') { setPin(r[0].geometry.location.lat(), r[0].geometry.location.lng()); gmap.setZoom(17); }
-        else alert('Lokasi tidak ditemukan.');
-    });
-}
-
-document.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter' && document.activeElement.id === 'mapSearch') { e.preventDefault(); searchLocation(); }
-});
-
-document.getElementById('lat_input') && document.getElementById('lat_input').addEventListener('change', function() {
-    var la = parseFloat(this.value), ln = parseFloat(document.getElementById('lng_input').value);
-    if (la && ln && gmap) setPin(la, ln);
-});
-document.getElementById('lng_input') && document.getElementById('lng_input').addEventListener('change', function() {
-    var la = parseFloat(document.getElementById('lat_input').value), ln = parseFloat(this.value);
-    if (la && ln && gmap) setPin(la, ln);
-});
+document.addEventListener('DOMContentLoaded', function() { initMap(); });
 
 var isFullscreen = false;
 function toggleFullscreen() {
     var el = document.getElementById('mapContainer');
     var icon = document.getElementById('fsIcon');
     if (!isFullscreen) {
-        el.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;border-radius:0;';
+        el.style.position = 'fixed';
+        el.style.top = '0';
+        el.style.left = '0';
+        el.style.width = '100vw';
+        el.style.height = '100vh';
+        el.style.zIndex = '9999';
+        el.style.borderRadius = '0';
         icon.className = 'fas fa-compress';
         isFullscreen = true;
-        gmap.setOptions({streetViewControl:true,mapTypeControl:true,scaleControl:true,zoomControl:true});
-
-        // Tambah search box fullscreen
-        var fsBox = document.createElement('div');
-        fsBox.id = 'fsSearchBox';
-        fsBox.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:10001;width:420px;max-width:85vw;display:flex;gap:6px;';
-        fsBox.innerHTML = '<input id="fsSearchInput" type="text" placeholder="Cari lokasi, nama jalan, tempat..." '
-            + 'style="flex:1;padding:10px 16px;border-radius:24px;border:none;box-shadow:0 2px 12px rgba(0,0,0,0.4);font-size:14px;outline:none;">'
-            + '<button onclick="fsSearch()" style="padding:10px 16px;border-radius:24px;border:none;background:#1a73e8;color:white;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.4);">'
-            + '<i class=\'fas fa-search\'></i></button>'
-            + '<button onclick="toggleFullscreen()" style="padding:10px 14px;border-radius:24px;border:none;background:rgba(0,0,0,0.6);color:white;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.4);">'
-            + '<i class=\'fas fa-compress\'></i></button>';
-        document.body.appendChild(fsBox);
-
-        // Autocomplete untuk fullscreen search
-        var fsAc = new google.maps.places.Autocomplete(
-            document.getElementById('fsSearchInput'),
-            {componentRestrictions: {country: 'id'}}
-        );
-        // Paksa dropdown autocomplete tampil di atas map
-        var style = document.createElement('style');
-        style.id = 'pacStyle';
-        style.innerHTML = '.pac-container { z-index: 10002 !important; }';
-        document.head.appendChild(style);
-        fsAc.addListener('place_changed', function() {
-            var place = fsAc.getPlace();
-            if (!place.geometry) return;
-            setPin(place.geometry.location.lat(), place.geometry.location.lng());
-            gmap.setZoom(18);
-        });
-        document.getElementById('fsSearchInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') { e.preventDefault(); fsSearch(); }
-        });
     } else {
+        el.style.position = 'relative';
+        el.style.top = '';
+        el.style.left = '';
+        el.style.width = '';
+        el.style.height = '280px';
+        el.style.zIndex = '';
+        el.style.borderRadius = '8px';
         icon.className = 'fas fa-expand';
         isFullscreen = false;
-        var fsBox = document.getElementById('fsSearchBox');
-        if (fsBox) fsBox.remove();
-        var pacStyle = document.getElementById('pacStyle');
-        if (pacStyle) pacStyle.remove();
-        // Reset semua style saat ESC
-        el.style.cssText = 'height:280px;width:100%;border-radius:8px;border:1px solid #dee2e6;position:relative;';
     }
-    setTimeout(function() {
-        google.maps.event.trigger(gmap, 'resize');
-        setTimeout(function() {
-            google.maps.event.trigger(gmap, 'resize');
-            if (gmarker) {
-                gmap.setCenter(gmarker.getPosition());
-            } else {
-                gmap.setCenter({lat: -7.9, lng: 112.6});
-            }
-        }, 200);
-    }, 150);
+    setTimeout(function() { window.dispatchEvent(new Event('resize')); }, 100);
 }
+
+// ESC untuk keluar fullscreen
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && isFullscreen) toggleFullscreen();
 });
-
-function fsSearch() {
-    var q = document.getElementById('fsSearchInput') ? document.getElementById('fsSearchInput').value.trim() : '';
-    if (!q) return;
-    new google.maps.Geocoder().geocode({address: q, region: 'id'}, function(r, s) {
-        if (s === 'OK') { setPin(r[0].geometry.location.lat(), r[0].geometry.location.lng()); gmap.setZoom(17); }
-        else alert('Lokasi tidak ditemukan.');
-    });
+function toggleMapSize(el) {
+    if (el.style.height === '280px' || el.style.height === '') {
+        el.style.height = '550px';
+        el.title = 'Klik untuk perkecil peta';
+    } else {
+        el.style.height = '280px';
+        el.title = 'Klik untuk perbesar peta';
+    }
+    // Refresh map agar tile load ulang
+    setTimeout(function() {
+        window.dispatchEvent(new Event('resize'));
+    }, 310);
 }
-
-// Init setelah Google Maps API load
-window.addEventListener('load', function() {
-    var checkInterval = setInterval(function() {
-        if (typeof google !== 'undefined' && google.maps && google.maps.Map) {
-            clearInterval(checkInterval);
-            initGoogleMap();
-        }
-    }, 100);
+function searchLocation() {
+    var q = document.getElementById('mapSearch').value.trim();
+    if (!q) return;
+    fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q) + '&limit=1&countrycodes=id')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (!data || data.length === 0) { alert('Lokasi tidak ditemukan. Coba kata kunci lain.'); return; }
+        var lat = parseFloat(data[0].lat);
+        var lng = parseFloat(data[0].lon);
+        document.getElementById('lat_input').value = lat.toFixed(8);
+        document.getElementById('lng_input').value = lng.toFixed(8);
+        document.getElementById('lat_input').dispatchEvent(new Event('change'));
+    })
+    .catch(function() { alert('Gagal cari lokasi. Cek koneksi internet.'); });
+}
+document.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && document.activeElement.id === 'mapSearch') {
+        e.preventDefault();
+        searchLocation();
+    }
 });
 </script>
-
 </body>
 </html>

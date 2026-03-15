@@ -169,8 +169,23 @@ class MikrotikController extends Controller
             $existing = Pelanggan::pluck('username')->toArray();
             $pakets   = Paket::all();
 
+            // Deduplikasi username dari Mikrotik
+            $seen = [];
+            $uniqueData = [];
+            foreach ($result['data'] as $s) {
+                $key = strtolower($s['username']);
+                if (isset($seen[$key])) continue;
+                $seen[$key] = true;
+                $uniqueData[] = $s;
+            }
+
             $data = array_map(function($s) use ($existing, $pakets) {
-                $matchPaket = $pakets->first(fn($p) => strtolower($p->nama_paket) === strtolower($s['profile']));
+                $profileClean = strtolower(trim($s['profile']));
+                $matchPaket = $pakets->first(function($p) use ($profileClean) {
+                    $namaClean = strtolower(trim($p->nama_paket));
+                    return $namaClean === $profileClean
+                        || str_replace([' ', '-', '_'], '', $namaClean) === str_replace([' ', '-', '_'], '', $profileClean);
+                });
                 return [
                     'username'   => $s['username'],
                     'password'   => $s['password'],
@@ -182,7 +197,7 @@ class MikrotikController extends Controller
                     'paket_id'   => $matchPaket ? $matchPaket->id : null,
                     'paket_nama' => $matchPaket ? $matchPaket->nama_paket : null,
                 ];
-            }, $result['data']);
+            }, $uniqueData);
 
             return response()->json([
                 'status' => true,
@@ -199,45 +214,67 @@ class MikrotikController extends Controller
     {
         $items    = $request->input('items', []);
         $paketId  = $request->input('paket_id');
+        $bulan    = max(1, (int) $request->input('bulan', 1));
         $imported = 0;
         $skipped  = 0;
+        $errors   = [];
 
-        foreach ($items as $item) {
-            $username = $item['username'] ?? '';
-            if (!$username) continue;
-            if (Pelanggan::where('username', $username)->exists()) {
-                $skipped++;
-                continue;
+        foreach ($items as $index => $item) {
+            try {
+                $username = trim($item['username'] ?? '');
+                if (!$username) continue;
+
+                if (Pelanggan::withTrashed()->where('username', $username)->exists()) {
+                Pelanggan::withTrashed()->where('username', $username)->forceDelete();
+                    $skipped++;
+                    continue;
+                }
+
+                $usePaketId = $item['paket_id'] ?? $paketId;
+                if (!$usePaketId) {
+                    $skipped++;
+                    $errors[] = $username . ': paket belum dipilih';
+                    continue;
+                }
+
+                \DB::transaction(function() use ($username, $item, $usePaketId, $router, $bulan, &$imported) {
+                    $lastId      = Pelanggan::lockForUpdate()->max('id') ?? 0;
+                    $idPelanggan = 'AR-' . date('Y') . str_pad($lastId + 1, 4, '0', STR_PAD_LEFT);
+
+                    $tglExpired = !empty($item['tgl_expired'])
+                        ? $item['tgl_expired']
+                        : now()->addMonths($bulan)->toDateString();
+
+                    Pelanggan::create([
+                        'id_pelanggan'   => $idPelanggan,
+                        'nama'           => $username,
+                        'username'       => $username,
+                        'password'       => bcrypt($item['password'] ?? $username),
+                        'password_pppoe' => $item['password'] ?? $username,
+                        'paket_id'       => $usePaketId,
+                        'router_id'      => $router->id,
+                        'router_name'    => $router->nama,
+                        'tgl_daftar'     => now()->toDateString(),
+                        'tgl_expired'    => $tglExpired,
+                        'ip_address'     => $item['address'] ?? null,
+                        'status'         => ($item['disabled'] ?? false) ? 'isolir' : 'aktif',
+                        'jenis_layanan'  => 'pppoe',
+                    ]);
+                    $imported++;
+                });
+
+            } catch (\Exception $e) {
+                $errors[] = ($item['username'] ?? 'item-' . $index) . ': ' . $e->getMessage();
             }
-            $usePaketId = $item['paket_id'] ?? $paketId;
-            if (!$usePaketId) { $skipped++; continue; }
-
-            $lastId      = Pelanggan::max('id') ?? 0;
-            $idPelanggan = 'AR-' . date('Y') . str_pad($lastId + 1, 4, '0', STR_PAD_LEFT);
-
-            Pelanggan::create([
-                'id_pelanggan'   => $idPelanggan,
-                'nama'           => $username,
-                'username'       => $username,
-                'password'       => bcrypt($item['password'] ?? $username),
-                'password_pppoe' => $item['password'] ?? $username,
-                'paket_id'       => $usePaketId,
-                'router_id'      => $router->id,
-                'router_name'    => $router->nama,
-                'tgl_daftar'     => now()->toDateString(),
-                'tgl_expired'    => !empty($item['tgl_expired']) ? $item['tgl_expired'] : now()->addDays(30)->toDateString(),
-                'ip_address'     => $item['address'] ?? null,
-                'status'         => ($item['disabled'] ?? false) ? 'isolir' : 'aktif',
-                'jenis_layanan'  => 'pppoe',
-            ]);
-            $imported++;
         }
 
         return response()->json([
             'status'   => true,
             'imported' => $imported,
             'skipped'  => $skipped,
-            'message'  => "Berhasil import {$imported} pelanggan, {$skipped} dilewati (sudah ada).",
+            'errors'   => $errors,
+            'message'  => 'Berhasil import ' . $imported . ' pelanggan, ' . $skipped . ' dilewati.'
+                        . (count($errors) ? ' Ada ' . count($errors) . ' error.' : ''),
         ]);
     }
 
