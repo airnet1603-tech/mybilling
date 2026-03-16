@@ -578,8 +578,8 @@
 var gmap = null, gmarker = null;
 
 function initGoogleMap() {
-    var lat = parseFloat(document.getElementById('lat_input').value) || -7.9;
-    var lng = parseFloat(document.getElementById('lng_input').value) || 112.6;
+    var lat = parseFloat(document.getElementById('lat_input').value) || -8.188492;
+    var lng = parseFloat(document.getElementById('lng_input').value) || 112.018204;
     var hasCoord = !!parseFloat(document.getElementById('lat_input').value);
 
     gmap = new google.maps.Map(document.getElementById('mapContainer'), {
@@ -717,7 +717,7 @@ function toggleFullscreen() {
             if (gmarker) {
                 gmap.setCenter(gmarker.getPosition());
             } else {
-                gmap.setCenter({lat: -7.9, lng: 112.6});
+                gmap.setCenter({lat: -8.188492, lng: 112.018204});
             }
         }, 200);
     }, 150);

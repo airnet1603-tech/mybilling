@@ -12,7 +12,19 @@
         :root { --sidebar-width:230px; --sidebar-bg-start:#1a1a2e; --sidebar-bg-end:#0f3460; --accent:#e94560; }
         * { box-sizing:border-box; }
         body { background:#f0f2f5; font-family:'Segoe UI',sans-serif; }
-        .sidebar { background:linear-gradient(180deg,var(--sidebar-bg-start) 0%,var(--sidebar-bg-end) 100%); min-height:100vh; width:var(--sidebar-width); position:fixed; top:0; left:0; z-index:100; display:flex; flex-direction:column; }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            background:linear-gradient(180deg,var(--sidebar-bg-start) 0%,var(--sidebar-bg-end) 100%);
+            min-height:100vh;
+            width:var(--sidebar-width);
+            position:fixed;
+            top:0; left:0;
+            z-index:1050;
+            display:flex;
+            flex-direction:column;
+            transition: transform 0.3s ease;
+        }
         .sidebar-brand { padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:10px; }
         .sidebar-brand .brand-icon { width:34px; height:34px; background:rgba(233,69,96,0.25); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--accent); font-size:1rem; }
         .sidebar-brand .brand-title { color:#fff; font-weight:700; font-size:0.9rem; display:block; }
@@ -25,19 +37,74 @@
         .sidebar-divider { border-top:1px solid rgba(255,255,255,0.08); margin:6px 14px; }
         .sidebar-nav .logout-btn { color:rgba(255,255,255,0.65); padding:8px 14px; border-radius:7px; margin:1px 8px; font-size:0.83rem; display:flex; align-items:center; gap:9px; background:none; border:none; width:calc(100% - 16px); text-align:left; cursor:pointer; }
         .sidebar-nav .logout-btn:hover { background:rgba(233,69,96,0.25); color:#fff; }
+
+        /* ===== TOPBAR MOBILE ===== */
+        .mobile-topbar {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 54px;
+            background: linear-gradient(90deg, var(--sidebar-bg-start), var(--sidebar-bg-end));
+            z-index: 1040;
+            align-items: center;
+            padding: 0 14px;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .mobile-topbar .hamburger-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.3rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .mobile-topbar .hamburger-btn:hover { background: rgba(255,255,255,0.15); }
+        .mobile-topbar .brand-title { color: #fff; font-weight: 700; font-size: 0.95rem; }
+
+        /* ===== OVERLAY ===== */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1045;
+        }
+        .sidebar-overlay.show { display: block; }
+
+        /* ===== MAIN CONTENT ===== */
         .main-content { margin-left:var(--sidebar-width); padding:20px 24px; }
+
         #petaMap { height:calc(100vh - 180px); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
         .stat-card { border:none; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.07); }
-        .info-window-content { min-width:200px; }
-        .badge-aktif { background:#d4edda; color:#155724; }
-        .badge-isolir { background:#f8d7da; color:#721c24; }
-        .badge-suspend { background:#fff3cd; color:#856404; }
-        .badge-nonaktif { background:#e2e3e5; color:#383d41; }
+        .map-label { background: rgba(0,0,0,0.65); padding: 2px 6px; border-radius: 4px; margin-top: 4px; white-space: nowrap; text-shadow: none; }
+
+        /* ===== RESPONSIVE MOBILE ===== */
+        @media (max-width: 768px) {
+            .mobile-topbar { display: flex; }
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 70px 14px 14px; }
+            #petaMap { height: calc(100vh - 220px); }
+        }
     </style>
 </head>
 <body>
 
-<div class="sidebar">
+<!-- Topbar Mobile (hamburger) -->
+<div class="mobile-topbar">
+    <button class="hamburger-btn" id="hamburgerBtn">
+        <i class="fas fa-bars"></i>
+    </button>
+    <span class="brand-title">ISP Billing</span>
+</div>
+
+<!-- Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <div class="brand-icon"><i class="fas fa-wifi"></i></div>
         <div class="brand-text">
@@ -152,24 +219,26 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// ===== HAMBURGER MENU =====
+var hamburgerBtn   = document.getElementById('hamburgerBtn');
+var sidebar        = document.getElementById('sidebar');
+var sidebarOverlay = document.getElementById('sidebarOverlay');
+
+hamburgerBtn.addEventListener('click', function() {
+    sidebar.classList.toggle('open');
+    sidebarOverlay.classList.toggle('show');
+});
+sidebarOverlay.addEventListener('click', function() {
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('show');
+});
+
+// ===== PETA =====
 var allMarkers = [];
 var infoWindow = null;
 var petaMap = null;
 
-var pelangganData = @json(->map(function() {
-    return [
-        'id'       => ->id,
-        'nama'     => ->nama,
-        'username' => ->username,
-        'status'   => ->status,
-        'paket'    => ->paket->nama_paket ?? '-',
-        'router'   => ->router->nama ?? '-',
-        'expired'  => ->tgl_expired?->format('d/m/Y') ?? '-',
-        'lat'      => (float)->latitude,
-        'lng'      => (float)->longitude,
-        'url'      => '/admin/pelanggan/' . ->id,
-    ];
-}));
+var pelangganData = {!! $mapDataJson !!};
 
 function initMap() {
     petaMap = new google.maps.Map(document.getElementById('petaMap'), {
@@ -184,7 +253,6 @@ function initMap() {
 
     infoWindow = new google.maps.InfoWindow();
 
-    // Warna pin per status
     var pinColors = {
         'aktif'    : 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
         'isolir'   : 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
@@ -199,6 +267,13 @@ function initMap() {
             title    : p.nama,
             icon     : pinColors[p.status] || pinColors['aktif'],
             data     : p,
+            label    : {
+                text      : p.nama,
+                color     : '#ffffff',
+                fontSize  : '11px',
+                fontWeight: 'bold',
+                className : 'map-label',
+            },
         });
 
         marker.addListener('click', function() {
@@ -223,14 +298,12 @@ function initMap() {
         allMarkers.push(marker);
     });
 
-    // Auto fit bounds
     if (allMarkers.length > 0) {
         var bounds = new google.maps.LatLngBounds();
         allMarkers.forEach(function(m) { bounds.extend(m.getPosition()); });
         petaMap.fitBounds(bounds);
     }
 
-    // Filter events
     document.getElementById('searchPelanggan').addEventListener('input', applyFilter);
     document.getElementById('filterStatus').addEventListener('change', applyFilter);
     document.getElementById('filterPaket').addEventListener('change', applyFilter);
