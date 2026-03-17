@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Pelanggan ï¿½ ISP Billing</title>
+    <title>Edit Pelanggan – ISP Billing</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -24,88 +24,47 @@
             width: var(--sidebar-width);
             position: fixed;
             top: 0; left: 0;
-            z-index: 100;
+            z-index: 1050;
             display: flex;
             flex-direction: column;
+            transition: transform 0.3s ease;
         }
-
-        .sidebar-brand {
-            padding: 14px 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .sidebar-brand .brand-icon {
-            width: 34px; height: 34px;
-            background: rgba(233,69,96,0.25);
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            color: var(--accent);
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
-
-        .sidebar-brand .brand-text { line-height: 1.2; }
-
-        .sidebar-brand .brand-title {
-            color: #fff;
-            font-weight: 700;
-            font-size: 0.9rem;
-            display: block;
-        }
-
-        .sidebar-brand .brand-sub {
-            color: rgba(255,255,255,0.45);
-            font-size: 0.7rem;
-        }
-
+        .sidebar-brand { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; }
+        .sidebar-brand .brand-icon { width: 34px; height: 34px; background: rgba(233,69,96,0.25); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 1rem; }
+        .sidebar-brand .brand-title { color: #fff; font-weight: 700; font-size: 0.9rem; display: block; }
+        .sidebar-brand .brand-sub { color: rgba(255,255,255,0.45); font-size: 0.7rem; }
         .sidebar-nav { padding: 8px 0; flex: 1; }
-
-        .sidebar-nav .nav-link {
-            color: rgba(255,255,255,0.65);
-            padding: 8px 14px;
-            border-radius: 7px;
-            margin: 1px 8px;
-            font-size: 0.83rem;
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            transition: background 0.2s, color 0.2s;
-            white-space: nowrap;
-        }
-
+        .sidebar-nav .nav-link { color: rgba(255,255,255,0.65); padding: 8px 14px; border-radius: 7px; margin: 1px 8px; font-size: 0.83rem; display: flex; align-items: center; gap: 9px; transition: background 0.2s, color 0.2s; white-space: nowrap; }
         .sidebar-nav .nav-link i { width: 16px; font-size: 0.82rem; flex-shrink: 0; }
-
-        .sidebar-nav .nav-link:hover,
-        .sidebar-nav .nav-link.active { background: rgba(233,69,96,0.25); color: #fff; }
+        .sidebar-nav .nav-link:hover, .sidebar-nav .nav-link.active { background: rgba(233,69,96,0.25); color: #fff; }
         .sidebar-nav .nav-link.active { background: rgba(233,69,96,0.35); }
-
         .sidebar-divider { border-top: 1px solid rgba(255,255,255,0.08); margin: 6px 14px; }
-
-        .sidebar-nav .logout-btn {
-            color: rgba(255,255,255,0.65);
-            padding: 8px 14px;
-            border-radius: 7px;
-            margin: 1px 8px;
-            font-size: 0.83rem;
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            background: none;
-            border: none;
-            width: calc(100% - 16px);
-            text-align: left;
-            cursor: pointer;
-            transition: background 0.2s, color 0.2s;
-        }
-
+        .sidebar-nav .logout-btn { color: rgba(255,255,255,0.65); padding: 8px 14px; border-radius: 7px; margin: 1px 8px; font-size: 0.83rem; display: flex; align-items: center; gap: 9px; background: none; border: none; width: calc(100% - 16px); text-align: left; cursor: pointer; transition: background 0.2s, color 0.2s; }
         .sidebar-nav .logout-btn:hover { background: rgba(233,69,96,0.25); color: #fff; }
+
+        /* ===== TOPBAR MOBILE ===== */
+        .mobile-topbar {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 54px;
+            background: linear-gradient(90deg, var(--sidebar-bg-start), var(--sidebar-bg-end));
+            z-index: 1040;
+            align-items: center;
+            padding: 0 14px;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .mobile-topbar .hamburger-btn { background: none; border: none; color: #fff; font-size: 1.3rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+        .mobile-topbar .hamburger-btn:hover { background: rgba(255,255,255,0.15); }
+        .mobile-topbar .brand-title { color: #fff; font-weight: 700; font-size: 0.95rem; }
+
+        /* ===== OVERLAY ===== */
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1045; }
+        .sidebar-overlay.show { display: block; }
 
         /* ===== MAIN ===== */
         .main-content { margin-left: var(--sidebar-width); padding: 20px 24px; }
-
         .card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
 
         .section-title {
@@ -127,104 +86,35 @@
             cursor: pointer;
             transition: border-color 0.2s, background 0.2s;
         }
-
         .paket-option:hover { border-color: #adb5bd; }
-
-        .paket-option.selected {
-            border-color: #0d6efd;
-            background: #f0f5ff;
-        }
-
+        .paket-option.selected { border-color: #0d6efd; background: #f0f5ff; }
         .paket-option input[type="radio"] { display: none; }
 
-        /* ===== MOBILE TOGGLE BUTTON (HAMBURGER MODERN) ===== */
-        .mobile-menu-btn {
-            display: none;
-            position: fixed;
-            top: 16px;
-            left: 16px;
-            z-index: 1060;
-            width: 42px;
-            height: 42px;
-            background: linear-gradient(135deg, var(--sidebar-bg-start), var(--accent));
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(233,69,96,0.4);
-            transition: all 0.3s ease;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            padding: 10px;
-        }
-
-        .mobile-menu-btn:hover {
-            transform: scale(1.08);
-            box-shadow: 0 6px 20px rgba(233,69,96,0.5);
-        }
-
-        .mobile-menu-btn .bar {
-            display: block;
-            width: 20px;
-            height: 2px;
-            background: white;
-            border-radius: 2px;
-            transition: all 0.3s ease;
-            transform-origin: center;
-        }
-
-        /* Animasi X saat sidebar terbuka */
-        .mobile-menu-btn.is-open .bar:nth-child(1) {
-            transform: translateY(7px) rotate(45deg);
-        }
-        .mobile-menu-btn.is-open .bar:nth-child(2) {
-            opacity: 0;
-            transform: scaleX(0);
-        }
-        .mobile-menu-btn.is-open .bar:nth-child(3) {
-            transform: translateY(-7px) rotate(-45deg);
-        }
-
-        /* ===== RESPONSIVE ===== */
+        /* ===== RESPONSIVE MOBILE ===== */
         @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                left: -230px;
-                top: 0;
-                height: 100vh;
-                z-index: 1050;
-                transition: left 0.3s ease;
-            }
-            .sidebar.show { left: 0; }
-            .main-content { margin-left: 0 !important; padding: 15px; padding-top: 72px; }
-            .sidebar-overlay {
-                display: none;
-                position: fixed;
-                inset: 0;
-                background: rgba(0,0,0,0.5);
-                z-index: 1040;
-                backdrop-filter: blur(2px);
-            }
-            .sidebar-overlay.show { display: block; }
-            .mobile-menu-btn { display: flex !important; }
+            .mobile-topbar { display: flex; }
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 70px 14px 14px; }
         }
     </style>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC33huzSRZbZ02tihkJmqqrGhP9Kml32uM&libraries=places&callback=initMap" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC33huzSRZbZ02tihkJmqqrGhP9Kml32uM&libraries=places&callback=initMap" async defer></script>
 </head>
 <body>
 
-{{-- TOMBOL HAMBURGER MODERN --}}
-<button id="menuToggleBtn" class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle menu">
-    <span class="bar"></span>
-    <span class="bar"></span>
-    <span class="bar"></span>
-</button>
+<!-- Topbar Mobile (hamburger) -->
+<div class="mobile-topbar">
+    <button class="hamburger-btn" id="hamburgerBtn">
+        <i class="fas fa-bars"></i>
+    </button>
+    <span class="brand-title">ISP Billing</span>
+</div>
 
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<!-- Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <!-- ===== SIDEBAR ===== -->
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <div class="brand-icon"><i class="fas fa-wifi"></i></div>
         <div class="brand-text">
@@ -232,54 +122,19 @@
             <span class="brand-sub">Management System</span>
         </div>
     </div>
-
     <nav class="sidebar-nav">
         <ul class="nav flex-column mb-0">
-            <li class="nav-item">
-                <a href="/admin/dashboard" class="nav-link">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/admin/pelanggan" class="nav-link active">
-                    <i class="fas fa-users"></i> Pelanggan
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/admin/paket" class="nav-link">
-                    <i class="fas fa-box"></i> Paket Internet
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/admin/tagihan" class="nav-link">
-                    <i class="fas fa-file-invoice-dollar"></i> Tagihan
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/admin/pembayaran" class="nav-link">
-                    <i class="fas fa-money-bill-wave"></i> Pembayaran
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/admin/laporan" class="nav-link">
-                    <i class="fas fa-chart-bar"></i> Laporan
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/admin/mikrotik" class="nav-link">
-                    <i class="fas fa-network-wired"></i> Mikrotik
-                </a>
-            </li>
+            <li class="nav-item"><a href="/admin/dashboard" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li class="nav-item"><a href="/admin/pelanggan" class="nav-link active"><i class="fas fa-users"></i> Pelanggan</a></li>
+            <li class="nav-item"><a href="/admin/paket" class="nav-link"><i class="fas fa-box"></i> Paket Internet</a></li>
+            <li class="nav-item"><a href="/admin/tagihan" class="nav-link"><i class="fas fa-file-invoice-dollar"></i> Tagihan</a></li>
+            <li class="nav-item"><a href="/admin/pembayaran" class="nav-link"><i class="fas fa-money-bill-wave"></i> Pembayaran</a></li>
+            <li class="nav-item"><a href="/admin/laporan" class="nav-link"><i class="fas fa-chart-bar"></i> Laporan</a></li>
+            <li class="nav-item"><a href="/admin/mikrotik" class="nav-link"><i class="fas fa-network-wired"></i> Mikrotik</a></li>
         </ul>
-
         <div class="sidebar-divider"></div>
-
         <ul class="nav flex-column">
-            <li class="nav-item">
-                <a href="/admin/setting" class="nav-link">
-                    <i class="fas fa-cog"></i> Pengaturan
-                </a>
-            </li>
+            <li class="nav-item"><a href="/admin/setting" class="nav-link"><i class="fas fa-cog"></i> Pengaturan</a></li>
             <li class="nav-item">
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
@@ -299,7 +154,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h5 class="fw-bold mb-0">Edit Pelanggan</h5>
-            <small class="text-muted">{{ $pelanggan->id_pelanggan }} ï¿½ {{ $pelanggan->nama }}</small>
+            <small class="text-muted">{{ $pelanggan->id_pelanggan }} · {{ $pelanggan->nama }}</small>
         </div>
         <a href="/admin/pelanggan/{{ $pelanggan->id }}" class="btn btn-secondary btn-sm">
             <i class="fas fa-arrow-left me-1"></i> Kembali
@@ -376,17 +231,19 @@
                                     </div>
                                     <div class="d-flex gap-1 mb-1">
                                         <div class="input-group input-group-sm flex-grow-1">
-                                        <input type="text" id="mapSearch" class="form-control form-control-sm"
-                                               placeholder="Cari lokasi... (contoh: Jl. Merdeka Malang)">
-                                        <button type="button" class="btn btn-outline-secondary" onclick="searchLocation()">
-                                            <i class="fas fa-search"></i>
-                                        </button>
+                                            <input type="text" id="mapSearch" class="form-control form-control-sm"
+                                                   placeholder="Cari lokasi... (contoh: Jl. Merdeka Malang)">
+                                            <button type="button" class="btn btn-outline-secondary" onclick="searchLocation()">
+                                                <i class="fas fa-search"></i>
+                                            </button>
                                         </div>
                                         <button type="button" class="btn btn-sm btn-outline-dark" onclick="toggleFullscreen()" title="Fullscreen">
                                             <i class="fas fa-expand" id="fsIcon"></i>
                                         </button>
                                     </div>
-                                    <div id="mapWrapper" style="width:100%;overflow:hidden;border-radius:8px;"><div id="mapContainer" style="height:280px;width:100%;border-radius:8px;border:1px solid #dee2e6;position:relative;"></div></div>
+                                    <div id="mapWrapper" style="width:100%;overflow:hidden;border-radius:8px;">
+                                        <div id="mapContainer" style="height:280px;width:100%;border-radius:8px;border:1px solid #dee2e6;position:relative;"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -498,35 +355,28 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    document.querySelectorAll('.paket-option').forEach(label => {
-        label.addEventListener('click', function () {
-            document.querySelectorAll('.paket-option').forEach(l => l.classList.remove('selected'));
-            this.classList.add('selected');
-        });
+// ===== HAMBURGER MENU (sama seperti peta.blade) =====
+var hamburgerBtn   = document.getElementById('hamburgerBtn');
+var sidebar        = document.getElementById('sidebar');
+var sidebarOverlay = document.getElementById('sidebarOverlay');
+
+hamburgerBtn.addEventListener('click', function () {
+    sidebar.classList.toggle('open');
+    sidebarOverlay.classList.toggle('show');
+});
+sidebarOverlay.addEventListener('click', function () {
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('show');
+});
+
+// ===== PAKET OPTION =====
+document.querySelectorAll('.paket-option').forEach(label => {
+    label.addEventListener('click', function () {
+        document.querySelectorAll('.paket-option').forEach(l => l.classList.remove('selected'));
+        this.classList.add('selected');
     });
-
-    function toggleSidebar() {
-        const sidebar = document.querySelector(".sidebar");
-        const overlay = document.getElementById("sidebarOverlay");
-        const btn     = document.getElementById("menuToggleBtn");
-
-        sidebar.classList.toggle("show");
-        overlay.classList.toggle("show");
-        btn.classList.toggle("is-open"); // hamburger ? X
-    }
-
-    document.addEventListener("touchstart", e => window._touchStartX = e.touches[0].clientX);
-    document.addEventListener("touchend", e => {
-        const endX = e.changedTouches[0].clientX;
-        if (window._touchStartX < 30 && endX - window._touchStartX > 70) toggleSidebar();
-        if (window._touchStartX > 200 && window._touchStartX - endX > 70) {
-            document.querySelector(".sidebar").classList.remove("show");
-            document.getElementById("sidebarOverlay").classList.remove("show");
-            document.getElementById("menuToggleBtn").classList.remove("is-open");
-        }
-    });
+});
 </script>
-
 
 <script>
 var gmap = null;
@@ -557,7 +407,6 @@ function initMap() {
         setPin(e.latLng.lat(), e.latLng.lng());
     });
 
-    // Search autocomplete
     var input = document.getElementById('mapSearch');
     if (input) {
         var autocomplete = new google.maps.places.Autocomplete(input, {
@@ -642,9 +491,8 @@ function toggleFullscreen() {
         el.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;border-radius:0;';
         icon.className = 'fas fa-compress';
         isFullscreen = true;
-        gmap.setOptions({streetViewControl:true,mapTypeControl:true,scaleControl:true,zoomControl:true});
+        gmap.setOptions({ streetViewControl: true, mapTypeControl: true, scaleControl: true, zoomControl: true });
 
-        // Tambah search box fullscreen
         var fsBox = document.createElement('div');
         fsBox.id = 'fsSearchBox';
         fsBox.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:10001;width:420px;max-width:85vw;display:flex;gap:6px;';
@@ -656,12 +504,10 @@ function toggleFullscreen() {
             + '<i class=\'fas fa-compress\'></i></button>';
         document.body.appendChild(fsBox);
 
-        // Autocomplete untuk fullscreen search
         var fsAc = new google.maps.places.Autocomplete(
             document.getElementById('fsSearchInput'),
-            {componentRestrictions: {country: 'id'}}
+            { componentRestrictions: { country: 'id' } }
         );
-        // Paksa dropdown autocomplete tampil di atas map
         var style = document.createElement('style');
         style.id = 'pacStyle';
         style.innerHTML = '.pac-container { z-index: 10002 !important; }';
@@ -682,7 +528,6 @@ function toggleFullscreen() {
         if (fsBox) fsBox.remove();
         var pacStyle = document.getElementById('pacStyle');
         if (pacStyle) pacStyle.remove();
-        // Reset semua style saat ESC
         el.style.cssText = 'height:280px;width:100%;border-radius:8px;border:1px solid #dee2e6;position:relative;';
     }
     setTimeout(function() {
@@ -692,11 +537,12 @@ function toggleFullscreen() {
             if (gmarker) {
                 gmap.setCenter(gmarker.getPosition());
             } else {
-                gmap.setCenter({lat: -8.188492, lng: 112.018204});
+                gmap.setCenter({ lat: -8.188492, lng: 112.018204 });
             }
         }, 200);
     }, 150);
 }
+
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && isFullscreen) toggleFullscreen();
 });
@@ -704,20 +550,9 @@ document.addEventListener('keydown', function(e) {
 function fsSearch() {
     var q = document.getElementById('fsSearchInput') ? document.getElementById('fsSearchInput').value.trim() : '';
     if (!q) return;
-    new google.maps.Geocoder().geocode({address: q, region: 'id'}, function(r, s) {
-        if (s === 'OK') { setPin(r[0].geometry.location.lat(), r[0].geometry.location.lng()); gmap.setZoom(17); }
-        else alert('Lokasi tidak ditemukan.');
-    });
-}
-
-function fsSearch() {
-    var q = document.getElementById('fsSearchInput') ? document.getElementById('fsSearchInput').value.trim() : '';
-    if (!q) return;
-    var geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ address: q, region: 'id' }, function(results, status) {
+    new google.maps.Geocoder().geocode({ address: q, region: 'id' }, function(results, status) {
         if (status === 'OK') {
-            var loc = results[0].geometry.location;
-            setPin(loc.lat(), loc.lng());
+            setPin(results[0].geometry.location.lat(), results[0].geometry.location.lng());
             gmap.setZoom(18);
         } else {
             alert('Lokasi tidak ditemukan.');

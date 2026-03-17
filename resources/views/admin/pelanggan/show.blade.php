@@ -24,74 +24,58 @@
             width: var(--sidebar-width);
             position: fixed;
             top: 0; left: 0;
-            z-index: 100;
+            z-index: 1050;
             display: flex;
             flex-direction: column;
+            transition: transform 0.3s ease;
         }
-
-        .sidebar-brand {
-            padding: 14px 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .sidebar-brand .brand-icon {
-            width: 34px; height: 34px;
-            background: rgba(233,69,96,0.25);
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            color: var(--accent);
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
-
-        .sidebar-brand .brand-text { line-height: 1.2; }
+        .sidebar-brand { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; }
+        .sidebar-brand .brand-icon { width: 34px; height: 34px; background: rgba(233,69,96,0.25); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 1rem; }
         .sidebar-brand .brand-title { color: #fff; font-weight: 700; font-size: 0.9rem; display: block; }
         .sidebar-brand .brand-sub { color: rgba(255,255,255,0.45); font-size: 0.7rem; }
-
         .sidebar-nav { padding: 8px 0; flex: 1; }
-
-        .sidebar-nav .nav-link {
-            color: rgba(255,255,255,0.65);
-            padding: 8px 14px;
-            border-radius: 7px;
-            margin: 1px 8px;
-            font-size: 0.83rem;
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            transition: background 0.2s, color 0.2s;
-            white-space: nowrap;
-        }
-
-        .sidebar-nav .nav-link i { width: 16px; font-size: 0.82rem; flex-shrink: 0; }
-
-        .sidebar-nav .nav-link:hover,
-        .sidebar-nav .nav-link.active { background: rgba(233,69,96,0.25); color: #fff; }
+        .sidebar-nav .nav-link { color: rgba(255,255,255,0.65); padding: 8px 14px; border-radius: 7px; margin: 1px 8px; font-size: 0.83rem; display: flex; align-items: center; gap: 9px; transition: background 0.2s, color 0.2s; }
+        .sidebar-nav .nav-link i { width: 16px; font-size: 0.82rem; }
+        .sidebar-nav .nav-link:hover, .sidebar-nav .nav-link.active { background: rgba(233,69,96,0.25); color: #fff; }
         .sidebar-nav .nav-link.active { background: rgba(233,69,96,0.35); }
-
         .sidebar-divider { border-top: 1px solid rgba(255,255,255,0.08); margin: 6px 14px; }
+        .sidebar-nav .logout-btn { color: rgba(255,255,255,0.65); padding: 8px 14px; border-radius: 7px; margin: 1px 8px; font-size: 0.83rem; display: flex; align-items: center; gap: 9px; background: none; border: none; width: calc(100% - 16px); text-align: left; cursor: pointer; }
+        .sidebar-nav .logout-btn:hover { background: rgba(233,69,96,0.25); color: #fff; }
 
-        .sidebar-nav .logout-btn {
-            color: rgba(255,255,255,0.65);
-            padding: 8px 14px;
-            border-radius: 7px;
-            margin: 1px 8px;
-            font-size: 0.83rem;
-            display: flex;
+        /* ===== TOPBAR MOBILE (sama seperti peta.blade) ===== */
+        .mobile-topbar {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 54px;
+            background: linear-gradient(90deg, var(--sidebar-bg-start), var(--sidebar-bg-end));
+            z-index: 1040;
             align-items: center;
-            gap: 9px;
+            padding: 0 14px;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .mobile-topbar .hamburger-btn {
             background: none;
             border: none;
-            width: calc(100% - 16px);
-            text-align: left;
+            color: #fff;
+            font-size: 1.3rem;
             cursor: pointer;
-            transition: background 0.2s, color 0.2s;
+            padding: 4px 8px;
+            border-radius: 6px;
         }
+        .mobile-topbar .hamburger-btn:hover { background: rgba(255,255,255,0.15); }
+        .mobile-topbar .brand-title { color: #fff; font-weight: 700; font-size: 0.95rem; }
 
-        .sidebar-nav .logout-btn:hover { background: rgba(233,69,96,0.25); color: #fff; }
+        /* ===== OVERLAY ===== */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1045;
+        }
+        .sidebar-overlay.show { display: block; }
 
         /* ===== MAIN CONTENT ===== */
         .main-content { margin-left: var(--sidebar-width); padding: 20px 24px; }
@@ -107,7 +91,6 @@
             color: white;
             margin-bottom: 12px;
         }
-
         .avatar {
             width: 60px; height: 60px;
             background: rgba(255,255,255,0.15);
@@ -120,50 +103,18 @@
         }
 
         /* ===== STATUS BADGES ===== */
-        .badge-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.78rem;
-            font-weight: 600;
-        }
+        .badge-status { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
         .badge-aktif    { background: #d4edda; color: #155724; }
         .badge-isolir   { background: #f8d7da; color: #721c24; }
         .badge-suspend  { background: #fff3cd; color: #856404; }
         .badge-nonaktif { background: #e2e3e5; color: #383d41; }
 
         /* ===== INFO LABEL ===== */
-        .info-label {
-            font-size: 0.7rem;
-            color: #6c757d;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            margin-bottom: 2px;
-        }
-
+        .info-label { font-size: 0.7rem; color: #6c757d; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 2px; }
         .card-section-title { font-size: 0.88rem; font-weight: 700; }
 
         /* ===== STATUS BUTTONS ===== */
-        .status-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 9px 13px;
-            border-radius: 8px;
-            border: 2px solid transparent;
-            font-size: 0.82rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: #f8f9fa;
-            color: #495057;
-            width: 100%;
-            text-align: left;
-        }
-
+        .status-btn { display: flex; align-items: center; gap: 8px; padding: 9px 13px; border-radius: 8px; border: 2px solid transparent; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s; background: #f8f9fa; color: #495057; width: 100%; text-align: left; }
         .status-btn:hover { transform: translateX(3px); }
         .status-btn.btn-aktif    { border-color: #28a745; color: #155724; background: #f0fff4; }
         .status-btn.btn-isolir   { border-color: #dc3545; color: #721c24; background: #fff5f5; }
@@ -172,101 +123,32 @@
         .status-btn.active-status { box-shadow: 0 2px 8px rgba(0,0,0,0.15); font-weight: 700; }
 
         /* ===== SYNC CARD ===== */
-        .sync-card {
-            background: linear-gradient(135deg, #1a1a2e, #0f3460);
-            border-radius: 12px;
-            padding: 16px;
-            color: white;
-            margin-bottom: 12px;
-        }
+        .sync-card { background: linear-gradient(135deg, #1a1a2e, #0f3460); border-radius: 12px; padding: 16px; color: white; margin-bottom: 12px; }
 
-        /* ===== MOBILE TOGGLE BUTTON (HAMBURGER MODERN) ===== */
-        .mobile-menu-btn {
-            display: none;
-            position: fixed;
-            top: 16px;
-            left: 16px;
-            z-index: 1060;
-            width: 42px;
-            height: 42px;
-            background: linear-gradient(135deg, var(--sidebar-bg-start), var(--accent));
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(233,69,96,0.4);
-            transition: all 0.3s ease;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            padding: 10px;
-        }
-
-        .mobile-menu-btn:hover {
-            transform: scale(1.08);
-            box-shadow: 0 6px 20px rgba(233,69,96,0.5);
-        }
-
-        .mobile-menu-btn .bar {
-            display: block;
-            width: 20px;
-            height: 2px;
-            background: white;
-            border-radius: 2px;
-            transition: all 0.3s ease;
-            transform-origin: center;
-        }
-
-        /* Animasi X saat sidebar terbuka */
-        .mobile-menu-btn.is-open .bar:nth-child(1) {
-            transform: translateY(7px) rotate(45deg);
-        }
-        .mobile-menu-btn.is-open .bar:nth-child(2) {
-            opacity: 0;
-            transform: scaleX(0);
-        }
-        .mobile-menu-btn.is-open .bar:nth-child(3) {
-            transform: translateY(-7px) rotate(-45deg);
-        }
-
-        /* ===== RESPONSIVE ===== */
+        /* ===== RESPONSIVE MOBILE (sama seperti peta.blade) ===== */
         @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                left: -230px;
-                top: 0;
-                height: 100vh;
-                z-index: 1050;
-                transition: left 0.3s ease;
-            }
-            .sidebar.show { left: 0; }
-            .main-content { margin-left: 0 !important; padding: 15px; padding-top: 72px; }
-            .sidebar-overlay {
-                display: none;
-                position: fixed;
-                inset: 0;
-                background: rgba(0,0,0,0.5);
-                z-index: 1040;
-                backdrop-filter: blur(2px);
-            }
-            .sidebar-overlay.show { display: block; }
-            .mobile-menu-btn { display: flex !important; }
+            .mobile-topbar { display: flex; }
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 70px 14px 14px; }
         }
     </style>
 </head>
 <body>
 
-{{-- TOMBOL HAMBURGER MODERN --}}
-<button id="menuToggleBtn" class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle menu">
-    <span class="bar"></span>
-    <span class="bar"></span>
-    <span class="bar"></span>
-</button>
+{{-- Topbar Mobile (hamburger) --}}
+<div class="mobile-topbar">
+    <button class="hamburger-btn" id="hamburgerBtn">
+        <i class="fas fa-bars"></i>
+    </button>
+    <span class="brand-title">ISP Billing</span>
+</div>
 
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<!-- Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <!-- ===== SIDEBAR ===== -->
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <div class="brand-icon"><i class="fas fa-wifi"></i></div>
         <div class="brand-text">
@@ -274,60 +156,23 @@
             <span class="brand-sub">Management System</span>
         </div>
     </div>
-
     <nav class="sidebar-nav">
         <ul class="nav flex-column mb-0">
-            <li class="nav-item">
-                <a href="/admin/dashboard" class="nav-link">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/admin/pelanggan" class="nav-link active">
-                    <i class="fas fa-users"></i> Pelanggan
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/admin/paket" class="nav-link">
-                    <i class="fas fa-box"></i> Paket Internet
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/admin/tagihan" class="nav-link">
-                    <i class="fas fa-file-invoice-dollar"></i> Tagihan
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/admin/pembayaran" class="nav-link">
-                    <i class="fas fa-money-bill-wave"></i> Pembayaran
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/admin/laporan" class="nav-link">
-                    <i class="fas fa-chart-bar"></i> Laporan
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="/admin/mikrotik" class="nav-link">
-                    <i class="fas fa-network-wired"></i> Mikrotik
-                </a>
-            </li>
+            <li><a href="/admin/dashboard" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="/admin/pelanggan" class="nav-link active"><i class="fas fa-users"></i> Pelanggan</a></li>
+            <li><a href="/admin/paket" class="nav-link"><i class="fas fa-box"></i> Paket Internet</a></li>
+            <li><a href="/admin/tagihan" class="nav-link"><i class="fas fa-file-invoice-dollar"></i> Tagihan</a></li>
+            <li><a href="/admin/pembayaran" class="nav-link"><i class="fas fa-money-bill-wave"></i> Pembayaran</a></li>
+            <li><a href="/admin/laporan" class="nav-link"><i class="fas fa-chart-bar"></i> Laporan</a></li>
+            <li><a href="/admin/mikrotik" class="nav-link"><i class="fas fa-network-wired"></i> Mikrotik</a></li>
         </ul>
-
         <div class="sidebar-divider"></div>
-
         <ul class="nav flex-column">
-            <li class="nav-item">
-                <a href="/admin/setting" class="nav-link">
-                    <i class="fas fa-cog"></i> Pengaturan
-                </a>
-            </li>
-            <li class="nav-item">
+            <li><a href="/admin/setting" class="nav-link"><i class="fas fa-cog"></i> Pengaturan</a></li>
+            <li>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="logout-btn">
-                        <i class="fas fa-sign-out-alt" style="width:16px;font-size:0.82rem;"></i> Logout
-                    </button>
+                    <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </form>
             </li>
         </ul>
@@ -422,7 +267,6 @@
                     <div class="card-section-title mb-3">
                         <i class="fas fa-toggle-on me-2 text-primary"></i>Ubah Status
                     </div>
-
                     <div class="d-flex flex-column gap-2">
 
                         {{-- AKTIF --}}
@@ -431,8 +275,7 @@
                             <button type="submit"
                                     class="status-btn btn-aktif {{ $pelanggan->status == 'aktif' ? 'active-status' : '' }}"
                                     onclick="return confirm('Aktifkan pelanggan {{ addslashes($pelanggan->nama) }}?')">
-                                <i class="fas fa-check-circle"></i>
-                                Aktif
+                                <i class="fas fa-check-circle"></i> Aktif
                                 @if($pelanggan->status == 'aktif')
                                     <span class="ms-auto badge bg-success" style="font-size:0.65rem;">Saat ini</span>
                                 @endif
@@ -445,8 +288,7 @@
                             <button type="submit"
                                     class="status-btn btn-isolir {{ $pelanggan->status == 'isolir' ? 'active-status' : '' }}"
                                     onclick="return confirm('Isolir pelanggan {{ addslashes($pelanggan->nama) }}? Koneksi internet akan diputus.')">
-                                <i class="fas fa-ban"></i>
-                                Isolir
+                                <i class="fas fa-ban"></i> Isolir
                                 @if($pelanggan->status == 'isolir')
                                     <span class="ms-auto badge bg-danger" style="font-size:0.65rem;">Saat ini</span>
                                 @endif
@@ -459,8 +301,7 @@
                             <button type="submit"
                                     class="status-btn btn-suspend {{ $pelanggan->status == 'suspend' ? 'active-status' : '' }}"
                                     onclick="return confirm('Suspend pelanggan {{ addslashes($pelanggan->nama) }}? Koneksi internet akan diputus.')">
-                                <i class="fas fa-pause-circle"></i>
-                                Suspend
+                                <i class="fas fa-pause-circle"></i> Suspend
                                 @if($pelanggan->status == 'suspend')
                                     <span class="ms-auto badge bg-warning text-dark" style="font-size:0.65rem;">Saat ini</span>
                                 @endif
@@ -473,8 +314,7 @@
                             <button type="submit"
                                     class="status-btn btn-nonaktif {{ $pelanggan->status == 'nonaktif' ? 'active-status' : '' }}"
                                     onclick="return confirm('Nonaktifkan pelanggan {{ addslashes($pelanggan->nama) }}? Koneksi internet akan diputus.')">
-                                <i class="fas fa-times-circle"></i>
-                                Nonaktif
+                                <i class="fas fa-times-circle"></i> Nonaktif
                                 @if($pelanggan->status == 'nonaktif')
                                     <span class="ms-auto badge bg-secondary" style="font-size:0.65rem;">Saat ini</span>
                                 @endif
@@ -644,25 +484,18 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function toggleSidebar() {
-    const sidebar = document.querySelector(".sidebar");
-    const overlay = document.getElementById("sidebarOverlay");
-    const btn     = document.getElementById("menuToggleBtn");
+// ===== HAMBURGER MENU (sama seperti peta.blade) =====
+var hamburgerBtn   = document.getElementById('hamburgerBtn');
+var sidebar        = document.getElementById('sidebar');
+var sidebarOverlay = document.getElementById('sidebarOverlay');
 
-    sidebar.classList.toggle("show");
-    overlay.classList.toggle("show");
-    btn.classList.toggle("is-open"); // hamburger ? X
-}
-
-document.addEventListener("touchstart", e => window._touchStartX = e.touches[0].clientX);
-document.addEventListener("touchend", e => {
-    const endX = e.changedTouches[0].clientX;
-    if (window._touchStartX < 30 && endX - window._touchStartX > 70) toggleSidebar();
-    if (window._touchStartX > 200 && window._touchStartX - endX > 70) {
-        document.querySelector(".sidebar").classList.remove("show");
-        document.getElementById("sidebarOverlay").classList.remove("show");
-        document.getElementById("menuToggleBtn").classList.remove("is-open");
-    }
+hamburgerBtn.addEventListener('click', function () {
+    sidebar.classList.toggle('open');
+    sidebarOverlay.classList.toggle('show');
+});
+sidebarOverlay.addEventListener('click', function () {
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('show');
 });
 </script>
 </body>

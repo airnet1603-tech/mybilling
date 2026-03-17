@@ -24,9 +24,10 @@
             width: var(--sidebar-width);
             position: fixed;
             top: 0; left: 0;
-            z-index: 100;
+            z-index: 1050;
             display: flex;
             flex-direction: column;
+            transition: transform 0.3s ease;
         }
 
         .sidebar-brand {
@@ -91,6 +92,35 @@
 
         .sidebar-nav .logout-btn:hover { background: rgba(233,69,96,0.25); color: #fff; }
 
+        /* ===== TOPBAR MOBILE ===== */
+        .mobile-topbar {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 54px;
+            background: linear-gradient(90deg, var(--sidebar-bg-start), var(--sidebar-bg-end));
+            z-index: 1040;
+            align-items: center;
+            padding: 0 14px;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .mobile-topbar .hamburger-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.3rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .mobile-topbar .hamburger-btn:hover { background: rgba(255,255,255,0.15); }
+        .mobile-topbar .brand-title { color: #fff; font-weight: 700; font-size: 0.95rem; }
+
+        /* ===== OVERLAY ===== */
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1045; }
+        .sidebar-overlay.show { display: block; }
+
         /* ===== MAIN CONTENT ===== */
         .main-content { margin-left: var(--sidebar-width); padding: 20px 24px; }
 
@@ -127,93 +157,30 @@
 
         .card-section-title { font-size: 0.88rem; font-weight: 700; }
 
-        /* ===== MOBILE TOGGLE BUTTON (HAMBURGER MODERN) ===== */
-        .mobile-menu-btn {
-            display: none;
-            position: fixed;
-            top: 16px;
-            left: 16px;
-            z-index: 1060;
-            width: 42px;
-            height: 42px;
-            background: linear-gradient(135deg, var(--sidebar-bg-start), var(--accent));
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(233,69,96,0.4);
-            transition: all 0.3s ease;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            padding: 10px;
-        }
-
-        .mobile-menu-btn:hover {
-            transform: scale(1.08);
-            box-shadow: 0 6px 20px rgba(233,69,96,0.5);
-        }
-
-        .mobile-menu-btn .bar {
-            display: block;
-            width: 20px;
-            height: 2px;
-            background: white;
-            border-radius: 2px;
-            transition: all 0.3s ease;
-            transform-origin: center;
-        }
-
-        /* Animasi X saat sidebar terbuka */
-        .mobile-menu-btn.is-open .bar:nth-child(1) {
-            transform: translateY(7px) rotate(45deg);
-        }
-        .mobile-menu-btn.is-open .bar:nth-child(2) {
-            opacity: 0;
-            transform: scaleX(0);
-        }
-        .mobile-menu-btn.is-open .bar:nth-child(3) {
-            transform: translateY(-7px) rotate(-45deg);
-        }
-
-        /* ===== RESPONSIVE ===== */
+        /* ===== RESPONSIVE MOBILE ===== */
         @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                left: -230px;
-                top: 0;
-                height: 100vh;
-                z-index: 1050;
-                transition: left 0.3s ease;
-            }
-            .sidebar.show { left: 0; }
-            .main-content { margin-left: 0 !important; padding: 15px; padding-top: 72px; }
-            .sidebar-overlay {
-                display: none;
-                position: fixed;
-                inset: 0;
-                background: rgba(0,0,0,0.5);
-                z-index: 1040;
-                backdrop-filter: blur(2px);
-            }
-            .sidebar-overlay.show { display: block; }
-            .mobile-menu-btn { display: flex !important; }
+            .mobile-topbar { display: flex; }
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 70px 14px 14px; }
         }
     </style>
 </head>
 <body>
 
-{{-- TOMBOL HAMBURGER MODERN --}}
-<button id="menuToggleBtn" class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle menu">
-    <span class="bar"></span>
-    <span class="bar"></span>
-    <span class="bar"></span>
-</button>
+<!-- Topbar Mobile (hamburger) -->
+<div class="mobile-topbar">
+    <button class="hamburger-btn" id="hamburgerBtn">
+        <i class="fas fa-bars"></i>
+    </button>
+    <span class="brand-title">ISP Billing</span>
+</div>
 
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<!-- Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <!-- ===== SIDEBAR ===== -->
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <div class="brand-icon"><i class="fas fa-wifi"></i></div>
         <div class="brand-text">
@@ -416,25 +383,18 @@ function updateInfo(sel) {
     }
 }
 
-function toggleSidebar() {
-    const sidebar = document.querySelector(".sidebar");
-    const overlay = document.getElementById("sidebarOverlay");
-    const btn     = document.getElementById("menuToggleBtn");
+// ===== HAMBURGER MENU (sama seperti setting.blade) =====
+var hamburgerBtn   = document.getElementById('hamburgerBtn');
+var sidebar        = document.getElementById('sidebar');
+var sidebarOverlay = document.getElementById('sidebarOverlay');
 
-    sidebar.classList.toggle("show");
-    overlay.classList.toggle("show");
-    btn.classList.toggle("is-open"); // hamburger ? X
-}
-
-document.addEventListener("touchstart", e => window._touchStartX = e.touches[0].clientX);
-document.addEventListener("touchend", e => {
-    const endX = e.changedTouches[0].clientX;
-    if (window._touchStartX < 30 && endX - window._touchStartX > 70) toggleSidebar();
-    if (window._touchStartX > 200 && window._touchStartX - endX > 70) {
-        document.querySelector(".sidebar").classList.remove("show");
-        document.getElementById("sidebarOverlay").classList.remove("show");
-        document.getElementById("menuToggleBtn").classList.remove("is-open");
-    }
+hamburgerBtn.addEventListener('click', function () {
+    sidebar.classList.toggle('open');
+    sidebarOverlay.classList.toggle('show');
+});
+sidebarOverlay.addEventListener('click', function () {
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('show');
 });
 </script>
 </body>
