@@ -279,6 +279,9 @@ function initMap() {
         marker.addListener('click', function() {
             var statusColor = {aktif:'#28a745',isolir:'#dc3545',suspend:'#ffc107',nonaktif:'#6c757d'};
             var color = statusColor[p.status] || '#6c757d';
+            var googleMapsUrl = 'https://www.google.com/maps?q=' + p.lat + ',' + p.lng;
+            var openStreetMapUrl = 'https://www.openstreetmap.org/?mlat=' + p.lat + '&mlon=' + p.lng + '&zoom=17';
+
             infoWindow.setContent(
                 '<div style="min-width:220px;font-family:Segoe UI,sans-serif;">' +
                 '<div style="font-weight:700;font-size:14px;margin-bottom:6px;">' + p.nama + '</div>' +
@@ -287,9 +290,20 @@ function initMap() {
                     '<span style="background:' + color + ';color:white;padding:2px 8px;border-radius:10px;font-size:11px;">' + p.status.toUpperCase() + '</span>' +
                 '</div>' +
                 '<div style="font-size:12px;color:#666;margin-bottom:2px;"><i class="fas fa-box me-1"></i>' + p.paket + '</div>' +
-                '<div style="font-size:12px;color:#666;margin-bottom:6px;"><i class="fas fa-calendar me-1"></i>Expired: ' + p.expired + '</div>' +
-                '<a href="' + p.url + '" style="display:block;text-align:center;background:#1a73e8;color:white;padding:6px;border-radius:6px;text-decoration:none;font-size:12px;">' +
+                '<div style="font-size:12px;color:#666;margin-bottom:10px;"><i class="fas fa-calendar me-1"></i>Expired: ' + p.expired + '</div>' +
+
+                // Tombol Lihat Detail
+                '<a href="' + p.url + '" style="display:block;text-align:center;background:#1a73e8;color:white;padding:6px;border-radius:6px;text-decoration:none;font-size:12px;margin-bottom:5px;">' +
                 '<i class="fas fa-eye me-1"></i>Lihat Detail</a>' +
+
+                // Tombol Google Maps
+                '<a href="' + googleMapsUrl + '" target="_blank" style="display:block;text-align:center;background:#34a853;color:white;padding:6px;border-radius:6px;text-decoration:none;font-size:12px;margin-bottom:5px;">' +
+                '<i class="fas fa-map-marked-alt me-1"></i>Buka di Google Maps</a>' +
+
+                // Tombol OpenStreetMap
+                '<a href="' + openStreetMapUrl + '" target="_blank" style="display:block;text-align:center;background:#e67e22;color:white;padding:6px;border-radius:6px;text-decoration:none;font-size:12px;">' +
+                '<i class="fas fa-map me-1"></i>Buka di OpenStreetMap</a>' +
+
                 '</div>'
             );
             infoWindow.open(petaMap, marker);

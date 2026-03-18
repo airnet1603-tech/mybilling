@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Mikrotik  ISP Billing</title>
+    <title>Mikrotik – ISP Billing</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -18,110 +18,69 @@
         * { box-sizing: border-box; }
         body { background: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
 
+        /* ===== SIDEBAR ===== */
         .sidebar {
             background: linear-gradient(180deg, var(--sidebar-bg-start) 0%, var(--sidebar-bg-end) 100%);
             min-height: 100vh;
             width: var(--sidebar-width);
             position: fixed;
             top: 0; left: 0;
-            z-index: 100;
+            z-index: 1050;
             display: flex;
             flex-direction: column;
+            transition: transform 0.3s ease;
         }
-
-        .sidebar-brand {
-            padding: 14px 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .sidebar-brand .brand-icon {
-            width: 34px; height: 34px;
-            background: rgba(233,69,96,0.25);
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            color: var(--accent);
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
-
-        .sidebar-brand .brand-text { line-height: 1.2; }
+        .sidebar-brand { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; }
+        .sidebar-brand .brand-icon { width: 34px; height: 34px; background: rgba(233,69,96,0.25); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 1rem; }
         .sidebar-brand .brand-title { color: #fff; font-weight: 700; font-size: 0.9rem; display: block; }
         .sidebar-brand .brand-sub { color: rgba(255,255,255,0.45); font-size: 0.7rem; }
-
         .sidebar-nav { padding: 8px 0; flex: 1; }
-
-        .sidebar-nav .nav-link {
-            color: rgba(255,255,255,0.65);
-            padding: 8px 14px;
-            border-radius: 7px;
-            margin: 1px 8px;
-            font-size: 0.83rem;
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            transition: background 0.2s, color 0.2s;
-            white-space: nowrap;
-        }
-
+        .sidebar-nav .nav-link { color: rgba(255,255,255,0.65); padding: 8px 14px; border-radius: 7px; margin: 1px 8px; font-size: 0.83rem; display: flex; align-items: center; gap: 9px; transition: background 0.2s, color 0.2s; white-space: nowrap; }
         .sidebar-nav .nav-link i { width: 16px; font-size: 0.82rem; flex-shrink: 0; }
-        .sidebar-nav .nav-link:hover,
-        .sidebar-nav .nav-link.active { background: rgba(233,69,96,0.25); color: #fff; }
+        .sidebar-nav .nav-link:hover, .sidebar-nav .nav-link.active { background: rgba(233,69,96,0.25); color: #fff; }
         .sidebar-nav .nav-link.active { background: rgba(233,69,96,0.35); }
         .sidebar-divider { border-top: 1px solid rgba(255,255,255,0.08); margin: 6px 14px; }
-
-        .sidebar-nav .logout-btn {
-            color: rgba(255,255,255,0.65);
-            padding: 8px 14px;
-            border-radius: 7px;
-            margin: 1px 8px;
-            font-size: 0.83rem;
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            background: none;
-            border: none;
-            width: calc(100% - 16px);
-            text-align: left;
-            cursor: pointer;
-            transition: background 0.2s, color 0.2s;
-        }
-
+        .sidebar-nav .logout-btn { color: rgba(255,255,255,0.65); padding: 8px 14px; border-radius: 7px; margin: 1px 8px; font-size: 0.83rem; display: flex; align-items: center; gap: 9px; background: none; border: none; width: calc(100% - 16px); text-align: left; cursor: pointer; }
         .sidebar-nav .logout-btn:hover { background: rgba(233,69,96,0.25); color: #fff; }
 
-        .main-content { margin-left: var(--sidebar-width); padding: 20px 24px; }
-        .card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
-
-        .mobile-menu-btn {
+        /* ===== TOPBAR MOBILE ===== */
+        .mobile-topbar {
             display: none;
             position: fixed;
-            top: 16px; left: 16px;
-            z-index: 1060;
-            width: 42px; height: 42px;
-            background: linear-gradient(135deg, var(--sidebar-bg-start), var(--accent));
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(233,69,96,0.4);
-            transition: all 0.3s ease;
-            flex-direction: column;
+            top: 0; left: 0; right: 0;
+            height: 54px;
+            background: linear-gradient(90deg, var(--sidebar-bg-start), var(--sidebar-bg-end));
+            z-index: 1040;
             align-items: center;
-            justify-content: center;
-            gap: 5px;
-            padding: 10px;
+            padding: 0 14px;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
+        .mobile-topbar .hamburger-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.3rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .mobile-topbar .hamburger-btn:hover { background: rgba(255,255,255,0.15); }
+        .mobile-topbar .brand-title { color: #fff; font-weight: 700; font-size: 0.95rem; }
 
-        .mobile-menu-btn:hover { transform: scale(1.08); }
-        .mobile-menu-btn .bar {
-            display: block; width: 20px; height: 2px;
-            background: white; border-radius: 2px;
-            transition: all 0.3s ease; transform-origin: center;
+        /* ===== OVERLAY ===== */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1045;
         }
-        .mobile-menu-btn.is-open .bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-        .mobile-menu-btn.is-open .bar:nth-child(2) { opacity: 0; transform: scaleX(0); }
-        .mobile-menu-btn.is-open .bar:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+        .sidebar-overlay.show { display: block; }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content { margin-left: var(--sidebar-width); padding: 20px 24px; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
 
         .form-label { margin-bottom: 3px; }
         .section-divider {
@@ -135,28 +94,30 @@
             margin: 10px 0 8px;
         }
 
+        /* ===== RESPONSIVE MOBILE ===== */
         @media (max-width: 768px) {
-            .sidebar { position: fixed; left: -230px; top: 0; height: 100vh; z-index: 1050; transition: left 0.3s ease; }
-            .sidebar.show { left: 0; }
-            .main-content { margin-left: 0 !important; padding: 15px; padding-top: 72px; }
-            .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1040; backdrop-filter: blur(2px); }
-            .sidebar-overlay.show { display: block; }
-            .mobile-menu-btn { display: flex !important; }
+            .mobile-topbar { display: flex; }
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 70px 14px 14px; }
         }
     </style>
 </head>
 <body>
 
-<button id="menuToggleBtn" class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle menu">
-    <span class="bar"></span>
-    <span class="bar"></span>
-    <span class="bar"></span>
-</button>
+{{-- Topbar Mobile (hamburger) --}}
+<div class="mobile-topbar">
+    <button class="hamburger-btn" id="hamburgerBtn">
+        <i class="fas fa-bars"></i>
+    </button>
+    <span class="brand-title">ISP Billing</span>
+</div>
 
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<!-- Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <!-- SIDEBAR -->
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <div class="brand-icon"><i class="fas fa-wifi"></i></div>
         <div class="brand-text">
@@ -166,23 +127,21 @@
     </div>
     <nav class="sidebar-nav">
         <ul class="nav flex-column mb-0">
-            <li class="nav-item"><a href="/admin/dashboard" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li class="nav-item"><a href="/admin/pelanggan" class="nav-link"><i class="fas fa-users"></i> Pelanggan</a></li>
-            <li class="nav-item"><a href="/admin/paket" class="nav-link"><i class="fas fa-box"></i> Paket Internet</a></li>
-            <li class="nav-item"><a href="/admin/tagihan" class="nav-link"><i class="fas fa-file-invoice-dollar"></i> Tagihan</a></li>
-            <li class="nav-item"><a href="/admin/pembayaran" class="nav-link"><i class="fas fa-money-bill-wave"></i> Pembayaran</a></li>
-            <li class="nav-item"><a href="/admin/laporan" class="nav-link"><i class="fas fa-chart-bar"></i> Laporan</a></li>
-            <li class="nav-item"><a href="/admin/mikrotik" class="nav-link active"><i class="fas fa-network-wired"></i> Mikrotik</a></li>
+            <li><a href="/admin/dashboard" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="/admin/pelanggan" class="nav-link"><i class="fas fa-users"></i> Pelanggan</a></li>
+            <li><a href="/admin/paket" class="nav-link"><i class="fas fa-box"></i> Paket Internet</a></li>
+            <li><a href="/admin/tagihan" class="nav-link"><i class="fas fa-file-invoice-dollar"></i> Tagihan</a></li>
+            <li><a href="/admin/pembayaran" class="nav-link"><i class="fas fa-money-bill-wave"></i> Pembayaran</a></li>
+            <li><a href="/admin/laporan" class="nav-link"><i class="fas fa-chart-bar"></i> Laporan</a></li>
+            <li><a href="/admin/mikrotik" class="nav-link active"><i class="fas fa-network-wired"></i> Mikrotik</a></li>
         </ul>
         <div class="sidebar-divider"></div>
         <ul class="nav flex-column">
-            <li class="nav-item"><a href="/admin/setting" class="nav-link"><i class="fas fa-cog"></i> Pengaturan</a></li>
-            <li class="nav-item">
+            <li><a href="/admin/setting" class="nav-link"><i class="fas fa-cog"></i> Pengaturan</a></li>
+            <li>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="logout-btn">
-                        <i class="fas fa-sign-out-alt" style="width:16px;font-size:0.82rem;"></i> Logout
-                    </button>
+                    <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </form>
             </li>
         </ul>
@@ -252,8 +211,7 @@
                                 Local Address
                                 <span class="text-muted fw-normal">(gateway PPPoE)</span>
                             </label>
-                            <input type="text" name="local_address" class="form-control form-control-sm"
-                                placeholder="Contoh: 103.x.x.1">
+                            <input type="text" name="local_address" class="form-control form-control-sm" placeholder="Contoh: 103.x.x.1">
                             <div class="form-text" style="font-size:0.7rem;">IP publik gateway router ini</div>
                         </div>
                         <div class="mb-2">
@@ -261,16 +219,12 @@
                                 Remote Address
                                 <span class="text-muted fw-normal">(nama pool)</span>
                             </label>
-                            <input type="text" name="remote_address" class="form-control form-control-sm"
-                                placeholder="Contoh: pool-pppoe">
+                            <input type="text" name="remote_address" class="form-control form-control-sm" placeholder="Contoh: pool-pppoe">
                             <div class="form-text" style="font-size:0.7rem;">Nama IP Pool yang sudah dibuat di Mikrotik</div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label small fw-semibold">
-                                DNS Server
-                            </label>
-                            <input type="text" name="dns_server" class="form-control form-control-sm"
-                                placeholder="Contoh: 8.8.8.8,8.8.4.4">
+                            <label class="form-label small fw-semibold">DNS Server</label>
+                            <input type="text" name="dns_server" class="form-control form-control-sm" placeholder="Contoh: 8.8.8.8,8.8.4.4">
                             <div class="form-text" style="font-size:0.7rem;">Pisahkan dengan koma jika lebih dari satu</div>
                         </div>
 
@@ -453,21 +407,17 @@
             <div class="modal-body">
                 <p class="text-muted small mb-3">Router: <strong id="importRouterNama"></strong></p>
 
-                <!-- Loading -->
                 <div id="importLoading" class="text-center py-3">
                     <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
                     <p class="mt-2 small">Membaca setting dari RB...</p>
                 </div>
 
-                <!-- Hasil Import -->
                 <div id="importResult" style="display:none;">
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">Local Address</label>
-                        <input type="text" id="importLocalAddress"
-                            class="form-control form-control-sm" placeholder="Kosong jika tidak ada">
+                        <input type="text" id="importLocalAddress" class="form-control form-control-sm" placeholder="Kosong jika tidak ada">
                         <div class="form-text" style="font-size:0.7rem;">Diambil dari PPP Profile RB</div>
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">Remote Address (Pool)</label>
                         <select id="importRemoteAddress" class="form-select form-select-sm">
@@ -475,21 +425,17 @@
                         </select>
                         <div class="form-text" style="font-size:0.7rem;">Pool yang tersedia di RB</div>
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">DNS Server</label>
-                        <input type="text" id="importDnsServer"
-                            class="form-control form-control-sm" placeholder="Diambil dari IP DNS RB">
+                        <input type="text" id="importDnsServer" class="form-control form-control-sm" placeholder="Diambil dari IP DNS RB">
                         <div class="form-text" style="font-size:0.7rem;">Diambil dari IP ? DNS RB</div>
                     </div>
-
                     <div class="alert alert-info py-2" style="font-size:0.78rem;">
                         <i class="fas fa-info-circle me-1"></i>
                         Setting ini hanya disimpan di billing. <strong>Tidak ada perubahan apapun di RB.</strong>
                     </div>
                 </div>
 
-                <!-- Error -->
                 <div id="importError" style="display:none;" class="text-center py-2">
                     <i class="fas fa-times-circle fa-2x text-danger"></i>
                     <p class="mt-2 small fw-semibold text-danger" id="importErrorMsg">Gagal konek ke RB</p>
@@ -516,19 +462,16 @@
             <div class="modal-body">
                 <p class="text-muted small mb-3">Router: <strong id="importPppoeRouterNama"></strong></p>
 
-                <!-- Loading -->
                 <div id="importPppoeLoading" class="text-center py-4">
                     <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
                     <p class="mt-2 small">Mengambil data PPPoE dari Mikrotik...</p>
                 </div>
 
-                <!-- Error -->
                 <div id="importPppoeError" style="display:none;" class="alert alert-danger py-2">
                     <i class="fas fa-times-circle me-1"></i>
                     <span id="importPppoeErrorMsg"></span>
                 </div>
 
-                <!-- Hasil -->
                 <div id="importPppoeResult" style="display:none;">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <div class="d-flex gap-2 align-items-center flex-wrap">
@@ -557,12 +500,12 @@
                                     <th class="small">Status</th>
                                     <th class="small">Paket Billing</th>
                                     <th class="small">
-                                    Aktif Sampai
-                                    <div class="d-flex align-items-center gap-1 mt-1">
-                                        <input type="checkbox" id="applyGlobalDate" onchange="toggleGlobalDate(this)" title="Terapkan ke semua">
-                                        <input type="date" id="globalTglExpired" class="form-control form-control-sm" style="width:140px;font-size:0.75rem;" onchange="applyToAll()" disabled>
-                                    </div>
-                                </th>
+                                        Aktif Sampai
+                                        <div class="d-flex align-items-center gap-1 mt-1">
+                                            <input type="checkbox" id="applyGlobalDate" onchange="toggleGlobalDate(this)" title="Terapkan ke semua">
+                                            <input type="date" id="globalTglExpired" class="form-control form-control-sm" style="width:140px;font-size:0.75rem;" onchange="applyToAll()" disabled>
+                                        </div>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody id="importPppoeTableBody"></tbody>
@@ -583,12 +526,25 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Simpan router ID aktif untuk import
+// ===== HAMBURGER MENU (sama dengan show.blade) =====
+var hamburgerBtn   = document.getElementById('hamburgerBtn');
+var sidebar        = document.getElementById('sidebar');
+var sidebarOverlay = document.getElementById('sidebarOverlay');
+
+hamburgerBtn.addEventListener('click', function () {
+    sidebar.classList.toggle('open');
+    sidebarOverlay.classList.toggle('show');
+});
+sidebarOverlay.addEventListener('click', function () {
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('show');
+});
+
+// ===== MIKROTIK FUNCTIONS =====
 let currentImportRouterId = null;
 
 function importDariRB(id, nama) {
     currentImportRouterId = id;
-
     document.getElementById('importRouterNama').textContent = nama;
     document.getElementById('importLoading').style.display = 'block';
     document.getElementById('importResult').style.display = 'none';
@@ -607,14 +563,8 @@ function importDariRB(id, nama) {
                 document.getElementById('importErrorMsg').textContent = data.message || 'Gagal konek ke RB';
                 return;
             }
-
-            // Isi local address
             document.getElementById('importLocalAddress').value = data.local_address || '';
-
-            // Isi DNS
             document.getElementById('importDnsServer').value = data.dns || '';
-
-            // Isi dropdown pool
             const select = document.getElementById('importRemoteAddress');
             select.innerHTML = '<option value="">-- Pilih Pool --</option>';
             (data.pools || []).forEach(pool => {
@@ -623,7 +573,6 @@ function importDariRB(id, nama) {
                 opt.textContent = pool.name + ' (' + pool.ranges + ')';
                 select.appendChild(opt);
             });
-
             document.getElementById('importResult').style.display = 'block';
             document.getElementById('importFooter').style.display = 'flex';
         })
@@ -639,10 +588,7 @@ function simpanImport() {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Menyimpan...';
 
-    const token = document.querySelector('meta[name="csrf-token"]') 
-        ? document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        : '{{ csrf_token() }}';
-
+    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const formData = new FormData();
     formData.append('_token', token);
     formData.append('_method', 'PATCH');
@@ -728,25 +674,22 @@ function importPppoe(id, nama) {
             pppoeData = data.data;
             paketData = data.pakets;
 
-            // Isi dropdown paket default
             const sel = document.getElementById('defaultPaketId');
             sel.innerHTML = '<option value="">-- Pilih Paket --</option>';
             paketData.forEach(p => {
                 sel.innerHTML += `<option value="${p.id}">${p.nama}</option>`;
             });
 
-            // Hitung stats
             let online = 0, offline = 0, exists = 0;
             pppoeData.forEach(s => {
                 if (s.online) online++;
                 else offline++;
                 if (s.exists) exists++;
             });
-            document.getElementById('countOnline').textContent = online + ' Online';
+            document.getElementById('countOnline').textContent  = online + ' Online';
             document.getElementById('countOffline').textContent = offline + ' Offline';
-            document.getElementById('countExists').textContent = exists + ' Sudah Ada';
+            document.getElementById('countExists').textContent  = exists + ' Sudah Ada';
 
-            // Render tabel
             const tbody = document.getElementById('importPppoeTableBody');
             tbody.innerHTML = '';
             pppoeData.forEach((s, i) => {
@@ -823,7 +766,6 @@ function applyToAll() {
 }
 
 function initAllExpired() {
-    // Set default tanggal 1 bulan dari sekarang
     const d = new Date();
     d.setMonth(d.getMonth() + 1);
     const defaultTgl = d.toISOString().split('T')[0];
@@ -838,31 +780,27 @@ function doImportPppoe() {
     document.querySelectorAll('.pppoe-check:not(:disabled):checked').forEach(c => {
         const i = c.dataset.index;
         const s = pppoeData[i];
-        const paketSel = document.querySelector(`.paket-select[data-index="${i}"]`);
-        const paketId  = paketSel ? paketSel.value : null;
+        const paketSel    = document.querySelector(`.paket-select[data-index="${i}"]`);
         const expiredInput = document.querySelector(`.expired-input[data-index="${i}"]`);
         items.push({
-            username: s.username,
-            password: s.password,
-            profile:  s.profile,
-            address:  s.address,
-            disabled: s.disabled,
-            paket_id: paketId || defaultPaket || null,
+            username:    s.username,
+            password:    s.password,
+            profile:     s.profile,
+            address:     s.address,
+            disabled:    s.disabled,
+            paket_id:    paketSel ? paketSel.value : null || defaultPaket || null,
             tgl_expired: expiredInput ? expiredInput.value : null,
         });
     });
 
     if (!items.length) { alert('Pilih minimal 1 user!'); return; }
-
-    const hasNoPaket = items.some(i => !i.paket_id);
-    if (hasNoPaket) { alert('Beberapa user belum dipilih paketnya!'); return; }
+    if (items.some(i => !i.paket_id)) { alert('Beberapa user belum dipilih paketnya!'); return; }
 
     const btn = document.querySelector('#importPppoeFooter .btn-primary');
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Mengimport...';
 
     const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    const bulanVal = 1;
     fetch('/admin/mikrotik/' + currentImportPppoeRouterId + '/import-pppoe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
@@ -880,26 +818,6 @@ function doImportPppoe() {
         btn.innerHTML = '<i class="fas fa-file-import me-1"></i> Import Terpilih';
     });
 }
-
-function toggleSidebar() {
-    const sidebar = document.querySelector(".sidebar");
-    const overlay = document.getElementById("sidebarOverlay");
-    const btn     = document.getElementById("menuToggleBtn");
-    sidebar.classList.toggle("show");
-    overlay.classList.toggle("show");
-    btn.classList.toggle("is-open");
-}
-
-document.addEventListener("touchstart", e => window._touchStartX = e.touches[0].clientX);
-document.addEventListener("touchend", e => {
-    const endX = e.changedTouches[0].clientX;
-    if (window._touchStartX < 30 && endX - window._touchStartX > 70) toggleSidebar();
-    if (window._touchStartX > 200 && window._touchStartX - endX > 70) {
-        document.querySelector(".sidebar").classList.remove("show");
-        document.getElementById("sidebarOverlay").classList.remove("show");
-        document.getElementById("menuToggleBtn").classList.remove("is-open");
-    }
-});
 </script>
 </body>
 </html>
