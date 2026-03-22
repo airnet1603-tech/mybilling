@@ -39,7 +39,7 @@
         }
 
         .sidebar-brand .brand-icon {
-            width: 34px; height: 34px;
+            width: 70px; height: 40px;
             background: rgba(233,69,96,0.25);
             border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
@@ -182,7 +182,7 @@
 <!-- ===== SIDEBAR ===== -->
 <div class="sidebar" id="sidebar">
     <div class="sidebar-brand">
-        <div class="brand-icon"><i class="fas fa-wifi"></i></div>
+        <div class="brand-icon"><img src="https://airnetps.my.id/app/icon/icon_airnet.png" style="height:38px;object-fit:contain;background:#ffffff;padding:2px 4px;border-radius:8px 0px 8px 0px;"></div>
         <div class="brand-text">
             <span class="brand-title">ISP Billing</span>
             <span class="brand-sub">Management System</span>

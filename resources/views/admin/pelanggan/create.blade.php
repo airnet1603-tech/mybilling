@@ -30,7 +30,7 @@
             transition: transform 0.3s ease;
         }
         .sidebar-brand { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; }
-        .sidebar-brand .brand-icon { width: 34px; height: 34px; background: rgba(233,69,96,0.25); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 1rem; }
+        .sidebar-brand .brand-icon { width: 70px; height: 40px; background: rgba(233,69,96,0.25); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 1rem; }
         .sidebar-brand .brand-title { color: #fff; font-weight: 700; font-size: 0.9rem; display: block; }
         .sidebar-brand .brand-sub { color: rgba(255,255,255,0.45); font-size: 0.7rem; }
         .sidebar-nav { padding: 8px 0; flex: 1; }
@@ -122,7 +122,7 @@
 <!-- ===== SIDEBAR ===== -->
 <div class="sidebar" id="sidebar">
     <div class="sidebar-brand">
-        <div class="brand-icon"><i class="fas fa-wifi"></i></div>
+        <div class="brand-icon"><img src="https://airnetps.my.id/app/icon/icon_airnet.png" style="height:38px;object-fit:contain;background:#ffffff;padding:2px 4px;border-radius:8px 0px 8px 0px;"></div>
         <div class="brand-text">
             <span class="brand-title">ISP Billing</span>
             <span class="brand-sub">Management System</span>
@@ -261,8 +261,8 @@
                                             <i class="fas fa-expand" id="fsIcon"></i>
                                         </button>
                                     </div>
-                                    <div id="mapWrapper" style="width:100%;overflow:hidden;border-radius:8px;">
-                                        <div id="mapContainer" style="height:280px;width:100%;border-radius:8px;border:1px solid #dee2e6;position:relative;"></div>
+                                    <div id="mapWrapper" style="width:100%;overflow:hidden;border-radius:8px 0px 8px 0px;">
+                                        <div id="mapContainer" style="height:280px;width:100%;border-radius:8px 0px 8px 0px;border:1px solid #dee2e6;position:relative;"></div>
                                     </div>
                                 </div>
                             </div>
@@ -543,7 +543,7 @@ function toggleFullscreen() {
         if (fsBox) fsBox.remove();
         var pacStyle = document.getElementById('pacStyle');
         if (pacStyle) pacStyle.remove();
-        el.style.cssText = 'height:280px;width:100%;border-radius:8px;border:1px solid #dee2e6;position:relative;';
+        el.style.cssText = 'height:280px;width:100%;border-radius:8px 0px 8px 0px;border:1px solid #dee2e6;position:relative;';
     }
     setTimeout(function() {
         google.maps.event.trigger(gmap, 'resize');

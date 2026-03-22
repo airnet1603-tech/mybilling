@@ -11,7 +11,7 @@
         *{box-sizing:border-box}body{background:#f0f2f5;font-family:'Segoe UI',sans-serif}
         .sidebar{background:linear-gradient(180deg,var(--sidebar-bg-start) 0%,var(--sidebar-bg-end) 100%);min-height:100vh;width:var(--sidebar-width);position:fixed;top:0;left:0;z-index:100;display:flex;flex-direction:column}
         .sidebar-brand{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;gap:10px}
-        .brand-icon{width:34px;height:34px;background:rgba(233,69,96,0.25);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--accent)}
+        .brand-icon{width:70px;height:40px;background:rgba(233,69,96,0.25);border-radius:8px 0px 8px 0px;display:flex;align-items:center;justify-content:center;color:var(--accent)}
         .brand-title{color:#fff;font-weight:700;font-size:0.9rem;display:block}.brand-sub{color:rgba(255,255,255,0.45);font-size:0.7rem}
         .sidebar-nav{padding:8px 0;flex:1}
         .sidebar-nav .nav-link{display:flex;align-items:center;gap:10px;padding:9px 18px;color:rgba(255,255,255,0.65);font-size:0.82rem;text-decoration:none;transition:.15s}
@@ -33,7 +33,7 @@
 <body>
 <div class="sidebar">
     <div class="sidebar-brand">
-        <div class="brand-icon"><i class="fas fa-wifi"></i></div>
+        <div class="brand-icon"><img src="https://airnetps.my.id/app/icon/icon_airnet.png" style="height:38px;object-fit:contain;background:#ffffff;padding:2px 4px;border-radius:8px 0px 8px 0px;"></div>
         <div><span class="brand-title">ISP BILLING</span><span class="brand-sub">Management System</span></div>
     </div>
     <nav class="sidebar-nav">
@@ -86,7 +86,7 @@
                                 <label class="role-card {{ old('role', $user->role ?? '') === 'admin' ? 'selected' : '' }}" onclick="selectRole(this,'admin')">
                                     <input type="radio" name="role" value="admin" {{ old('role', $user->role ?? '') === 'admin' ? 'checked' : '' }} style="display:none">
                                     <div class="d-flex align-items-center gap-3">
-                                        <div style="width:40px;height:40px;background:rgba(233,69,96,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center"><i class="fas fa-crown text-danger"></i></div>
+                                        <div style="width:40px;height:40px;background:rgba(233,69,96,0.1);border-radius:8px 0px 8px 0px;display:flex;align-items:center;justify-content:center"><i class="fas fa-crown text-danger"></i></div>
                                         <div><div class="fw-bold">Admin</div><small class="text-muted">Akses penuh semua fitur</small></div>
                                     </div>
                                 </label>
@@ -95,7 +95,7 @@
                                 <label class="role-card {{ old('role', $user->role ?? 'operator') === 'operator' ? 'selected' : '' }}" onclick="selectRole(this,'operator')">
                                     <input type="radio" name="role" value="operator" {{ old('role', $user->role ?? 'operator') === 'operator' ? 'checked' : '' }} style="display:none">
                                     <div class="d-flex align-items-center gap-3">
-                                        <div style="width:40px;height:40px;background:rgba(15,52,96,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center"><i class="fas fa-user-tie" style="color:#0f3460"></i></div>
+                                        <div style="width:40px;height:40px;background:rgba(15,52,96,0.1);border-radius:8px 0px 8px 0px;display:flex;align-items:center;justify-content:center"><i class="fas fa-user-tie" style="color:#0f3460"></i></div>
                                         <div><div class="fw-bold">Operator</div><small class="text-muted">Pelanggan, tagihan, bayar</small></div>
                                     </div>
                                 </label>

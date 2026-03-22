@@ -11,7 +11,7 @@
         *{box-sizing:border-box}body{background:#f0f2f5;font-family:'Segoe UI',sans-serif}
         .sidebar{background:linear-gradient(180deg,var(--sidebar-bg-start) 0%,var(--sidebar-bg-end) 100%);min-height:100vh;width:var(--sidebar-width);position:fixed;top:0;left:0;z-index:100;display:flex;flex-direction:column}
         .sidebar-brand{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;gap:10px}
-        .brand-icon{width:34px;height:34px;background:rgba(233,69,96,0.25);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:1rem}
+        .brand-icon{width:70px;height:40px;background:rgba(233,69,96,0.25);border-radius:8px 0px 8px 0px;display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:1rem}
         .brand-text{line-height:1.2}.brand-title{color:#fff;font-weight:700;font-size:0.9rem;display:block}.brand-sub{color:rgba(255,255,255,0.45);font-size:0.7rem}
         .sidebar-nav{padding:8px 0;flex:1}
         .sidebar-nav .nav-link{display:flex;align-items:center;gap:9px;padding:8px 14px;border-radius:7px;margin:1px 8px;color:rgba(255,255,255,0.65);font-size:0.83rem;text-decoration:none;transition:background 0.2s,color 0.2s;white-space:nowrap}
@@ -30,7 +30,7 @@
 <body>
 <div class="sidebar">
     <div class="sidebar-brand">
-        <div class="brand-icon"><i class="fas fa-wifi"></i></div>
+        <div class="brand-icon"><img src="https://airnetps.my.id/app/icon/icon_airnet.png" style="height:38px;object-fit:contain;background:#ffffff;padding:2px 4px;border-radius:8px 0px 8px 0px;"></div>
         <div class="brand-text">
             <span class="brand-title">ISP Billing</span>
             <span class="brand-sub">Management System</span>
