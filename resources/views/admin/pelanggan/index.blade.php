@@ -328,7 +328,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// ===== HAMBURGER MENU (sama seperti peta.blade) =====
+// ===== HAMBURGER MENU =====
 var hamburgerBtn   = document.getElementById('hamburgerBtn');
 var sidebar        = document.getElementById('sidebar');
 var sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -398,7 +398,7 @@ document.getElementById('searchInput').addEventListener('input', function () {
                 <div id="csvStep1">
                     <div class="alert alert-info py-2 small">
                         <i class="fas fa-info-circle me-1"></i>
-                        Format kolom: <code>username, password, nama, no_hp, alamat, wilayah, nama_paket, nama_router, tgl_expired</code>
+                        Format kolom: <code>username, password, nama, no_hp, alamat, wilayah, nama_paket, nama_router, tgl_expired, maps</code>
                         <a href="/admin/csv/template/pelanggan" class="ms-2 btn btn-sm btn-outline-primary py-0">
                             <i class="fas fa-download me-1"></i> Download Template
                         </a>
@@ -437,6 +437,7 @@ document.getElementById('searchInput').addEventListener('input', function () {
                                     <th class="small">Paket</th>
                                     <th class="small">Router</th>
                                     <th class="small">Expired</th>
+                                    <th class="small">Maps</th>
                                     <th class="small">Status</th>
                                 </tr>
                             </thead>
@@ -508,7 +509,9 @@ function previewCsv() {
             let routerOpts = '<option value="">-- Pilih --</option>';
             csvRouters.forEach(r => routerOpts += `<option value="${r.id}" ${row.router_id==r.id?'selected':''}>${r.nama}</option>`);
 
+            const mapsVal = row.maps ? row.maps.replace(/"/g, '&quot;') : '';
             const rowClass = row.exists ? 'table-warning' : (row.error ? 'table-danger' : '');
+
             tbody.innerHTML += `
             <tr class="${rowClass}">
                 <td><input type="checkbox" class="csv-check" data-index="${i}" ${row.exists||row.error?'disabled':''} ${!row.exists&&!row.error?'checked':''}></td>
@@ -518,6 +521,11 @@ function previewCsv() {
                 <td><select class="form-select form-select-sm csv-paket" data-index="${i}" style="min-width:90px;">${paketOpts}</select></td>
                 <td><select class="form-select form-select-sm csv-router" data-index="${i}" style="min-width:90px;">${routerOpts}</select></td>
                 <td><input type="date" class="form-control form-control-sm csv-expired" data-index="${i}" value="${row.tgl_expired||''}" style="min-width:130px;"></td>
+                <td>
+                    <input type="text" class="form-control form-control-sm csv-maps" data-index="${i}"
+                           value="${mapsVal}" placeholder="https://maps.google.com/..."
+                           style="min-width:160px;">
+                </td>
                 <td class="small">${row.exists ? '<span class="badge bg-warning text-dark">Sudah Ada</span>' : (row.error ? `<span class="badge bg-danger" title="${row.error}">Error</span>` : '<span class="badge bg-success">OK</span>')}</td>
             </tr>`;
         });
@@ -558,6 +566,7 @@ function doImportCsv() {
             paket_id:    document.querySelector(`.csv-paket[data-index="${i}"]`)?.value,
             router_id:   document.querySelector(`.csv-router[data-index="${i}"]`)?.value,
             tgl_expired: document.querySelector(`.csv-expired[data-index="${i}"]`)?.value,
+            maps:        document.querySelector(`.csv-maps[data-index="${i}"]`)?.value,
         });
     });
 

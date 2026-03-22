@@ -51,32 +51,18 @@
             gap: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
-        .mobile-topbar .hamburger-btn {
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 1.3rem;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 6px;
-        }
+        .mobile-topbar .hamburger-btn { background: none; border: none; color: #fff; font-size: 1.3rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
         .mobile-topbar .hamburger-btn:hover { background: rgba(255,255,255,0.15); }
         .mobile-topbar .brand-title { color: #fff; font-weight: 700; font-size: 0.95rem; }
 
         /* ===== OVERLAY ===== */
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 1045;
-        }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1045; }
         .sidebar-overlay.show { display: block; }
 
         /* ===== MAIN CONTENT ===== */
         .main-content { margin-left:var(--sidebar-width); padding:20px 24px; }
 
-        #petaMap { height:calc(100vh - 180px); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
+        #petaMap { height:calc(100vh - 280px); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
         .stat-card { border:none; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.07); }
         .map-label { background: rgba(0,0,0,0.65); padding: 2px 6px; border-radius: 4px; margin-top: 4px; white-space: nowrap; text-shadow: none; }
 
@@ -86,7 +72,7 @@
             .sidebar { transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); }
             .main-content { margin-left: 0; padding: 70px 14px 14px; }
-            #petaMap { height: calc(100vh - 220px); }
+            #petaMap { height: calc(100vh - 320px); }
         }
     </style>
 </head>
@@ -146,7 +132,7 @@
         </a>
     </div>
 
-    <!-- Stat Cards -->
+    <!-- Stat Cards — FIX: pakai $totalPeta dan $tanpaPeta -->
     <div class="row g-3 mb-3">
         <div class="col-md-4">
             <div class="stat-card card">
@@ -168,7 +154,7 @@
                         <i class="fas fa-map-marker-alt text-success"></i>
                     </div>
                     <div>
-                        <div class="fw-bold fs-5">{{ $total }}</div>
+                        <div class="fw-bold fs-5">{{ $totalPeta }}</div>
                         <div class="small text-muted">Ada di Peta</div>
                     </div>
                 </div>
@@ -181,7 +167,7 @@
                         <i class="fas fa-map-marker text-danger"></i>
                     </div>
                     <div>
-                        <div class="fw-bold fs-5">{{ $total }}</div>
+                        <div class="fw-bold fs-5">{{ $tanpaPeta }}</div>
                         <div class="small text-muted">Tanpa Koordinat</div>
                     </div>
                 </div>
@@ -209,7 +195,8 @@
             <button class="btn btn-sm btn-outline-secondary" onclick="resetFilter()">
                 <i class="fas fa-times me-1"></i>Reset
             </button>
-            <span class="ms-auto small text-muted" id="pinCount">{{ $total }} pin ditampilkan</span>
+            {{-- FIX: pin count pakai $totalPeta bukan $total --}}
+            <span class="ms-auto small text-muted" id="pinCount">{{ $totalPeta }} pin ditampilkan</span>
         </div>
     </div>
 
@@ -236,19 +223,19 @@ sidebarOverlay.addEventListener('click', function() {
 // ===== PETA =====
 var allMarkers = [];
 var infoWindow = null;
-var petaMap = null;
+var petaMap    = null;
 
 var pelangganData = {!! $mapDataJson !!};
 
 function initMap() {
     petaMap = new google.maps.Map(document.getElementById('petaMap'), {
-        center: { lat: -7.9, lng: 112.6 },
-        zoom: 12,
-        mapTypeId: 'hybrid',
-        gestureHandling: 'greedy',
-        fullscreenControl: true,
-        streetViewControl: true,
-        mapTypeControl: true,
+        center            : { lat: -7.9, lng: 112.6 },
+        zoom              : 12,
+        mapTypeId         : 'hybrid',
+        gestureHandling   : 'greedy',
+        fullscreenControl : true,
+        streetViewControl : true,
+        mapTypeControl    : true,
     });
 
     infoWindow = new google.maps.InfoWindow();
@@ -277,9 +264,13 @@ function initMap() {
         });
 
         marker.addListener('click', function() {
-            var statusColor = {aktif:'#28a745',isolir:'#dc3545',suspend:'#ffc107',nonaktif:'#6c757d'};
+            var statusColor = { aktif:'#28a745', isolir:'#dc3545', suspend:'#ffc107', nonaktif:'#6c757d' };
             var color = statusColor[p.status] || '#6c757d';
-            var googleMapsUrl = 'https://www.google.com/maps?q=' + p.lat + ',' + p.lng;
+
+            // FIX: gunakan link maps dari database jika ada, fallback ke koordinat
+            var googleMapsUrl = (p.maps && p.maps.trim() !== '')
+                ? p.maps
+                : 'https://www.google.com/maps?q=' + p.lat + ',' + p.lng;
             var openStreetMapUrl = 'https://www.openstreetmap.org/?mlat=' + p.lat + '&mlon=' + p.lng + '&zoom=17';
 
             infoWindow.setContent(
@@ -292,15 +283,12 @@ function initMap() {
                 '<div style="font-size:12px;color:#666;margin-bottom:2px;"><i class="fas fa-box me-1"></i>' + p.paket + '</div>' +
                 '<div style="font-size:12px;color:#666;margin-bottom:10px;"><i class="fas fa-calendar me-1"></i>Expired: ' + p.expired + '</div>' +
 
-                // Tombol Lihat Detail
                 '<a href="' + p.url + '" style="display:block;text-align:center;background:#1a73e8;color:white;padding:6px;border-radius:6px;text-decoration:none;font-size:12px;margin-bottom:5px;">' +
                 '<i class="fas fa-eye me-1"></i>Lihat Detail</a>' +
 
-                // Tombol Google Maps
                 '<a href="' + googleMapsUrl + '" target="_blank" style="display:block;text-align:center;background:#34a853;color:white;padding:6px;border-radius:6px;text-decoration:none;font-size:12px;margin-bottom:5px;">' +
                 '<i class="fas fa-map-marked-alt me-1"></i>Buka di Google Maps</a>' +
 
-                // Tombol OpenStreetMap
                 '<a href="' + openStreetMapUrl + '" target="_blank" style="display:block;text-align:center;background:#e67e22;color:white;padding:6px;border-radius:6px;text-decoration:none;font-size:12px;">' +
                 '<i class="fas fa-map me-1"></i>Buka di OpenStreetMap</a>' +
 
@@ -330,7 +318,7 @@ function applyFilter() {
     var count  = 0;
 
     allMarkers.forEach(function(m) {
-        var p = m.data;
+        var p    = m.data;
         var show = true;
         if (search && !p.nama.toLowerCase().includes(search) && !p.username.toLowerCase().includes(search)) show = false;
         if (status && p.status !== status) show = false;
@@ -344,8 +332,8 @@ function applyFilter() {
 
 function resetFilter() {
     document.getElementById('searchPelanggan').value = '';
-    document.getElementById('filterStatus').value = '';
-    document.getElementById('filterPaket').value = '';
+    document.getElementById('filterStatus').value    = '';
+    document.getElementById('filterPaket').value     = '';
     applyFilter();
 }
 

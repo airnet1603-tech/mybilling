@@ -33,7 +33,6 @@ class PelangganController extends Controller
             $query->where("paket_id", $request->paket_id);
         }
 
-        // FIX: filter by router
         if ($request->filled("router_id")) {
             $query->where("router_id", $request->router_id);
         }
@@ -91,8 +90,7 @@ class PelangganController extends Controller
             "wilayah"        => $request->wilayah,
             "latitude"       => $request->latitude,
             "longitude"      => $request->longitude,
-            "latitude"       => $request->latitude,
-            "longitude"      => $request->longitude,
+            "maps"           => $request->maps,
             "router_name"    => $request->router_name,
             "ip_address"     => $request->ip_address,
             "tgl_daftar"     => now(),
@@ -133,7 +131,6 @@ class PelangganController extends Controller
             $query->where('paket_id', $request->paket_id);
         }
 
-        // FIX: filter by router saat export
         if ($request->filled('router_id')) {
             $query->where('router_id', $request->router_id);
         }
@@ -238,7 +235,6 @@ class PelangganController extends Controller
 
         foreach ($pelanggans as $p) {
             try {
-                // Hapus dari Mikrotik jika ada router
                 if ($p->router) {
                     $mikrotik->connect($p->router->ip_address, $p->router->username, $p->router->password, $p->router->port);
                     $mikrotik->deletePppoeUser($p->username);
@@ -248,7 +244,6 @@ class PelangganController extends Controller
                 $errors[] = $p->username . ': ' . $e->getMessage();
             }
 
-            // Hapus dari DB (force delete termasuk soft deleted)
             \App\Models\Pelanggan::withTrashed()->where('id', $p->id)->forceDelete();
             $deleted++;
         }
@@ -259,20 +254,20 @@ class PelangganController extends Controller
         return response()->json(['status' => true, 'message' => $msg]);
     }
 
-
     public function peta()
     {
+        // Ambil pelanggan yang punya koordinat (latitude & longitude)
         $pelanggans = \App\Models\Pelanggan::with(['paket', 'router'])
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
+            ->where('latitude', '!=', '')
+            ->where('longitude', '!=', '')
             ->get();
 
-        $allPelanggans = \App\Models\Pelanggan::count();
-        $total         = $allPelanggans;
-        $totalPeta     = $pelanggans->count();
-        $tanpaPeta     = $total - $totalPeta;
+        $total     = \App\Models\Pelanggan::count();
+        $totalPeta = $pelanggans->count();
+        $tanpaPeta = $total - $totalPeta;
 
-        // Siapkan data untuk JS
         $mapData = $pelanggans->map(function($p) {
             return [
                 'id'       => $p->id,
@@ -282,8 +277,9 @@ class PelangganController extends Controller
                 'paket'    => optional($p->paket)->nama_paket ?? '-',
                 'router'   => optional($p->router)->nama ?? '-',
                 'expired'  => $p->tgl_expired ? $p->tgl_expired->format('d/m/Y') : '-',
-                'lat'      => (float)$p->latitude,
-                'lng'      => (float)$p->longitude,
+                'lat'      => (float) $p->latitude,
+                'lng'      => (float) $p->longitude,
+                'maps'     => $p->maps ?? '',
                 'url'      => '/admin/pelanggan/' . $p->id,
             ];
         })->values()->toArray();
@@ -292,5 +288,4 @@ class PelangganController extends Controller
 
         return view('admin.pelanggan.peta', compact('total', 'totalPeta', 'tanpaPeta', 'mapDataJson'));
     }
-
 }
