@@ -30,27 +30,43 @@ class CsvImportController extends Controller
         $pakets  = Paket::all();
         $routers = Router::all();
 
+        // Baca header dari baris pertama yang tidak kosong
+        $headers = [];
+        $dataStart = 0;
+        foreach ($rows as $i => $row) {
+            $row = array_map('trim', $row);
+            if (count($row) < 2) continue;
+            $headers = array_map('strtolower', $row);
+            $dataStart = $i + 1;
+            break;
+        }
+        // Helper ambil nilai berdasarkan nama kolom
+        $col = function($row, $name, $default = '') use ($headers) {
+            $idx = array_search($name, $headers);
+            return $idx !== false ? (trim($row[$idx] ?? '') ?: $default) : $default;
+        };
+
         $preview = [];
         foreach ($rows as $i => $row) {
-            if ($i === 0) continue; // skip header
+            if ($i < $dataStart) continue;
             $row = array_map('trim', $row);
             if (count($row) < 2) continue;
 
-            $username   = $row[0] ?? '';
-            $password   = $row[1] ?? $username;
-            $nama       = $row[2] ?? $username;
-            $no_hp      = $row[3] ?? '';
-            $email      = $row[4] ?? '';
-            $wilayah    = $row[5] ?? '';
-            $alamat     = $row[6] ?? '';
-            $latitude   = $row[7] ?? '';
-            $longitude  = $row[8] ?? '';
-            $maps       = $row[9] ?? '';
-            $jenis      = $row[10] ?? 'pppoe';
-            $ip_address = $row[11] ?? '';
-            $paketNama  = $row[12] ?? '';
-            $routerNama = $row[13] ?? '';
-            $tglExpired = $row[14] ?? '';
+            $username   = $col($row, 'username');
+            $password   = $col($row, 'password', $username);
+            $nama       = $col($row, 'nama', $username);
+            $no_hp      = $col($row, 'no_hp');
+            $email      = $col($row, 'email');
+            $wilayah    = $col($row, 'wilayah');
+            $alamat     = $col($row, 'alamat');
+            $latitude   = $col($row, 'latitude');
+            $longitude  = $col($row, 'longitude');
+            $maps       = $col($row, 'maps');
+            $jenis      = $col($row, 'jenis_layanan', 'pppoe');
+            $ip_address = $col($row, 'ip_address');
+            $paketNama  = $col($row, 'nama_paket');
+            $routerNama = $col($row, 'nama_router');
+            $tglExpired = $col($row, 'tgl_expired');
 
             $paket  = $pakets->first(fn($p) => strtolower(trim($p->nama_paket)) === strtolower(trim($paketNama)));
             $router = $routers->first(fn($r) => strtolower(trim($r->nama)) === strtolower(trim($routerNama)));
