@@ -216,7 +216,7 @@ class CsvImportController extends Controller
     {
         $templates = [
             'pelanggan' => [
-                'header' => ['username','password','nama','no_hp','alamat','wilayah','nama_paket','nama_router','tgl_expired','maps'],
+                'header' => ['username','password','nama','no_hp','email','wilayah','alamat','latitude','longitude','maps','jenis_layanan','ip_address','nama_paket','nama_router','tgl_expired'],
                 'contoh' => ['pelanggan1','pass123','Budi Santoso','081234567890','Jl. Merdeka No.1','Demuk','110k','Router Utama','2026-04-14'],
             ],
             'paket' => [
