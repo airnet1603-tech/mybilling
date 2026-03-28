@@ -218,7 +218,7 @@
                 <div class="col-auto ms-auto">
                     <a href="/admin/pelanggan/export?{{ http_build_query(request()->query()) }}"
                        class="btn btn-success btn-sm">
-                        <i class="fas fa-file-excel me-1"></i> Export Excel
+                        <i class="fas fa-file-csv me-1"></i> Export CSV
                     </a>
                 </div>
             </form>

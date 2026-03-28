@@ -21,7 +21,7 @@ class Pelanggan extends Authenticatable
         'wilayah',
         'latitude',
         'longitude', 'pin', 'fcm_token',
-        'router_id', 'password_pppoe',
+        'router_id', 'password_pppoe', 'maps',
     ];
 
     protected $hidden = ['password', 'pin'];

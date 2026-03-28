@@ -45,6 +45,7 @@ class CsvImportController extends Controller
             $paketNama = $row[6] ?? '';
             $routerNama= $row[7] ?? '';
             $tglExpired= $row[8] ?? '';
+            $maps      = $row[9] ?? '';
 
             $paket  = $pakets->first(fn($p) => strtolower(trim($p->nama_paket)) === strtolower(trim($paketNama)));
             $router = $routers->first(fn($r) => strtolower(trim($r->nama)) === strtolower(trim($routerNama)));
@@ -62,6 +63,7 @@ class CsvImportController extends Controller
                 'router_nama'=> $routerNama,
                 'router_id'  => $router?->id,
                 'tgl_expired'=> $tglExpired,
+                'maps'       => $maps,
                 'exists'     => $exists,
                 'error'      => !$username ? 'Username kosong' : (!$paket ? 'Paket tidak ditemukan' : (!$router ? 'Router tidak ditemukan' : null)),
             ];
@@ -121,6 +123,7 @@ class CsvImportController extends Controller
                         'no_hp'          => $item['no_hp'] ?? null,
                         'alamat'         => $item['alamat'] ?? null,
                         'wilayah'        => $item['wilayah'] ?? null,
+                        'maps'           => $item['maps'] ?? null,
                         'paket_id'       => $paketId,
                         'router_id'      => $routerId,
                         'router_name'    => $router->nama,
@@ -213,7 +216,7 @@ class CsvImportController extends Controller
     {
         $templates = [
             'pelanggan' => [
-                'header' => ['username','password','nama','no_hp','alamat','wilayah','nama_paket','nama_router','tgl_expired'],
+                'header' => ['username','password','nama','no_hp','alamat','wilayah','nama_paket','nama_router','tgl_expired','maps'],
                 'contoh' => ['pelanggan1','pass123','Budi Santoso','081234567890','Jl. Merdeka No.1','Demuk','110k','Router Utama','2026-04-14'],
             ],
             'paket' => [
