@@ -456,6 +456,7 @@ function initGoogleMap() {
 }
 
 function setPin(lat, lng) {
+    autoFillMapsUrl(lat, lng);
     lat = parseFloat(lat); lng = parseFloat(lng);
     if (gmarker) gmarker.setMap(null);
     gmarker = new google.maps.Marker({

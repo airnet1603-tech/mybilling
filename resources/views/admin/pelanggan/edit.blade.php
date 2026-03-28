@@ -430,6 +430,7 @@ function initMap() {
 }
 
 function setPin(lat, lng) {
+    autoFillMapsUrl(lat, lng);
     if (gmarker) gmarker.setMap(null);
     gmarker = new google.maps.Marker({
         position: { lat: parseFloat(lat), lng: parseFloat(lng) },
