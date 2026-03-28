@@ -98,6 +98,7 @@ class PelangganController extends Controller
             "status"         => "aktif",
             "jenis_layanan"  => $request->jenis_layanan ?? "pppoe",
             "router_id"      => $request->router_id,
+            "maps"           => $request->maps,
         ]);
 
         return redirect('/admin/pelanggan')->with('success', 'Pelanggan berhasil ditambahkan!');
