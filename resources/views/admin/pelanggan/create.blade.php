@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tambah Pelanggan – ISP Billing</title>
+    <title>Tambah Pelanggan ï¿½ ISP Billing</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -248,6 +248,11 @@
                                         <button type="button" class="btn btn-sm btn-outline-primary text-nowrap" onclick="getGPS()">
                                             <i class="fas fa-crosshairs me-1"></i>GPS
                                         </button>
+                                    </div>
+                                    <div class="mb-1">
+                                        <input type="text" name="maps" class="form-control form-control-sm"
+                                               placeholder="URL Google Maps (https://maps.app.goo.gl/...)"
+                                               value="{{ old('maps') }}">
                                     </div>
                                     <div class="d-flex gap-1 mb-1">
                                         <div class="input-group input-group-sm flex-grow-1">
@@ -496,6 +501,22 @@ document.getElementById('lat_input').addEventListener('change', function() {
 document.getElementById('lng_input').addEventListener('change', function() {
     var la = parseFloat(document.getElementById('lat_input').value), ln = parseFloat(this.value);
     if (la && ln && gmap) setPin(la, ln);
+});
+
+function autoFillMapsUrl(lat, lng) {
+    if (!lat || !lng) return;
+    var mapsInput = document.querySelector('input[name="maps"]');
+    if (mapsInput && !mapsInput.value) {
+        mapsInput.value = 'https://www.google.com/maps?q=' + lat + ',' + lng;
+    }
+}
+
+// Auto-fill saat koordinat berubah
+document.getElementById('lat_input').addEventListener('change', function() {
+    autoFillMapsUrl(parseFloat(this.value), parseFloat(document.getElementById('lng_input').value));
+});
+document.getElementById('lng_input').addEventListener('change', function() {
+    autoFillMapsUrl(parseFloat(document.getElementById('lat_input').value), parseFloat(this.value));
 });
 
 var isFullscreen = false;
