@@ -76,7 +76,7 @@ class PelangganController extends Controller
             $idPelanggan = "AR-" . $tahun . str_pad($urutan, 4, "0", STR_PAD_LEFT);
         }
 
-        Pelanggan::create([
+        $pelanggan = Pelanggan::create([
             "id_pelanggan"   => $idPelanggan,
             "nama"           => $request->nama,
             "username"       => $request->username,
@@ -98,10 +98,23 @@ class PelangganController extends Controller
             "status"         => "aktif",
             "jenis_layanan"  => $request->jenis_layanan ?? "pppoe",
             "router_id"      => $request->router_id,
-            "maps"           => $request->maps,
         ]);
 
-        return redirect('/admin/pelanggan')->with('success', 'Pelanggan berhasil ditambahkan!');
+        // Auto sync ke Mikrotik
+        try {
+            $router = $pelanggan->router;
+            $paket  = $pelanggan->paket;
+            if ($router && $paket) {
+                $mikrotik = new MikrotikService();
+                $mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
+                $mikrotik->addPppoeUser($pelanggan->username, $request->password, $paket->nama_paket);
+                $mikrotik->disconnect();
+            }
+        } catch (\Exception $e) {
+            return redirect('/admin/pelanggan')->with('warning', 'Pelanggan berhasil ditambahkan, tapi gagal sync Mikrotik: ' . $e->getMessage());
+        }
+
+        return redirect('/admin/pelanggan')->with('success', 'Pelanggan berhasil ditambahkan dan disync ke Mikrotik!');
     }
 
     public function show(Pelanggan $pelanggan)
