@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Pelanggan – ISP Billing</title>
+    <title>Edit Pelanggan ï¿½ ISP Billing</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -154,7 +154,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h5 class="fw-bold mb-0">Edit Pelanggan</h5>
-            <small class="text-muted">{{ $pelanggan->id_pelanggan }} · {{ $pelanggan->nama }}</small>
+            <small class="text-muted">{{ $pelanggan->id_pelanggan }} ï¿½ {{ $pelanggan->nama }}</small>
         </div>
         <a href="/admin/pelanggan/{{ $pelanggan->id }}" class="btn btn-secondary btn-sm">
             <i class="fas fa-arrow-left me-1"></i> Kembali
@@ -228,6 +228,11 @@
                                         <button type="button" class="btn btn-sm btn-outline-primary text-nowrap" onclick="getGPS()">
                                             <i class="fas fa-crosshairs me-1"></i>GPS
                                         </button>
+                                    </div>
+                                    <div class="mb-1">
+                                        <input type="text" name="maps" class="form-control form-control-sm"
+                                               placeholder="URL Google Maps (https://maps.app.goo.gl/...)"
+                                               value="{{ old('maps', $pelanggan->maps) }}">
                                     </div>
                                     <div class="d-flex gap-1 mb-1">
                                         <div class="input-group input-group-sm flex-grow-1">
@@ -477,10 +482,27 @@ document.addEventListener('keypress', function(e) {
 document.getElementById('lat_input').addEventListener('change', function() {
     var la = parseFloat(this.value), ln = parseFloat(document.getElementById('lng_input').value);
     if (la && ln && gmap) setPin(la, ln);
+    autoFillMapsUrl(la, ln);
 });
 document.getElementById('lng_input').addEventListener('change', function() {
     var la = parseFloat(document.getElementById('lat_input').value), ln = parseFloat(this.value);
     if (la && ln && gmap) setPin(la, ln);
+    autoFillMapsUrl(la, ln);
+});
+
+function autoFillMapsUrl(lat, lng) {
+    if (!lat || !lng) return;
+    var mapsInput = document.querySelector('input[name="maps"]');
+    if (mapsInput && !mapsInput.value) {
+        mapsInput.value = 'https://www.google.com/maps?q=' + lat + ',' + lng;
+    }
+}
+
+// Auto-fill saat halaman pertama kali load jika koordinat sudah ada tapi maps kosong
+window.addEventListener('load', function() {
+    var lat = parseFloat(document.getElementById('lat_input').value);
+    var lng = parseFloat(document.getElementById('lng_input').value);
+    autoFillMapsUrl(lat, lng);
 });
 
 var isFullscreen = false;
