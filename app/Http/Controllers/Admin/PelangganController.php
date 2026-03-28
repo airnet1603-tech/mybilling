@@ -144,20 +144,19 @@ class PelangganController extends Controller
 
         $callback = function() use ($pelanggans) {
             $file = fopen('php://output', 'w');
-            fputcsv($file, ['ID Pelanggan', 'Nama', 'Username', 'No HP', 'Email', 'Router', 'Paket', 'Kecepatan', 'Status', 'Tgl Daftar', 'Expired']);
+            fputcsv($file, ['username','password','nama','no_hp','alamat','wilayah','nama_paket','nama_router','tgl_expired','maps']);
             foreach ($pelanggans as $p) {
                 fputcsv($file, [
-                    $p->id_pelanggan,
-                    $p->nama,
                     $p->username,
-                    $p->no_hp,
-                    $p->email ?? '-',
-                    $p->router->nama ?? '-',
-                    $p->paket->nama_paket ?? '-',
-                    ($p->paket->kecepatan_download ?? 0) . ' Mbps',
-                    $p->status,
-                    $p->tgl_daftar?->format('d/m/Y') ?? '-',
-                    $p->tgl_expired?->format('d/m/Y') ?? '-',
+                    $p->password_pppoe ?? '',
+                    $p->nama,
+                    $p->no_hp ?? '',
+                    $p->alamat ?? '',
+                    $p->wilayah ?? '',
+                    $p->paket->nama_paket ?? '',
+                    $p->router->nama ?? '',
+                    $p->tgl_expired?->format('Y-m-d') ?? '',
+                    $p->maps ?? '',
                 ]);
             }
             fclose($file);

@@ -532,6 +532,22 @@ function previewCsv() {
 
         document.addEventListener('change', function(e) {
             if (e.target.classList.contains('csv-check')) updateCsvInfo();
+
+            // Kalau user ganti pilihan router/paket, re-evaluate baris
+            if (e.target.classList.contains('csv-router') || e.target.classList.contains('csv-paket')) {
+                const i   = e.target.dataset.index;
+                const row = e.target.closest('tr');
+                const paketVal  = row.querySelector('.csv-paket').value;
+                const routerVal = row.querySelector('.csv-router').value;
+                const cb = row.querySelector('.csv-check');
+                if (paketVal && routerVal) {
+                    cb.disabled = false;
+                    cb.checked  = true;
+                    row.classList.remove('table-danger');
+                    row.querySelector('td:last-child').innerHTML = '<span class="badge bg-success">OK</span>';
+                    updateCsvInfo();
+                }
+            }
         });
 
         updateCsvInfo();
