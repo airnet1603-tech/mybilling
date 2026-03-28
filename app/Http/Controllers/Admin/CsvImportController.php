@@ -36,16 +36,21 @@ class CsvImportController extends Controller
             $row = array_map('trim', $row);
             if (count($row) < 2) continue;
 
-            $username  = $row[0] ?? '';
-            $password  = $row[1] ?? $username;
-            $nama      = $row[2] ?? $username;
-            $no_hp     = $row[3] ?? '';
-            $alamat    = $row[4] ?? '';
-            $wilayah   = $row[5] ?? '';
-            $paketNama = $row[6] ?? '';
-            $routerNama= $row[7] ?? '';
-            $tglExpired= $row[8] ?? '';
-            $maps      = $row[9] ?? '';
+            $username   = $row[0] ?? '';
+            $password   = $row[1] ?? $username;
+            $nama       = $row[2] ?? $username;
+            $no_hp      = $row[3] ?? '';
+            $email      = $row[4] ?? '';
+            $wilayah    = $row[5] ?? '';
+            $alamat     = $row[6] ?? '';
+            $latitude   = $row[7] ?? '';
+            $longitude  = $row[8] ?? '';
+            $maps       = $row[9] ?? '';
+            $jenis      = $row[10] ?? 'pppoe';
+            $ip_address = $row[11] ?? '';
+            $paketNama  = $row[12] ?? '';
+            $routerNama = $row[13] ?? '';
+            $tglExpired = $row[14] ?? '';
 
             $paket  = $pakets->first(fn($p) => strtolower(trim($p->nama_paket)) === strtolower(trim($paketNama)));
             $router = $routers->first(fn($r) => strtolower(trim($r->nama)) === strtolower(trim($routerNama)));
@@ -56,14 +61,19 @@ class CsvImportController extends Controller
                 'password'   => $password,
                 'nama'       => $nama,
                 'no_hp'      => $no_hp,
+                'email'      => $email,
                 'alamat'     => $alamat,
                 'wilayah'    => $wilayah,
+                'latitude'   => $latitude,
+                'longitude'  => $longitude,
+                'maps'       => $maps,
+                'jenis'      => $jenis,
+                'ip_address' => $ip_address,
                 'paket_nama' => $paketNama,
                 'paket_id'   => $paket?->id,
                 'router_nama'=> $routerNama,
                 'router_id'  => $router?->id,
                 'tgl_expired'=> $tglExpired,
-                'maps'       => $maps,
                 'exists'     => $exists,
                 'error'      => !$username ? 'Username kosong' : (!$paket ? 'Paket tidak ditemukan' : (!$router ? 'Router tidak ditemukan' : null)),
             ];
@@ -130,7 +140,7 @@ class CsvImportController extends Controller
                         'tgl_daftar'     => now()->toDateString(),
                         'tgl_expired'    => $tglExpired,
                         'status'         => 'aktif',
-                        'jenis_layanan'  => 'pppoe',
+
                     ]);
 
                     // Auto create PPPoE di Mikrotik
