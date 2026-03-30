@@ -60,8 +60,8 @@ class MikrotikController extends Controller
 
             return response()->json([
                 'status'        => true,
-                'pools'         => $pools['data']       ?? [],
-                'dns'           => $dns['dns']          ?? '',
+                'pools'         => $pools['data']              ?? [],
+                'dns'           => $dns['dns']                 ?? '',
                 'local_address' => $localAddr['local_address'] ?? '',
             ]);
         } catch (\Exception $e) {
@@ -119,7 +119,7 @@ class MikrotikController extends Controller
                 'status'      => true,
                 'cpu'         => rtrim($d['cpu_load'] ?? '-', '%'),
                 'memory'      => $d['memory_used'] ?? '-',
-                'uptime'      => $d['uptime'] ?? '-',
+                'uptime'      => $d['uptime']      ?? '-',
                 'pppoe_count' => count($sessions['data'] ?? []),
             ]);
         } catch (\Exception $e) {
@@ -134,13 +134,19 @@ class MikrotikController extends Controller
             $raw = $this->mikrotik->getActiveSessions();
             $this->mikrotik->disconnect();
 
-            $sessions = array_map(function($s) {
+            $sessions = array_map(function ($s) {
+                // RouterOS v6 pakai 'bytes-in'/'bytes-out'
+                // RouterOS v7 pakai 'rx-byte'/'tx-byte'
+                // Fallback ke semua kemungkinan field agar kompatibel
+                $bytesIn  = (int) ($s['rx-byte']   ?? $s['bytes-in']  ?? $s['rx-bytes']  ?? 0);
+                $bytesOut = (int) ($s['tx-byte']   ?? $s['bytes-out'] ?? $s['tx-bytes']  ?? 0);
+
                 return [
                     'name'        => $s['name']      ?? '-',
                     'address'     => $s['address']   ?? '-',
                     'uptime'      => $s['uptime']    ?? '-',
-                    'bytes_in'    => isset($s['bytes-in'])  ? (int)$s['bytes-in']  : 0,
-                    'bytes_out'   => isset($s['bytes-out']) ? (int)$s['bytes-out'] : 0,
+                    'bytes_in'    => $bytesIn,
+                    'bytes_out'   => $bytesOut,
                     'mac_address' => $s['caller-id'] ?? '-',
                 ];
             }, $raw['data'] ?? []);
@@ -170,18 +176,18 @@ class MikrotikController extends Controller
             $pakets   = Paket::all();
 
             // Deduplikasi username dari Mikrotik
-            $seen = [];
+            $seen       = [];
             $uniqueData = [];
             foreach ($result['data'] as $s) {
                 $key = strtolower($s['username']);
                 if (isset($seen[$key])) continue;
-                $seen[$key] = true;
+                $seen[$key]   = true;
                 $uniqueData[] = $s;
             }
 
-            $data = array_map(function($s) use ($existing, $pakets) {
+            $data = array_map(function ($s) use ($existing, $pakets) {
                 $profileClean = strtolower(trim($s['profile']));
-                $matchPaket = $pakets->first(function($p) use ($profileClean) {
+                $matchPaket   = $pakets->first(function ($p) use ($profileClean) {
                     $namaClean = strtolower(trim($p->nama_paket));
                     return $namaClean === $profileClean
                         || str_replace([' ', '-', '_'], '', $namaClean) === str_replace([' ', '-', '_'], '', $profileClean);
@@ -194,7 +200,7 @@ class MikrotikController extends Controller
                     'address'    => $s['address'],
                     'disabled'   => $s['disabled'],
                     'exists'     => in_array($s['username'], $existing),
-                    'paket_id'   => $matchPaket ? $matchPaket->id : null,
+                    'paket_id'   => $matchPaket ? $matchPaket->id   : null,
                     'paket_nama' => $matchPaket ? $matchPaket->nama_paket : null,
                 ];
             }, $uniqueData);
@@ -225,7 +231,7 @@ class MikrotikController extends Controller
                 if (!$username) continue;
 
                 if (Pelanggan::withTrashed()->where('username', $username)->exists()) {
-                Pelanggan::withTrashed()->where('username', $username)->forceDelete();
+                    Pelanggan::withTrashed()->where('username', $username)->forceDelete();
                     $skipped++;
                     continue;
                 }
@@ -237,7 +243,7 @@ class MikrotikController extends Controller
                     continue;
                 }
 
-                \DB::transaction(function() use ($username, $item, $usePaketId, $router, $bulan, &$imported) {
+                \DB::transaction(function () use ($username, $item, $usePaketId, $router, $bulan, &$imported) {
                     $lastId      = Pelanggan::lockForUpdate()->max('id') ?? 0;
                     $idPelanggan = 'AR-' . date('Y') . str_pad($lastId + 1, 4, '0', STR_PAD_LEFT);
 
@@ -262,7 +268,6 @@ class MikrotikController extends Controller
                     ]);
                     $imported++;
                 });
-
             } catch (\Exception $e) {
                 $errors[] = ($item['username'] ?? 'item-' . $index) . ': ' . $e->getMessage();
             }
@@ -274,7 +279,7 @@ class MikrotikController extends Controller
             'skipped'  => $skipped,
             'errors'   => $errors,
             'message'  => 'Berhasil import ' . $imported . ' pelanggan, ' . $skipped . ' dilewati.'
-                        . (count($errors) ? ' Ada ' . count($errors) . ' error.' : ''),
+                . (count($errors) ? ' Ada ' . count($errors) . ' error.' : ''),
         ]);
     }
 
@@ -344,8 +349,10 @@ class MikrotikController extends Controller
             $result = $this->mikrotik->isolir($pelanggan->username);
             $this->mikrotik->disconnect();
             if ($result['status']) $pelanggan->update(['status' => 'suspend']);
-            return back()->with($result['status'] ? 'success' : 'error',
-                $result['status'] ? "Pelanggan {$pelanggan->nama} berhasil di-suspend." : $result['message']);
+            return back()->with(
+                $result['status'] ? 'success' : 'error',
+                $result['status'] ? "Pelanggan {$pelanggan->nama} berhasil di-suspend." : $result['message']
+            );
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal suspend: ' . $e->getMessage());
         }
@@ -360,8 +367,10 @@ class MikrotikController extends Controller
             $result = $this->mikrotik->isolir($pelanggan->username);
             $this->mikrotik->disconnect();
             if ($result['status']) $pelanggan->update(['status' => 'nonaktif']);
-            return back()->with($result['status'] ? 'success' : 'error',
-                $result['status'] ? "Pelanggan {$pelanggan->nama} berhasil dinonaktifkan." : $result['message']);
+            return back()->with(
+                $result['status'] ? 'success' : 'error',
+                $result['status'] ? "Pelanggan {$pelanggan->nama} berhasil dinonaktifkan." : $result['message']
+            );
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal nonaktifkan: ' . $e->getMessage());
         }

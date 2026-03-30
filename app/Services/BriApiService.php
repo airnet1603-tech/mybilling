@@ -25,13 +25,8 @@ class BriApiService
 
     private function makeExternalId(): string
     {
-        return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-        );
+        // Max 20 karakter numerik sesuai standar BRI SNAP API
+        return now()->format('YmdHis') . rand(100, 999);
     }
 
     private function makeTimestamp(): string
@@ -77,6 +72,8 @@ class BriApiService
     {
         [$token, $timestamp] = $this->getTokenAndTimestamp();
         $externalId = $this->makeExternalId();
+
+        Log::info('BRI QRIS ExternalID', ['externalId' => $externalId, 'length' => strlen($externalId)]);
 
         $body = [
             'partnerReferenceNo' => $params['no_tagihan'],
@@ -133,9 +130,18 @@ class BriApiService
         [$token, $timestamp] = $this->getTokenAndTimestamp();
         $externalId = $this->makeExternalId();
 
+        Log::info('BRI VA ExternalID', ['externalId' => $externalId, 'length' => strlen($externalId)]);
+
         $partnerServiceId = config('bri.partner_service_id');
         $customerNo = substr(str_pad(preg_replace('/[^0-9]/', '', $params['no_tagihan']), 20, '0', STR_PAD_LEFT), -20);
         $vaNumber   = $partnerServiceId . $customerNo;
+
+        Log::info('BRI VA Numbers', [
+            'partnerServiceId' => $partnerServiceId,
+            'customerNo'       => $customerNo,
+            'vaNumber'         => $vaNumber,
+            'vaLength'         => strlen($vaNumber),
+        ]);
 
         $body = [
             'partnerServiceId'   => $partnerServiceId,
@@ -152,6 +158,12 @@ class BriApiService
         ];
 
         $signature = $this->generateHmacSignature('POST', '/snap/v1.0/transfer-va/create-va', $token, $body, $timestamp);
+
+        Log::info('BRI VA Request Headers', [
+            'X-PARTNER-ID'  => $this->partnerId,
+            'X-EXTERNAL-ID' => $externalId,
+            'CHANNEL-ID'    => $this->channelId,
+        ]);
 
         $response = Http::withHeaders([
             'Content-Type'  => 'application/json',

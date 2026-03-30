@@ -135,13 +135,72 @@ class MikrotikService
         }
     }
 
+    /**
+     * [FIX] Ambil stats traffic dari Simple Queue per username.
+     * Simple Queue menyimpan bytes aktual, bukan /ppp/active.
+     */
+    public function getQueueStats()
+    {
+        try {
+            $result = $this->api->comm('/queue/simple/print');
+            $stats  = [];
+
+            foreach ($result as $q) {
+                $name = $q['name'] ?? '';
+                if (!$name) continue;
+
+                // RouterOS v6 & v7: field bytes-in / bytes-out
+                $bytesIn  = (int) ($q['bytes-in']  ?? 0);
+                $bytesOut = (int) ($q['bytes-out'] ?? 0);
+
+                // Fallback: beberapa versi pakai format "in/out" dalam satu field
+                if ($bytesIn === 0 && $bytesOut === 0 && !empty($q['bytes'])) {
+                    $parts    = explode('/', $q['bytes']);
+                    $bytesIn  = (int) ($parts[0] ?? 0);
+                    $bytesOut = (int) ($parts[1] ?? 0);
+                }
+
+                $stats[$name] = [
+                    'bytes_in'  => $bytesIn,
+                    'bytes_out' => $bytesOut,
+                ];
+            }
+
+            return ['status' => true, 'data' => $stats];
+        } catch (Exception $e) {
+            return ['status' => false, 'data' => [], 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * [FIX] Ambil active sessions + merge traffic bytes dari Simple Queue.
+     * /ppp/active/print tidak mengembalikan bytes traffic yang akurat,
+     * sehingga data diambil dari Simple Queue berdasarkan username.
+     */
     public function getActiveSessions()
     {
         try {
-            $result = $this->api->comm('/ppp/active/print');
-            return ['status' => true, 'data' => $result];
+            $sessions   = $this->api->comm('/ppp/active/print');
+            $queueStats = $this->getQueueStats();
+            $queues     = $queueStats['data'] ?? [];
+
+            foreach ($sessions as &$s) {
+                $name = $s['name'] ?? '';
+                if (isset($queues[$name])) {
+                    // Override bytes dengan data dari Simple Queue
+                    $s['rx-byte'] = $queues[$name]['bytes_in'];
+                    $s['tx-byte'] = $queues[$name]['bytes_out'];
+                } else {
+                    // Kalau tidak ada di queue, set ke 0 (jangan biarkan null)
+                    $s['rx-byte'] = $s['rx-byte'] ?? $s['bytes-in'] ?? 0;
+                    $s['tx-byte'] = $s['tx-byte'] ?? $s['bytes-out'] ?? 0;
+                }
+            }
+            unset($s);
+
+            return ['status' => true, 'data' => $sessions];
         } catch (Exception $e) {
-            return ['status' => false, 'data' => []];
+            return ['status' => false, 'data' => [], 'message' => $e->getMessage()];
         }
     }
 
@@ -166,7 +225,6 @@ class MikrotikService
 
     /**
      * Sync PPPoE profile ke Mikrotik dengan setting per router
-     * $router = object Router (bisa null jika tidak ada)
      */
     public function syncProfile($nama, $download, $upload, $router = null)
     {
@@ -178,17 +236,14 @@ class MikrotikService
                 "rate-limit" => $rateLimit,
             ];
 
-            // Tambahkan local-address jika ada di router
             if ($router && !empty($router->local_address)) {
                 $params['local-address'] = $router->local_address;
             }
 
-            // Tambahkan remote-address (pool) jika ada di router
             if ($router && !empty($router->remote_address)) {
                 $params['remote-address'] = $router->remote_address;
             }
 
-            // Tambahkan DNS server jika ada di router
             if ($router && !empty($router->dns_server)) {
                 $params['dns-server'] = $router->dns_server;
             }
@@ -298,9 +353,6 @@ class MikrotikService
         }
     }
 
-    /**
-     * Ambil semua IP Pool dari RB
-     */
     public function getIpPools()
     {
         try {
@@ -308,8 +360,8 @@ class MikrotikService
             $pools = [];
             foreach ($result as $p) {
                 $pools[] = [
-                    'name'      => $p['name']    ?? '-',
-                    'ranges'    => $p['ranges']  ?? '-',
+                    'name'   => $p['name']   ?? '-',
+                    'ranges' => $p['ranges'] ?? '-',
                 ];
             }
             return ['status' => true, 'data' => $pools];
@@ -318,9 +370,6 @@ class MikrotikService
         }
     }
 
-    /**
-     * Ambil DNS Server dari RB (IP ? DNS)
-     */
     public function getDnsServer()
     {
         try {
@@ -332,20 +381,15 @@ class MikrotikService
         }
     }
 
-    /**
-     * Ambil Local Address PPPoE dari RB (dari profile default atau interface PPPoE server)
-     */
     public function getPppoeLocalAddress()
     {
         try {
             $result = $this->api->comm('/ppp/profile/print');
-            // Cari profile default dulu
             foreach ($result as $p) {
                 if (($p['name'] ?? '') === 'default' && !empty($p['local-address'])) {
                     return ['status' => true, 'local_address' => $p['local-address']];
                 }
             }
-            // Kalau default kosong, cari profile lain yang ada local-address
             foreach ($result as $p) {
                 if (!empty($p['local-address'])) {
                     return ['status' => true, 'local_address' => $p['local-address']];
@@ -359,7 +403,7 @@ class MikrotikService
 
     private function formatBytes($bytes)
     {
-        $bytes = (int)$bytes;
+        $bytes = (int) $bytes;
         if ($bytes >= 1073741824) return round($bytes / 1073741824, 1) . ' GB';
         if ($bytes >= 1048576)    return round($bytes / 1048576, 1) . ' MB';
         if ($bytes >= 1024)       return round($bytes / 1024, 1) . ' KB';

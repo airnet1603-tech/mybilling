@@ -17,6 +17,7 @@ Route::get('/home', function () { return redirect('/admin/dashboard'); })->middl
 
 // Portal Pelanggan
 Route::prefix('pelanggan')->group(function () {
+    Route::get('/', function () { return redirect('/pelanggan/login'); }); // REDIRECT FIX
     Route::get('/login',  [PortalController::class, 'showLogin']);
     Route::post('/login', [PortalController::class, 'login']);
     Route::get('/logout', [PortalController::class, 'logout']);
@@ -75,6 +76,7 @@ Route::prefix('admin/mikrotik')->middleware(['auth', 'role:admin,operator'])->gr
     Route::post('/{router}/import-pppoe',  [App\Http\Controllers\Admin\MikrotikController::class, 'doImportPppoe'])->name('mikrotik.import-pppoe');
     Route::post('/pelanggan/{pelanggan}/sync',     [App\Http\Controllers\Admin\MikrotikController::class, 'syncPelanggan'])->name('mikrotik.sync');
 });
+
 // BRI Payment (Portal Pelanggan)
 use App\Http\Controllers\Pelanggan\BriPaymentController;
 
