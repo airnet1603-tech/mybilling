@@ -72,6 +72,10 @@
         .badge-isolir   { background: #f8d7da; color: #721c24; }
         .badge-suspend  { background: #fff3cd; color: #856404; }
         .badge-nonaktif { background: #e2e3e5; color: #383d41; }
+
+        /* Fix pagination arrow size */
+        .pagination .page-link svg { width: 8px !important; height: 8px !important; max-width: 10px !important; max-height: 10px !important; }
+        .pagination { margin-bottom: 0; }
         .badge-status   { font-size: 0.75rem; font-weight: 600; padding: 3px 10px; }
 
         .router-badge { font-size: 0.68rem; font-weight: 600; padding: 2px 7px; border-radius: 20px; background: #e8f0fe; color: #1a56db; }

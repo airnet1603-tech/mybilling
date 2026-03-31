@@ -105,10 +105,17 @@ class MikrotikController extends Controller
     public function getStats(Router $router)
     {
         try {
-            $this->mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
-            $resource = $this->mikrotik->getRouterResource();
-            $sessions = $this->mikrotik->getActiveSessions();
-            $this->mikrotik->disconnect();
+            $cacheFile = sys_get_temp_dir() . '/mikrotik_cache_' . $router->id . '.json';
+            if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < 30) {
+                $cache    = json_decode(file_get_contents($cacheFile), true);
+                $resource = ['status' => true, 'data' => $cache['resource'] ?? []];
+                $sessions = ['data' => $cache['sessions'] ?? []];
+            } else {
+                $this->mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
+                $resource = $this->mikrotik->getRouterResource();
+                $sessions = $this->mikrotik->getActiveSessions();
+                $this->mikrotik->disconnect();
+            }
 
             if (!$resource['status']) {
                 return response()->json(['status' => false]);
@@ -130,31 +137,61 @@ class MikrotikController extends Controller
     public function getSessions(Router $router)
     {
         try {
-            $this->mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
-            $raw = $this->mikrotik->getActiveSessions();
-            $this->mikrotik->disconnect();
+            // Coba baca dari cache poller dulu (instan)
+            $cacheFile = sys_get_temp_dir() . '/mikrotik_cache_' . $router->id . '.json';
+            if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < 30) {
+                $cache = json_decode(file_get_contents($cacheFile), true);
+                $raw   = ['data' => $cache['sessions'] ?? []];
+            } else {
+                // Fallback: langsung ke MikroTik kalau cache tidak ada
+                $this->mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
+                $raw = $this->mikrotik->getActiveSessions();
+                $this->mikrotik->disconnect();
+            }
 
-            $sessions = array_map(function ($s) {
-                // RouterOS v6 pakai 'bytes-in'/'bytes-out'
-                // RouterOS v7 pakai 'rx-byte'/'tx-byte'
-                // Fallback ke semua kemungkinan field agar kompatibel
-                $bytesIn  = (int) ($s['rx-byte']   ?? $s['bytes-in']  ?? $s['rx-bytes']  ?? 0);
-                $bytesOut = (int) ($s['tx-byte']   ?? $s['bytes-out'] ?? $s['tx-bytes']  ?? 0);
+            $search   = strtolower(trim(request('search', '')));
+            $page     = max(1, (int) request('page', 1));
+            $perPage  = 25;
 
+            $all = array_map(function ($s) {
+                $bytesIn  = (int) ($s['rx-byte']  ?? $s['bytes-in']  ?? $s['rx-bytes']  ?? 0);
+                $bytesOut = (int) ($s['tx-byte']  ?? $s['bytes-out'] ?? $s['tx-bytes']  ?? 0);
+                $rateIn   = (int) ($s['rate_in']  ?? 0);
+                $rateOut  = (int) ($s['rate_out'] ?? 0);
                 return [
                     'name'        => $s['name']      ?? '-',
                     'address'     => $s['address']   ?? '-',
                     'uptime'      => $s['uptime']    ?? '-',
                     'bytes_in'    => $bytesIn,
                     'bytes_out'   => $bytesOut,
+                    'rate_in'     => $rateIn,
+                    'rate_out'    => $rateOut,
                     'mac_address' => $s['caller-id'] ?? '-',
                 ];
             }, $raw['data'] ?? []);
 
+            // Filter search
+            if ($search !== '') {
+                $all = array_values(array_filter($all, function ($s) use ($search) {
+                    return str_contains(strtolower($s['name']), $search)
+                        || str_contains(strtolower($s['address']), $search)
+                        || str_contains(strtolower($s['mac_address']), $search);
+                }));
+            }
+
+            $total      = count($all);
+            $totalPages = max(1, (int) ceil($total / $perPage));
+            $page       = min($page, $totalPages);
+            $offset     = ($page - 1) * $perPage;
+            $sessions   = array_slice($all, $offset, $perPage);
+
             return response()->json([
-                'status'   => true,
-                'sessions' => $sessions,
-                'count'    => count($sessions),
+                'status'      => true,
+                'sessions'    => $sessions,
+                'total'       => $total,
+                'per_page'    => $perPage,
+                'current_page'=> $page,
+                'total_pages' => $totalPages,
             ]);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()]);

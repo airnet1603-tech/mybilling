@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Bayar Tagihan — Portal Pelanggan</title>
+    <title>Bayar Tagihan | Portal Pelanggan</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -16,6 +16,8 @@
         .nav-portal a{color:rgba(255,255,255,0.75);text-decoration:none;font-size:0.85rem;padding:6px 12px;border-radius:8px;transition:.15s}
         .nav-portal a:hover,.nav-portal a.active{background:rgba(255,255,255,0.1);color:#fff}
         .main{padding:20px;max-width:600px;margin:0 auto}
+        .btn-bayar{background:linear-gradient(135deg,#0f3460,#e94560);border:none;color:#fff;padding:14px;font-size:1.1rem;font-weight:600;border-radius:12px;transition:.2s}
+        .btn-bayar:hover{opacity:.9;color:#fff;transform:translateY(-1px)}
     </style>
 </head>
 <body>
@@ -60,73 +62,30 @@
     <div class="card shadow-sm mb-4" id="card-pilih-metode">
         <div class="card-header"><h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Pilih Metode Pembayaran</h5></div>
         <div class="card-body">
-            <div class="row g-3">
-                <div class="col-6">
-                    <button class="btn btn-outline-primary w-100 py-3" onclick="pilihMetode('qris')">
-                        <div class="fw-bold fs-4 mb-1">&#9644; QRIS</div>
-                        <small class="text-muted">Scan QR - semua e-wallet</small>
-                    </button>
-                </div>
-                <div class="col-6">
-                    <button class="btn btn-outline-primary w-100 py-3" onclick="pilihMetode('va')">
-                        <div class="fw-bold fs-5 mb-1">?? Virtual Account</div>
-                        <small class="text-muted">Transfer Bank BRI</small>
-                    </button>
-                </div>
+            <div class="alert alert-info py-2 mb-3">
+                <small><i class="fas fa-info-circle me-1"></i>Tersedia: Virtual Account (semua bank), QRIS, GoPay, dan lainnya via Midtrans.</small>
             </div>
+            <button class="btn btn-bayar w-100" onclick="bayarMidtrans()">
+                <i class="fas fa-shopping-cart me-2"></i>Bayar Sekarang
+                <div class="small fw-normal mt-1">VA Semua Bank · QRIS · GoPay · dll</div>
+            </button>
         </div>
     </div>
 
     {{-- Loading --}}
     <div id="loading" class="text-center py-5 d-none">
         <div class="spinner-border text-primary mb-3" role="status"></div>
-        <p class="text-muted">Sedang memproses...</p>
+        <p class="text-muted">Sedang memproses, harap tunggu...</p>
     </div>
 
-    {{-- Panel QRIS --}}
-    <div id="panel-qris" class="card shadow-sm mb-4 d-none">
-        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="fas fa-qrcode me-2"></i>Bayar via QRIS</h5>
-            <button class="btn btn-sm btn-outline-light" onclick="gantiMetode()">Ganti Metode</button>
-        </div>
+    {{-- Error --}}
+    <div id="panel-error" class="card shadow-sm mb-4 d-none">
         <div class="card-body text-center py-4">
-            <p class="text-muted mb-3">Scan QR Code menggunakan e-wallet atau mobile banking manapun.</p>
-            <div id="qris-container" class="mb-3 d-flex justify-content-center"></div>
-            <div class="badge bg-warning text-dark fs-6 mb-3">
-                <i class="fas fa-clock me-1"></i>Berlaku hingga pukul: <span id="qris-expired">-</span>
-            </div>
-            <p class="fw-bold fs-5 mb-3">Rp {{ number_format($tagihan->total, 0, ',', '.') }}</p>
-            <div class="alert alert-info py-2 mb-3"><small>Setelah bayar, klik tombol di bawah untuk konfirmasi</small></div>
-            <button class="btn btn-success w-100" onclick="cekStatus()">
-                <i class="fas fa-sync me-2"></i>Cek Status Pembayaran
-            </button>
-        </div>
-    </div>
-
-    {{-- Panel VA --}}
-    <div id="panel-va" class="card shadow-sm mb-4 d-none">
-        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="fas fa-university me-2"></i>Virtual Account BRI</h5>
-            <button class="btn btn-sm btn-outline-light" onclick="gantiMetode()">Ganti Metode</button>
-        </div>
-        <div class="card-body">
-            <p class="text-muted mb-3">Transfer ke nomor VA berikut via ATM / Mobile Banking BRI:</p>
-            <div class="bg-light rounded p-3 mb-3 text-center">
-                <p class="text-muted mb-1 small">Nomor Virtual Account BRI</p>
-                <div class="d-flex align-items-center justify-content-center gap-2">
-                    <h3 class="mb-0 fw-bold" id="va-number" style="letter-spacing:3px">-</h3>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="copyVa()"><i class="fas fa-copy"></i></button>
-                </div>
-            </div>
-            <table class="table table-sm mb-3">
-                <tr><td class="text-muted">Total Bayar</td><td class="fw-bold text-primary">Rp {{ number_format($tagihan->total, 0, ',', '.') }}</td></tr>
-                <tr><td class="text-muted">Berlaku Hingga</td><td id="va-expired">-</td></tr>
-            </table>
-            <div class="alert alert-warning py-2 mb-3">
-                <small><i class="fas fa-exclamation-triangle me-1"></i>Transfer sesuai nominal persis. Beda 1 rupiah akan gagal.</small>
-            </div>
-            <button class="btn btn-info text-white w-100" onclick="cekStatus()">
-                <i class="fas fa-sync me-2"></i>Cek Status Pembayaran
+            <div class="text-danger mb-3" style="font-size:3rem;"><i class="fas fa-times-circle"></i></div>
+            <h5 class="text-danger">Gagal Membuat Pembayaran</h5>
+            <p class="text-muted" id="error-message">Terjadi kesalahan.</p>
+            <button class="btn btn-primary" onclick="resetPanel()">
+                <i class="fas fa-redo me-2"></i>Coba Lagi
             </button>
         </div>
     </div>
@@ -134,7 +93,7 @@
     {{-- Panel Sukses --}}
     <div id="panel-sukses" class="card shadow-sm border-success d-none">
         <div class="card-body text-center py-5">
-            <div class="text-success mb-3" style="font-size:4rem;">?</div>
+            <div class="text-success mb-3" style="font-size:4rem;"><i class="fas fa-check-circle"></i></div>
             <h4 class="text-success fw-bold">Pembayaran Berhasil!</h4>
             <p class="text-muted">Tagihan {{ $tagihan->no_tagihan }} telah lunas.</p>
             <a href="/pelanggan/tagihan" class="btn btn-primary mt-2">
@@ -146,17 +105,16 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const noTagihan = '{{ $tagihan->no_tagihan }}';
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 let checkInterval = null;
 
-function pilihMetode(metode) {
+function bayarMidtrans() {
     document.getElementById('card-pilih-metode').classList.add('d-none');
     document.getElementById('loading').classList.remove('d-none');
 
-    fetch(`/pelanggan/payment/${noTagihan}/${metode}`, {
+    fetch(`/pelanggan/payment/${noTagihan}/midtrans`, {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': csrfToken,
@@ -166,38 +124,28 @@ function pilihMetode(metode) {
     .then(r => r.json())
     .then(data => {
         document.getElementById('loading').classList.add('d-none');
-        if (!data.success) { alert('Error: ' + data.message); gantiMetode(); return; }
-        if (metode === 'qris') tampilQris(data);
-        else tampilVa(data);
+        if (!data.success || !data.payment_url) {
+            document.getElementById('error-message').textContent = data.message || 'Gagal mendapatkan link pembayaran.';
+            document.getElementById('panel-error').classList.remove('d-none');
+            return;
+        }
+        // Redirect ke halaman pembayaran Midtrans
+        window.location.href = data.payment_url;
     })
-    .catch(() => { document.getElementById('loading').classList.add('d-none'); alert('Terjadi kesalahan.'); gantiMetode(); });
+    .catch(() => {
+        document.getElementById('loading').classList.add('d-none');
+        document.getElementById('error-message').textContent = 'Terjadi kesalahan jaringan.';
+        document.getElementById('panel-error').classList.remove('d-none');
+    });
 }
 
-function tampilQris(data) {
-    document.getElementById('panel-qris').classList.remove('d-none');
-    document.getElementById('qris-expired').textContent = data.expired_at;
-    const container = document.getElementById('qris-container');
-    container.innerHTML = '';
-    if (data.qris_image) {
-        new QRCode(container, { text: data.qris_image, width: 250, height: 250, correctLevel: QRCode.CorrectLevel.M });
-    } else {
-        container.innerHTML = '<p class="text-danger">Gagal generate QR. Coba refresh.</p>';
-    }
-    startAutoCheck(5000);
+function resetPanel() {
+    document.getElementById('card-pilih-metode').classList.remove('d-none');
+    document.getElementById('panel-error').classList.add('d-none');
+    document.getElementById('loading').classList.add('d-none');
 }
 
-function tampilVa(data) {
-    document.getElementById('panel-va').classList.remove('d-none');
-    document.getElementById('va-number').textContent = data.va_number;
-    document.getElementById('va-expired').textContent = data.expired_at;
-    startAutoCheck(10000);
-}
-
-function startAutoCheck(interval) {
-    if (checkInterval) clearInterval(checkInterval);
-    checkInterval = setInterval(cekStatus, interval);
-}
-
+// Cek status otomatis saat kembali dari Midtrans
 function cekStatus() {
     fetch(`/pelanggan/payment/${noTagihan}/check`, {
         headers: { 'X-CSRF-TOKEN': csrfToken }
@@ -206,27 +154,19 @@ function cekStatus() {
     .then(data => {
         if (data.paid) {
             clearInterval(checkInterval);
-            ['panel-qris','panel-va'].forEach(id => document.getElementById(id).classList.add('d-none'));
+            document.getElementById('card-pilih-metode').classList.add('d-none');
             document.getElementById('panel-sukses').classList.remove('d-none');
             setTimeout(() => window.location.href = '/pelanggan/tagihan', 3000);
         }
     });
 }
 
-function gantiMetode() {
-    clearInterval(checkInterval);
-    document.getElementById('card-pilih-metode').classList.remove('d-none');
-    ['panel-qris','panel-va','loading'].forEach(id => document.getElementById(id).classList.add('d-none'));
-}
-
-function copyVa() {
-    const va = document.getElementById('va-number').textContent;
-    navigator.clipboard.writeText(va).then(() => {
-        const btn = event.target.closest('button');
-        btn.innerHTML = '<i class="fas fa-check"></i>';
-        setTimeout(() => btn.innerHTML = '<i class="fas fa-copy"></i>', 2000);
-    });
-}
+// Auto cek setiap 5 detik saat halaman aktif (user kembali dari Midtrans)
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        cekStatus();
+    }
+});
 </script>
 </body>
 </html>

@@ -129,20 +129,17 @@
                         <span class="fw-bold" id="modalJumlah"></span>
                     </div>
                 </div>
-                <div class="row g-3" id="pilihanMetode">
-                    <div class="col-6">
-                        <div class="pay-option" onclick="pilihBayar('va')">
-                            <img src="https://upload.wikimedia.org/wikipedia/id/thumb/5/5c/Bank_BRI_2020.svg/120px-Bank_BRI_2020.svg.png" height="36" alt="BRI">
-                            <div class="label">BRI Virtual Account</div>
-                            <div class="sub">Transfer ATM / m-Banking</div>
+                <div id="pilihanMetode">
+                    <div class="pay-option w-100" onclick="pilihBayar('va')" style="cursor:pointer;border:1px solid #dee2e6;border-radius:12px;padding:16px;text-align:center;">
+                        <div class="d-flex justify-content-center align-items-center gap-2 mb-2 flex-wrap">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg" height="24" alt="BCA" title="BCA">
+                            <img src="https://upload.wikimedia.org/wikipedia/id/thumb/5/5c/Bank_BRI_2020.svg/120px-Bank_BRI_2020.svg.png" height="24" alt="BRI" title="BRI">
+                            <img src="https://upload.wikimedia.org/wikipedia/id/thumb/5/55/BNI_logo.svg/120px-BNI_logo.svg.png" height="24" alt="BNI" title="BNI">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/a/ad/Bank_Mandiri_logo_2008.svg" height="24" alt="Mandiri" title="Mandiri">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/120px-Logo_QRIS.svg.png" height="24" alt="QRIS" title="QRIS">
                         </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="pay-option" onclick="pilihBayar('qris')">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/120px-Logo_QRIS.svg.png" height="36" alt="QRIS">
-                            <div class="label">QRIS</div>
-                            <div class="sub">GoPay, OVO, Dana, dll</div>
-                        </div>
+                        <div class="fw-bold">Bayar Sekarang</div>
+                        <div class="text-muted small">Virtual Account & QRIS semua bank</div>
                     </div>
                 </div>
                 <div id="loadingBayar" style="display:none;" class="text-center py-3">
@@ -172,7 +169,7 @@ function pilihBayar(tipe) {
     document.getElementById('pilihanMetode').style.display = 'none';
     document.getElementById('loadingBayar').style.display = 'block';
 
-    fetch(`/pelanggan/payment/${activeNoTagihan}/${tipe}`, {
+    fetch(`/pelanggan/payment/${activeNoTagihan}/midtrans`, {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -182,8 +179,8 @@ function pilihBayar(tipe) {
     })
     .then(r => r.json())
     .then(data => {
-        if (!data.success) throw new Error(data.message || 'Gagal memproses');
-        window.location.href = `/pelanggan/payment/${activeNoTagihan}`;
+        if (!data.success || !data.payment_url) throw new Error(data.message || 'Gagal memproses');
+        window.location.href = data.payment_url;
     })
     .catch(err => {
         document.getElementById('loadingBayar').innerHTML =

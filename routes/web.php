@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Pelanggan\PortalController;
+use App\Http\Controllers\Pelanggan\DuitkuPaymentController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,7 +18,7 @@ Route::get('/home', function () { return redirect('/admin/dashboard'); })->middl
 
 // Portal Pelanggan
 Route::prefix('pelanggan')->group(function () {
-    Route::get('/', function () { return redirect('/pelanggan/login'); }); // REDIRECT FIX
+    Route::get('/', function () { return redirect('/pelanggan/login'); });
     Route::get('/login',  [PortalController::class, 'showLogin']);
     Route::post('/login', [PortalController::class, 'login']);
     Route::get('/logout', [PortalController::class, 'logout']);
@@ -77,24 +78,27 @@ Route::prefix('admin/mikrotik')->middleware(['auth', 'role:admin,operator'])->gr
     Route::post('/pelanggan/{pelanggan}/sync',     [App\Http\Controllers\Admin\MikrotikController::class, 'syncPelanggan'])->name('mikrotik.sync');
 });
 
-// BRI Payment (Portal Pelanggan)
-use App\Http\Controllers\Pelanggan\BriPaymentController;
+// Duitku Payment (Portal Pelanggan)
+Route::prefix('pelanggan')->middleware('pelanggan.auth')->group(function () {
+    Route::get('/payment/{noTagihan}',        [DuitkuPaymentController::class, 'show'])->name('pelanggan.payment.show');
+    Route::post('/payment/{noTagihan}/qris',  [DuitkuPaymentController::class, 'createQris'])->name('pelanggan.payment.qris');
+    Route::post('/payment/{noTagihan}/va',    [DuitkuPaymentController::class, 'createVa'])->name('pelanggan.payment.va');
+    Route::get('/payment/{noTagihan}/check',  [DuitkuPaymentController::class, 'checkStatus'])->name('pelanggan.payment.check');
+});
+
+// Duitku Webhook (tanpa auth)
+Route::post('/webhook/duitku', [DuitkuPaymentController::class, 'webhook'])->name('webhook.duitku');
+
+// Midtrans Payment (Portal Pelanggan)
+use App\Http\Controllers\Pelanggan\MidtransPaymentController;
 
 Route::prefix('pelanggan')->middleware('pelanggan.auth')->group(function () {
-    Route::get('/payment/{noTagihan}',       [BriPaymentController::class, 'show'])->name('pelanggan.payment.show');
-    Route::post('/payment/{noTagihan}/qris', [BriPaymentController::class, 'createQris'])->name('pelanggan.payment.qris');
-    Route::post('/payment/{noTagihan}/va',   [BriPaymentController::class, 'createVa'])->name('pelanggan.payment.va');
-    Route::get('/payment/{noTagihan}/check', [BriPaymentController::class, 'checkStatus'])->name('pelanggan.payment.check');
+    Route::post('/payment/{noTagihan}/midtrans', [MidtransPaymentController::class, 'create'])->name('pelanggan.payment.midtrans');
+    Route::get('/payment/{noTagihan}/check-midtrans', [MidtransPaymentController::class, 'checkStatus'])->name('pelanggan.payment.check.midtrans');
 });
 
-// BRI Webhook (tanpa auth)
-Route::post('/webhook/bri', [BriPaymentController::class, 'webhook'])->name('webhook.bri');
-
-Route::get('/test-bri', function() {
-    $svc = app(App\Services\BriApiService::class);
-    return $svc->getAccessToken();
-});
-
+// Midtrans Webhook (tanpa auth)
+Route::post('/webhook/midtrans', [MidtransPaymentController::class, 'webhook'])->name('webhook.midtrans');
 // CSV Import
 Route::prefix('admin/csv')->middleware(['auth', 'role:admin,operator'])->group(function () {
     Route::get('/template/{type}',        [App\Http\Controllers\Admin\CsvImportController::class, 'template'])->name('csv.template');

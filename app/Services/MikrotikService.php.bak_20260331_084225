@@ -10,14 +10,12 @@ class MikrotikService
 {
     private $api;
     private $connected = false;
-    private $currentIp = 'default';
 
     public function connect($ip, $username, $password, $port = 8728)
     {
         $this->api = new \RouterosAPI();
         $this->api->connect($ip, $username, $password, $port);
         $this->connected = true;
-        $this->currentIp = $ip;
         return $this->api;
     }
 
@@ -138,49 +136,36 @@ class MikrotikService
     }
 
     /**
-     * [FIX] Ambil bytes traffic dari interface PPPoE dinamis RouterOS.
+     * [FIX] Ambil stats traffic dari Simple Queue per username.
+     * Simple Queue menyimpan bytes aktual, bukan /ppp/active.
      */
-    public function getPppoeInterfaceStats()
+    public function getQueueStats()
     {
         try {
-            $interfaces = $this->api->comm('/interface/print');
-            $now        = microtime(true);
-            
-            $snapFile   = sys_get_temp_dir() . '/mikrotik_snap_' . md5($this->currentIp) . '.json';
-            $snap       = file_exists($snapFile) ? json_decode(file_get_contents($snapFile), true) : [];
-            $newSnap    = ['time' => $now, 'data' => []];
-            $stats      = [];
+            $result = $this->api->comm('/queue/simple/print');
+            $stats  = [];
 
-            foreach ($interfaces as $iface) {
-                $name = $iface['name'] ?? '';
-                if (!preg_match('/^<pppoe-(.+)>$/', $name, $match)) continue;
-                $username  = $match[1];
-                $bytesIn   = (int) ($iface['rx-byte'] ?? 0);
-                $bytesOut  = (int) ($iface['tx-byte'] ?? 0);
+            foreach ($result as $q) {
+                $name = $q['name'] ?? '';
+                if (!$name) continue;
 
-                $newSnap['data'][$username] = ['in' => $bytesIn, 'out' => $bytesOut];
+                // RouterOS v6 & v7: field bytes-in / bytes-out
+                $bytesIn  = (int) ($q['bytes-in']  ?? 0);
+                $bytesOut = (int) ($q['bytes-out'] ?? 0);
 
-                // Hitung rate dari delta bytes
-                $rateIn = $rateOut = 0;
-                if (!empty($snap['data'][$username]) && isset($snap['time'])) {
-                    $elapsed = $now - (float) $snap['time'];
-                    if ($elapsed > 0.5) {
-                        $deltaIn  = $bytesIn  - (int) $snap['data'][$username]['in'];
-                        $deltaOut = $bytesOut - (int) $snap['data'][$username]['out'];
-                        if ($deltaIn  >= 0) $rateIn  = (int) (($deltaIn  * 8) / $elapsed);
-                        if ($deltaOut >= 0) $rateOut = (int) (($deltaOut * 8) / $elapsed);
-                    }
+                // Fallback: beberapa versi pakai format "in/out" dalam satu field
+                if ($bytesIn === 0 && $bytesOut === 0 && !empty($q['bytes'])) {
+                    $parts    = explode('/', $q['bytes']);
+                    $bytesIn  = (int) ($parts[0] ?? 0);
+                    $bytesOut = (int) ($parts[1] ?? 0);
                 }
 
-                $stats[$username] = [
+                $stats[$name] = [
                     'bytes_in'  => $bytesIn,
                     'bytes_out' => $bytesOut,
-                    'rate_in'   => $rateIn,
-                    'rate_out'  => $rateOut,
                 ];
             }
 
-            file_put_contents($snapFile, json_encode($newSnap));
             return ['status' => true, 'data' => $stats];
         } catch (Exception $e) {
             return ['status' => false, 'data' => [], 'message' => $e->getMessage()];
@@ -188,47 +173,31 @@ class MikrotikService
     }
 
     /**
-     * [FIX] Ambil active sessions + merge traffic dari interface PPPoE.
+     * [FIX] Ambil active sessions + merge traffic bytes dari Simple Queue.
+     * /ppp/active/print tidak mengembalikan bytes traffic yang akurat,
+     * sehingga data diambil dari Simple Queue berdasarkan username.
      */
     public function getActiveSessions()
     {
         try {
-            $sessions = $this->api->comm('/ppp/active/print');
-            $ifaceStats = $this->getPppoeInterfaceStats();
-            $ifaceData  = $ifaceStats['data'] ?? [];
-            $queueData = [];
-            if (empty($ifaceData)) {
-                $queues = $this->api->comm('/queue/simple/print', ['.proplist' => 'name,bytes-in,bytes-out,bytes']);
-                foreach ($queues as $q) {
-                    $qName = $q['name'] ?? '';
-                    if (!$qName) continue;
-                    $bytesIn  = (int) ($q['bytes-in']  ?? 0);
-                    $bytesOut = (int) ($q['bytes-out'] ?? 0);
-                    if ($bytesIn === 0 && $bytesOut === 0 && !empty($q['bytes'])) {
-                        $parts = explode('/', $q['bytes']);
-                        $bytesIn  = (int) ($parts[0] ?? 0);
-                        $bytesOut = (int) ($parts[1] ?? 0);
-                    }
-                    $queueData[$qName] = ['bytes_in' => $bytesIn, 'bytes_out' => $bytesOut];
-                }
-            }
+            $sessions   = $this->api->comm('/ppp/active/print');
+            $queueStats = $this->getQueueStats();
+            $queues     = $queueStats['data'] ?? [];
+
             foreach ($sessions as &$s) {
                 $name = $s['name'] ?? '';
-                if (isset($ifaceData[$name])) {
-                    $s['rx-byte']  = $ifaceData[$name]['bytes_in'];
-
-                    $s['rate_in']  = $ifaceData[$name]['rate_in']  ?? 0;
-                    $s['rate_out'] = $ifaceData[$name]['rate_out'] ?? 0;
-                    $s['tx-byte'] = $ifaceData[$name]['bytes_out'];
-                } elseif (isset($queueData[$name])) {
-                    $s['rx-byte'] = $queueData[$name]['bytes_in'];
-                    $s['tx-byte'] = $queueData[$name]['bytes_out'];
+                if (isset($queues[$name])) {
+                    // Override bytes dengan data dari Simple Queue
+                    $s['rx-byte'] = $queues[$name]['bytes_in'];
+                    $s['tx-byte'] = $queues[$name]['bytes_out'];
                 } else {
-                    $s['rx-byte'] = (int) ($s['rx-byte'] ?? $s['bytes-in'] ?? 0);
-                    $s['tx-byte'] = (int) ($s['tx-byte'] ?? $s['bytes-out'] ?? 0);
+                    // Kalau tidak ada di queue, set ke 0 (jangan biarkan null)
+                    $s['rx-byte'] = $s['rx-byte'] ?? $s['bytes-in'] ?? 0;
+                    $s['tx-byte'] = $s['tx-byte'] ?? $s['bytes-out'] ?? 0;
                 }
             }
             unset($s);
+
             return ['status' => true, 'data' => $sessions];
         } catch (Exception $e) {
             return ['status' => false, 'data' => [], 'message' => $e->getMessage()];
