@@ -269,6 +269,7 @@
                     </div>
                     <div class="d-flex flex-column gap-2">
 
+@if(auth()->user()->role === 'admin')
                         {{-- AKTIF --}}
                         <form method="POST" action="{{ route('mikrotik.aktifkan', $pelanggan->id) }}">
                             @csrf
@@ -321,6 +322,9 @@
                             </button>
                         </form>
 
+                        @else
+                            <p class="text-muted small"><i class="fas fa-lock"></i> Hanya admin yang dapat mengubah status.</p>
+                        @endif
                     </div>
                 </div>
             </div>

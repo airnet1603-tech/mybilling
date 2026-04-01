@@ -300,8 +300,14 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label small fw-semibold">Tanggal Expired</label>
+                                @if(auth()->user()->role === 'admin')
                                 <input type="date" name="tgl_expired" class="form-control form-control-sm"
                                        value="{{ old('tgl_expired', $pelanggan->tgl_expired?->format('Y-m-d')) }}">
+@else
+                                <input type="date" name="tgl_expired" class="form-control form-control-sm"
+                                       value="{{ old('tgl_expired', $pelanggan->tgl_expired?->format('Y-m-d')) }}" disabled>
+                                <input type="hidden" name="tgl_expired" value="{{ $pelanggan->tgl_expired?->format('Y-m-d') }}">
+@endif
                             </div>
                         </div>
                     </div>

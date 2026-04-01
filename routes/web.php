@@ -41,6 +41,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     Route::post('pelanggan/{pelanggan}/status', [PelangganController::class, 'ubahStatus'])->name('pelanggan.status');
     Route::resource('tagihan', TagihanController::class);
     Route::post('tagihan/generate', [TagihanController::class, 'generateMassal'])->name('tagihan.generate');
+    Route::post('tagihan/bayar-massal', [TagihanController::class, 'bayarMassal'])->name('tagihan.bayar-massal');
     Route::post('tagihan/{tagihan}/bayar', [TagihanController::class, 'konfirmasiBayar'])->name('tagihan.bayar');
     Route::get('pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');
 
@@ -48,6 +49,13 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     Route::middleware('role:admin,operator')->group(function () {
         Route::resource('paket', PaketController::class);
         Route::get('laporan', [LaporanController::class, 'index'])->name('laporan.index');
+        Route::middleware('role:admin')->group(function () {
+            Route::delete('laporan/rollback-unpaid', [LaporanController::class, 'rollbackUnpaid'])->name('laporan.rollback-unpaid');
+            Route::delete('laporan/clear-pelanggan', [LaporanController::class, 'clearPelanggan'])->name('laporan.clear-pelanggan');
+            Route::delete('laporan/clear-bulan',  [LaporanController::class, 'clearBulan'])->name('laporan.clear-bulan');
+            Route::delete('laporan/clear-tahun',  [LaporanController::class, 'clearTahun'])->name('laporan.clear-tahun');
+            Route::delete('laporan/clear-user',   [LaporanController::class, 'clearUser'])->name('laporan.clear-user');
+        });
     });
 
     // Akses Admin Only

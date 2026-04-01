@@ -113,6 +113,7 @@ class TagihanController extends Controller
             'jumlah_bayar'  => $tagihan->total,
             'metode'        => $request->metode_bayar,
             'catatan'       => $request->catatan,
+            'created_by'    => auth()->id(),
         ]);
         return back()->with('success', 'Pembayaran berhasil dikonfirmasi! Pelanggan aktif kembali.');
     }
@@ -145,6 +146,59 @@ class TagihanController extends Controller
             $berhasil++;
         }
         return back()->with('success', "Generate selesai! Berhasil: {$berhasil}, Skip (sudah ada): {$skip}");
+    }
+
+    public function bayarMassal(Request $request)
+    {
+        $request->validate([
+            'tagihan_ids'  => 'required|array',
+            'metode_bayar' => 'required|in:cash,transfer,midtrans,xendit',
+        ]);
+
+        $berhasil = 0;
+        $skip     = 0;
+
+        foreach ($request->tagihan_ids as $id) {
+            $tagihan = Tagihan::with('pelanggan.paket', 'pelanggan.router')->find($id);
+            if (!$tagihan || $tagihan->status === 'paid') { $skip++; continue; }
+
+            $tagihan->update([
+                'status'       => 'paid',
+                'tgl_bayar'    => now(),
+                'metode_bayar' => $request->metode_bayar,
+                'catatan'      => $request->catatan,
+            ]);
+
+            $pelanggan = $tagihan->pelanggan;
+            $expired   = ($pelanggan->tgl_expired && $pelanggan->tgl_expired > now())
+                ? $pelanggan->tgl_expired->addDays($pelanggan->paket->masa_aktif)
+                : now()->addDays($pelanggan->paket->masa_aktif);
+            $pelanggan->update(['status' => 'aktif', 'tgl_expired' => $expired]);
+
+            if ($pelanggan->router) {
+                try {
+                    $mikrotik = new MikrotikService();
+                    $mikrotik->connect($pelanggan->router->ip_address, $pelanggan->router->username, $pelanggan->router->password, $pelanggan->router->port);
+                    $mikrotik->aktifkan($pelanggan->username);
+                    $mikrotik->disconnect();
+                } catch (\Exception $e) {
+                    \Log::warning("Gagal aktifkan MikroTik: " . $e->getMessage());
+                }
+            }
+
+            \App\Models\Pembayaran::create([
+                'no_pembayaran' => 'PAY-' . now()->format('YmdHis') . '-' . $tagihan->id,
+                'tagihan_id'    => $tagihan->id,
+                'pelanggan_id'  => $pelanggan->id,
+                'jumlah_bayar'  => $tagihan->total,
+                'metode'        => $request->metode_bayar,
+                'catatan'       => $request->catatan,
+                'created_by'    => auth()->id(),
+            ]);
+            $berhasil++;
+        }
+
+        return back()->with('success', "Pembayaran massal selesai! Berhasil: {$berhasil}, Skip: {$skip}");
     }
 
     public function destroy(Tagihan $tagihan)
