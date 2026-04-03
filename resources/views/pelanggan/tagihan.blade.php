@@ -169,7 +169,7 @@ function pilihBayar(tipe) {
     document.getElementById('pilihanMetode').style.display = 'none';
     document.getElementById('loadingBayar').style.display = 'block';
 
-    fetch(`/pelanggan/payment/${activeNoTagihan}/midtrans`, {
+    fetch(`/pelanggan/payment/${activeNoTagihan}/va`, {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,

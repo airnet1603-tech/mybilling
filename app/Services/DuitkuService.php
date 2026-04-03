@@ -51,7 +51,7 @@ class DuitkuService
 
         Log::info('Duitku Create Transaction', $body);
 
-        $response = Http::post($this->baseUrl . '/api/merchant/createInvoice', $body);
+        $response = Http::post($this->baseUrl . '/api/merchant/v2/inquiry', $body);
 
         Log::info('Duitku Response', ['status' => $response->status(), 'body' => $response->body()]);
 

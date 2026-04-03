@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Pelanggan;
 use App\Models\Tagihan;
 use App\Services\MikrotikService;
+use App\Services\FonnteService;
 use Illuminate\Http\Request;
 
 class TagihanController extends Controller
@@ -48,7 +49,7 @@ class TagihanController extends Controller
         ]);
         $pelanggan = Pelanggan::with('paket')->findOrFail($request->pelanggan_id);
         $harga     = $pelanggan->paket->harga;
-        Tagihan::create([
+        $tagihan = Tagihan::create([
             'no_tagihan'      => Tagihan::generateNomor(),
             'pelanggan_id'    => $pelanggan->id,
             'paket_id'        => $pelanggan->paket_id,
@@ -62,6 +63,23 @@ class TagihanController extends Controller
             'status'          => 'unpaid',
             'catatan'         => $request->catatan,
         ]);
+
+        // Kirim notifikasi WA
+        if ($pelanggan->no_hp) {
+            try {
+                $fonnte = new FonnteService();
+                $fonnte->sendTagihan(
+                    $pelanggan->no_hp,
+                    $pelanggan->nama,
+                    now()->format('F Y'),
+                    $tagihan->total,
+                    \Carbon\Carbon::parse($request->tgl_jatuh_tempo)->format('d/m/Y')
+                );
+            } catch (\Exception $e) {
+                \Log::warning('Gagal kirim WA tagihan: ' . $e->getMessage());
+            }
+        }
+
         return redirect('/admin/tagihan')->with('success', 'Tagihan berhasil dibuat!');
     }
 
@@ -90,6 +108,7 @@ class TagihanController extends Controller
             'status'      => 'aktif',
             'tgl_expired' => $expired,
         ]);
+
         // AUTO AKTIFKAN DI MIKROTIK
         if ($pelanggan->router) {
             try {
@@ -106,6 +125,7 @@ class TagihanController extends Controller
                 \Log::warning("Gagal aktifkan MikroTik untuk {$pelanggan->username}: " . $e->getMessage());
             }
         }
+
         \App\Models\Pembayaran::create([
             'no_pembayaran' => 'PAY-' . now()->format('YmdHis'),
             'tagihan_id'    => $tagihan->id,
@@ -115,6 +135,22 @@ class TagihanController extends Controller
             'catatan'       => $request->catatan,
             'created_by'    => auth()->id(),
         ]);
+
+        // Kirim notifikasi WA konfirmasi bayar
+        if ($pelanggan->no_hp) {
+            try {
+                $fonnte = new FonnteService();
+                $fonnte->sendKonfirmasiBayar(
+                    $pelanggan->no_hp,
+                    $pelanggan->nama,
+                    \Carbon\Carbon::parse($tagihan->periode_bulan)->format('F Y'),
+                    $tagihan->total
+                );
+            } catch (\Exception $e) {
+                \Log::warning('Gagal kirim WA konfirmasi: ' . $e->getMessage());
+            }
+        }
+
         return back()->with('success', 'Pembayaran berhasil dikonfirmasi! Pelanggan aktif kembali.');
     }
 
@@ -124,13 +160,14 @@ class TagihanController extends Controller
         $berhasil = 0;
         $skip     = 0;
         $pelanggans = Pelanggan::with('paket')->whereIn('status', ['aktif', 'isolir'])->get();
+        $fonnte = new FonnteService();
         foreach ($pelanggans as $pelanggan) {
             $sudahAda = Tagihan::where('pelanggan_id', $pelanggan->id)
                 ->whereMonth('periode_bulan', now()->month)
                 ->whereYear('periode_bulan', now()->year)
                 ->exists();
             if ($sudahAda) { $skip++; continue; }
-            Tagihan::create([
+            $tagihan = Tagihan::create([
                 'no_tagihan'      => Tagihan::generateNomor(),
                 'pelanggan_id'    => $pelanggan->id,
                 'paket_id'        => $pelanggan->paket_id,
@@ -143,6 +180,22 @@ class TagihanController extends Controller
                 'tgl_jatuh_tempo' => now()->day($hariJatuhTempo),
                 'status'          => 'unpaid',
             ]);
+
+            // Kirim notifikasi WA
+            if ($pelanggan->no_hp) {
+                try {
+                    $fonnte->sendTagihan(
+                        $pelanggan->no_hp,
+                        $pelanggan->nama,
+                        now()->format('F Y'),
+                        $tagihan->total,
+                        now()->day($hariJatuhTempo)->format('d/m/Y')
+                    );
+                } catch (\Exception $e) {
+                    \Log::warning('Gagal kirim WA: ' . $e->getMessage());
+                }
+            }
+
             $berhasil++;
         }
         return back()->with('success', "Generate selesai! Berhasil: {$berhasil}, Skip (sudah ada): {$skip}");
@@ -157,6 +210,7 @@ class TagihanController extends Controller
 
         $berhasil = 0;
         $skip     = 0;
+        $fonnte = new FonnteService();
 
         foreach ($request->tagihan_ids as $id) {
             $tagihan = Tagihan::with('pelanggan.paket', 'pelanggan.router')->find($id);
@@ -195,6 +249,21 @@ class TagihanController extends Controller
                 'catatan'       => $request->catatan,
                 'created_by'    => auth()->id(),
             ]);
+
+            // Kirim notifikasi WA konfirmasi bayar massal
+            if ($pelanggan->no_hp) {
+                try {
+                    $fonnte->sendKonfirmasiBayar(
+                        $pelanggan->no_hp,
+                        $pelanggan->nama,
+                        \Carbon\Carbon::parse($tagihan->periode_bulan)->format('F Y'),
+                        $tagihan->total
+                    );
+                } catch (\Exception $e) {
+                    \Log::warning('Gagal kirim WA: ' . $e->getMessage());
+                }
+            }
+
             $berhasil++;
         }
 

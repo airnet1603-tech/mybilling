@@ -60,7 +60,7 @@ class DuitkuPaymentController extends Controller
                 'nama_pelanggan' => $pelanggan->nama,
                 'email'          => $pelanggan->email ?? 'pelanggan@isp.com',
                 'product_details'=> 'Tagihan Internet ' . $tagihan->periode,
-                'payment_method' => 'VC',
+                'payment_method' => 'BR',
                 'expiry_period'  => 1440,
             ]);
 

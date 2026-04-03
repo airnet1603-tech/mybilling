@@ -145,6 +145,17 @@
         Belum ada tagihan
     </div>
     @endif
+
+    {{-- Kontak Support --}}
+    <div class="section-card">
+        <h6><i class="fas fa-headset text-primary me-2"></i>Kontak Support</h6>
+        <div class="d-flex flex-column gap-2" style="font-size:0.88rem">
+            <div><i class="fas fa-envelope me-2 text-muted"></i><strong>Email:</strong> support@airnetps.my.id</div>
+            <div><i class="fas fa-phone me-2 text-muted"></i><strong>Telepon/WA:</strong> 085645785634 </div>
+            <div><i class="fas fa-map-marker-alt me-2 text-muted"></i><strong>Alamat:</strong> Desa Sumberdadap-Kecamatan Pucanglaban-Kabupaten Tulungagung</div>
+        </div>
+    </div>
+
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
