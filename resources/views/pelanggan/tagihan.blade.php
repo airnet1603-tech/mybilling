@@ -129,18 +129,53 @@
                         <span class="fw-bold" id="modalJumlah"></span>
                     </div>
                 </div>
-                <div id="pilihanMetode">
-                    <div class="pay-option w-100" onclick="pilihBayar('va')" style="cursor:pointer;border:1px solid #dee2e6;border-radius:12px;padding:16px;text-align:center;">
+                @php
+                    $gwDuitku   = \App\Models\PaymentSetting::isActive('duitku');
+                    $gwMidtrans = \App\Models\PaymentSetting::isActive('midtrans');
+                    $gwManual   = \App\Models\PaymentSetting::isActive('manual');
+                    $manualInfo = \App\Models\PaymentSetting::getGateway('manual');
+                @endphp
+                <div id="pilihanMetode" style="display:flex;flex-direction:column;gap:10px;">
+                    @if($gwDuitku)
+                    <div class="pay-option w-100" onclick="pilihBayar('duitku')" style="cursor:pointer;border:1px solid #dee2e6;border-radius:12px;padding:16px;text-align:center;">
                         <div class="d-flex justify-content-center align-items-center gap-2 mb-2 flex-wrap">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg" height="24" alt="BCA" title="BCA">
-                            <img src="https://upload.wikimedia.org/wikipedia/id/thumb/5/5c/Bank_BRI_2020.svg/120px-Bank_BRI_2020.svg.png" height="24" alt="BRI" title="BRI">
-                            <img src="https://upload.wikimedia.org/wikipedia/id/thumb/5/55/BNI_logo.svg/120px-BNI_logo.svg.png" height="24" alt="BNI" title="BNI">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/a/ad/Bank_Mandiri_logo_2008.svg" height="24" alt="Mandiri" title="Mandiri">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/120px-Logo_QRIS.svg.png" height="24" alt="QRIS" title="QRIS">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg" height="22" alt="BCA">
+                            <img src="https://upload.wikimedia.org/wikipedia/id/thumb/5/5c/Bank_BRI_2020.svg/120px-Bank_BRI_2020.svg.png" height="22" alt="BRI">
+                            <img src="https://upload.wikimedia.org/wikipedia/id/thumb/5/55/BNI_logo.svg/120px-BNI_logo.svg.png" height="22" alt="BNI">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/120px-Logo_QRIS.svg.png" height="22" alt="QRIS">
                         </div>
-                        <div class="fw-bold">Bayar Sekarang</div>
+                        <div class="fw-bold">Bayar via Duitku</div>
                         <div class="text-muted small">Virtual Account & QRIS semua bank</div>
                     </div>
+                    @endif
+                    @if($gwMidtrans)
+                    <div class="pay-option w-100" onclick="pilihBayar('midtrans')" style="cursor:pointer;border:1px solid #dee2e6;border-radius:12px;padding:16px;text-align:center;">
+                        <div class="d-flex justify-content-center align-items-center gap-2 mb-2 flex-wrap">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/a/ad/Bank_Mandiri_logo_2008.svg" height="22" alt="Mandiri">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/120px-Logo_QRIS.svg.png" height="22" alt="QRIS">
+                        </div>
+                        <div class="fw-bold">Bayar via Midtrans</div>
+                        <div class="text-muted small">VA Semua Bank, QRIS, GoPay, dll</div>
+                    </div>
+                    @endif
+                    @if($gwManual)
+                    <div class="pay-option w-100" style="border:1px solid #dee2e6;border-radius:12px;padding:16px;">
+                        <div class="fw-bold mb-1"><i class="fas fa-university me-2"></i>Transfer Manual</div>
+                        <div class="text-muted small">
+                            {{ $manualInfo['nama_bank'] ?? '' }} - {{ $manualInfo['no_rekening'] ?? '' }}<br>
+                            a/n {{ $manualInfo['atas_nama'] ?? '' }}
+                        </div>
+                        @if(!empty($manualInfo['instruksi']))
+                        <div class="text-muted small mt-1">{{ $manualInfo['instruksi'] }}</div>
+                        @endif
+                    </div>
+                    @endif
+                    @if(!$gwDuitku && !$gwMidtrans && !$gwManual)
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-exclamation-circle fa-2x mb-2"></i>
+                        <p class="small">Belum ada metode pembayaran yang aktif.<br>Hubungi admin.</p>
+                    </div>
+                    @endif
                 </div>
                 <div id="loadingBayar" style="display:none;" class="text-center py-3">
                     <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
@@ -165,11 +200,18 @@ function bukaPilihBayar(noTagihan, amount) {
     new bootstrap.Modal(document.getElementById('modalBayar')).show();
 }
 
-function pilihBayar(tipe) {
+function pilihBayar(gateway) {
     document.getElementById('pilihanMetode').style.display = 'none';
     document.getElementById('loadingBayar').style.display = 'block';
 
-    fetch(`/pelanggan/payment/${activeNoTagihan}/va`, {
+    const urls = {
+        'duitku':   `/pelanggan/payment/${activeNoTagihan}/va`,
+        'midtrans': `/pelanggan/payment/${activeNoTagihan}/midtrans`,
+    };
+    const url = urls[gateway];
+    if (!url) return;
+
+    fetch(url, {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,

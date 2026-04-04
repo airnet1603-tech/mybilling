@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pengaturan – ISP Billing</title>
+    <title>Pengaturan ï¿½ ISP Billing</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -166,6 +166,11 @@
             <li class="nav-item">
                 <a class="nav-link" data-bs-toggle="tab" href="#whatsapp">
                     <i class="fab fa-whatsapp me-1"></i> WhatsApp
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/setting/payment-gateway">
+                    <i class="fas fa-credit-card me-1"></i> Payment Gateway
                 </a>
             </li>
         </ul>

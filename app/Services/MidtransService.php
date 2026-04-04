@@ -11,8 +11,10 @@ class MidtransService
 
     public function __construct()
     {
-        $this->serverKey = config('midtrans.server_key');
-        $this->baseUrl   = config('midtrans.is_production')
+        $s = \App\Models\PaymentSetting::getGateway('midtrans');
+        $this->serverKey = $s['server_key'] ?? config('midtrans.server_key');
+        $mode = $s['mode'] ?? 'sandbox';
+        $this->baseUrl = $mode === 'production'
             ? 'https://api.midtrans.com'
             : 'https://api.sandbox.midtrans.com';
     }

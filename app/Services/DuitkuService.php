@@ -12,9 +12,11 @@ class DuitkuService
 
     public function __construct()
     {
-        $this->merchantCode = config('duitku.merchant_code');
-        $this->apiKey       = config('duitku.api_key');
-        $this->baseUrl      = config('duitku.env') === 'production'
+        $s = \App\Models\PaymentSetting::getGateway('duitku');
+        $this->merchantCode = $s['merchant_code'] ?? config('duitku.merchant_code');
+        $this->apiKey       = $s['api_key']       ?? config('duitku.api_key');
+        $mode = $s['mode'] ?? config('duitku.env', 'sandbox');
+        $this->baseUrl = $mode === 'production'
             ? 'https://passport.duitku.com/webapi'
             : 'https://sandbox.duitku.com/webapi';
     }

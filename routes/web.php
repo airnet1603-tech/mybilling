@@ -62,6 +62,8 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::get('setting',  [SettingController::class, 'index'])->name('setting.index');
         Route::put('setting',  [SettingController::class, 'update'])->name('setting.update');
+            Route::get('setting/payment-gateway', [App\Http\Controllers\Admin\PaymentGatewayController::class, 'index'])->name('setting.payment-gateway.index');
+            Route::put('setting/payment-gateway/{gateway}', [App\Http\Controllers\Admin\PaymentGatewayController::class, 'update'])->name('setting.payment-gateway.update');
         Route::resource('users', UserController::class)->names('users');
     });
 });
