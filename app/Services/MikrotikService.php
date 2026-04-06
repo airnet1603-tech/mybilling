@@ -29,7 +29,8 @@ class MikrotikService
     public function testConnection($router)
     {
         try {
-            $this->connect($router->ip_address, $router->username, $router->password, $router->port);
+            $ip = (!empty($router->use_wireguard) && !empty($router->wg_ip)) ? $router->wg_ip : $router->ip_address;
+            $this->connect($ip, $router->username, $router->password, $router->port);
             $result = $this->api->comm('/system/identity/print');
             $this->disconnect();
             return ['status' => true, 'message' => 'Koneksi berhasil', 'identity' => $result[0]['name'] ?? '-'];

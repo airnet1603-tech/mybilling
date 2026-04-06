@@ -31,14 +31,16 @@
     </style>
 </head>
 <body>
-<div class="sidebar">
-    <div class="sidebar-brand">
-        <div class="brand-icon"><img src="https://airnetps.my.id/app/icon/icon_airnet.png" style="height:38px;object-fit:contain;background:#ffffff;padding:2px 4px;border-radius:8px 0px 8px 0px;"></div>
+@include('admin.partials.sidebar')
         <div><span class="brand-title">ISP BILLING</span><span class="brand-sub">Management System</span></div>
     </div>
     <nav class="sidebar-nav">
         <a href="/admin/dashboard" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-        <a href="/admin/pelanggan" class="nav-link"><i class="fas fa-users"></i> Pelanggan</a>
+        <a href="/admin/pelanggan/peta" class="nav-link"><i class="fas fa-map-marked-alt"></i> Peta
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/pelanggan" class="nav-link"><i class="fas fa-users"></i> Pelanggan</a>
         <a href="/admin/paket" class="nav-link"><i class="fas fa-box"></i> Paket Internet</a>
         <a href="/admin/tagihan" class="nav-link"><i class="fas fa-file-invoice"></i> Tagihan</a>
         <a href="/admin/pembayaran" class="nav-link"><i class="fas fa-money-bill-wave"></i> Pembayaran</a>
@@ -112,6 +114,23 @@
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var hamburgerBtn = document.getElementById("hamburgerBtn");
+    var sidebar = document.getElementById("sidebar");
+    var sidebarOverlay = document.getElementById("sidebarOverlay");
+    if(hamburgerBtn) {
+        hamburgerBtn.addEventListener("click", function() {
+            sidebar.classList.toggle("open");
+            sidebarOverlay.classList.toggle("show");
+        });
+        sidebarOverlay.addEventListener("click", function() {
+            sidebar.classList.remove("open");
+            sidebarOverlay.classList.remove("show");
+        });
+    }
+});
+</script>
 <script>
 function selectRole(el,val){document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');el.querySelector('input').checked=true;}
 </script>

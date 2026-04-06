@@ -116,3 +116,5 @@ Route::prefix('admin/csv')->middleware(['auth', 'role:admin,operator'])->group(f
     Route::post('/pelanggan/import',      [App\Http\Controllers\Admin\CsvImportController::class, 'importPelanggan'])->name('csv.pelanggan.import');
     Route::post('/paket/import',          [App\Http\Controllers\Admin\CsvImportController::class, 'importPaket'])->name('csv.paket.import');
 });
+Route::post('/admin/mikrotik/{router}/wireguard/setup', [App\Http\Controllers\Admin\MikrotikController::class, 'setupWireguard'])->name('mikrotik.wireguard.setup');
+Route::get('/admin/mikrotik/{router}/wireguard/config', [App\Http\Controllers\Admin\MikrotikController::class, 'getWireguardConfig'])->name('mikrotik.wireguard.config');

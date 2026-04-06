@@ -72,6 +72,8 @@ class MikrotikController extends Controller
     public function updatePppoeSetting(Request $request, Router $router)
     {
         $router->update([
+            'ip_address'     => $request->ip_address ?: $router->ip_address,
+            'port'           => $request->port ?: $router->port,
             'local_address'  => $request->local_address,
             'remote_address' => $request->remote_address,
             'dns_server'     => $request->dns_server,
@@ -98,8 +100,9 @@ class MikrotikController extends Controller
 
     public function monitoring()
     {
+        $singleRouter = null;
         $routers = Router::where('is_active', true)->get();
-        return view('admin.mikrotik.monitoring', compact('routers'));
+        return view('admin.mikrotik.monitoring', compact('routers', 'singleRouter'));
     }
 
     public function getStats(Router $router)
@@ -411,5 +414,45 @@ class MikrotikController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal nonaktifkan: ' . $e->getMessage());
         }
+    }
+    public function setupWireguard(Router $router)
+    {
+        try {
+            $wg        = new \App\Services\WireguardService();
+            $vpsPublic = $wg->getVpsPublicKey();
+            if ($router->use_wireguard && $router->wg_ip && $router->wg_private_key) {
+                $config = $wg->getMikrotikConfig($router->wg_private_key, $router->wg_ip, $vpsPublic);
+                return response()->json(['status' => true, 'wg_ip' => $router->wg_ip, 'config' => $config, 'message' => "WireGuard sudah terkonfigurasi. IP tunnel: {$router->wg_ip}"]);
+            }
+            $keypair   = $wg->generateKeypair();
+            $wgIp      = $wg->getNextAvailableIp();
+
+            $router->update([
+                'use_wireguard'  => true,
+                'wg_public_key'  => $keypair['public'],
+                'wg_private_key' => $keypair['private'],
+                'wg_ip'          => $wgIp,
+            ]);
+
+            $wg->addPeer($keypair['public'], $wgIp);
+
+            $config = $wg->getMikrotikConfig($keypair['private'], $wgIp, $vpsPublic);
+
+            return response()->json([
+                'status'  => true,
+                'wg_ip'   => $wgIp,
+                'config'  => $config,
+                'message' => "WireGuard berhasil! IP tunnel: $wgIp",
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function getWireguardConfig(Router $router)
+    {
+        $wg     = new \App\Services\WireguardService();
+        $config = $wg->getMikrotikConfig($router->wg_private_key, $router->wg_ip, $wg->getVpsPublicKey());
+        return response()->json(['status' => true, 'config' => $config, 'wg_ip' => $router->wg_ip]);
     }
 }

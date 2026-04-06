@@ -22,9 +22,24 @@ class RouterosAPI
 
     private function login($login, $password)
     {
+        // Coba plain login dulu (RouterOS v7)
         $result = $this->comm('/login', ['name' => $login, 'password' => $password]);
+
         if (isset($result[0]['!trap'])) {
             throw new Exception("Login gagal: " . ($result[0]['message'] ?? 'Unknown error'));
+        }
+
+        // Jika ada challenge (RouterOS v6), pakai MD5
+        if (isset($result[0]['ret'])) {
+            $challenge = pack('H*', $result[0]['ret']);
+            $hash = md5(chr(0) . $password . $challenge);
+            $result2 = $this->comm('/login', [
+                'name'     => $login,
+                'response' => '00' . $hash,
+            ]);
+            if (isset($result2[0]['!trap'])) {
+                throw new Exception("Login gagal: " . ($result2[0]['message'] ?? 'Unknown error'));
+            }
         }
     }
 

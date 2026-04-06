@@ -31,7 +31,8 @@
             transition: transform 0.3s ease;
         }
         .sidebar-brand { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; }
-        .sidebar-brand .brand-icon { width: 70px; height: 40px; background: rgba(233,69,96,0.25); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 1rem; }
+        .sidebar-brand .brand-icon { width: 70px; height: 40px; background: rgba(233,69,96,0.25); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 1rem; flex-shrink: 0; }
+        .sidebar-brand .brand-text { line-height: 1.2; }
         .sidebar-brand .brand-title { color: #fff; font-weight: 700; font-size: 0.9rem; display: block; }
         .sidebar-brand .brand-sub { color: rgba(255,255,255,0.45); font-size: 0.7rem; }
         .sidebar-nav { padding: 8px 0; flex: 1; }
@@ -50,7 +51,7 @@
             top: 0; left: 0; right: 0;
             height: 54px;
             background: linear-gradient(90deg, var(--sidebar-bg-start), var(--sidebar-bg-end));
-            z-index: 1040;
+            z-index: 1060;
             align-items: center;
             padding: 0 14px;
             gap: 12px;
@@ -101,59 +102,24 @@
             .sidebar.open { transform: translateX(0); }
             .main-content { margin-left: 0; padding: 70px 14px 14px; }
         }
-    </style>
+    #editModal .modal-body { max-height: 60vh; overflow-y: auto; }
+</style>
 </head>
 <body>
 
 {{-- Topbar Mobile (hamburger) --}}
-<div class="mobile-topbar">
-    <button class="hamburger-btn" id="hamburgerBtn">
-        <i class="fas fa-bars"></i>
-    </button>
-    <span class="brand-title">ISP Billing</span>
-</div>
-
-<!-- Overlay -->
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <!-- SIDEBAR -->
-<div class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-        <div class="brand-icon"><img src="https://airnetps.my.id/app/icon/icon_airnet.png" style="height:38px;object-fit:contain;background:#ffffff;padding:2px 4px;border-radius:8px 0px 8px 0px;"></div>
-        <div class="brand-text">
-            <span class="brand-title">ISP Billing</span>
-            <span class="brand-sub">Management System</span>
-        </div>
-    </div>
-    <nav class="sidebar-nav">
-        <ul class="nav flex-column mb-0">
-            <li><a href="/admin/dashboard" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li><a href="/admin/pelanggan" class="nav-link"><i class="fas fa-users"></i> Pelanggan</a></li>
-            <li><a href="/admin/paket" class="nav-link"><i class="fas fa-box"></i> Paket Internet</a></li>
-            <li><a href="/admin/tagihan" class="nav-link"><i class="fas fa-file-invoice-dollar"></i> Tagihan</a></li>
-            <li><a href="/admin/pembayaran" class="nav-link"><i class="fas fa-money-bill-wave"></i> Pembayaran</a></li>
-            <li><a href="/admin/laporan" class="nav-link"><i class="fas fa-chart-bar"></i> Laporan</a></li>
-            <li><a href="/admin/mikrotik" class="nav-link active"><i class="fas fa-network-wired"></i> Mikrotik</a></li>
-        </ul>
-        <div class="sidebar-divider"></div>
-        <ul class="nav flex-column">
-            <li><a href="/admin/setting" class="nav-link"><i class="fas fa-cog"></i> Pengaturan</a></li>
-            <li>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
-                </form>
-            </li>
-        </ul>
-    </nav>
-</div>
-
+@include('admin.partials.sidebar')
 <!-- MAIN CONTENT -->
 <div class="main-content">
 
-    <div class="mb-4">
-        <h5 class="fw-bold mb-0">Manajemen Router Mikrotik</h5>
-        <small class="text-muted">Kelola koneksi router</small>
+    <div class="mb-4 d-flex align-items-center justify-content-between">
+        <div>
+            <h5 class="fw-bold mb-0">Manajemen Router Mikrotik</h5>
+            <small class="text-muted">Kelola koneksi router</small>
+        </div>
+        <a href="/admin/wireguard" class="btn btn-sm text-white" style="background:#6f42c1;"><i class="fas fa-shield-alt"></i> WireGuard</a>
     </div>
 
     @if(session('success'))
@@ -303,7 +269,7 @@
                                             class="btn btn-sm btn-info text-white py-0 px-2" title="Test Koneksi">
                                             <i class="fas fa-plug fa-xs"></i>
                                         </button>
-                                        <button onclick="editRouter({{ $router->id }}, '{{ $router->nama }}', '{{ $router->local_address }}', '{{ $router->remote_address }}', '{{ $router->dns_server }}')"
+                                        <button onclick="editRouter({{ $router->id }}, '{{ $router->nama }}', '{{ $router->local_address }}', '{{ $router->remote_address }}', '{{ $router->dns_server }}', '{{ $router->ip_address }}', '{{ $router->port }}')"
                                             class="btn btn-sm btn-warning py-0 px-2" title="Edit Setting PPPoE">
                                             <i class="fas fa-edit fa-xs"></i>
                                         </button>
@@ -311,6 +277,7 @@
                                             class="btn btn-sm btn-success py-0 px-2" title="Import Setting dari RB">
                                             <i class="fas fa-download fa-xs"></i>
                                         </button>
+                                        <button onclick="setupWireguard({{ $router->id }}, '{{ $router->nama }}')" class="btn btn-sm py-0 px-2 text-white" style="background:#6f42c1;" title="Setup WireGuard"><i class="fas fa-shield-alt fa-xs"></i></button>
                                         <form method="POST" action="/admin/mikrotik/{{ $router->id }}"
                                               onsubmit="return confirm('Hapus router ini?')">
                                             @csrf @method('DELETE')
@@ -358,7 +325,7 @@
 
 <!-- MODAL EDIT SETTING PPPoE -->
 <div class="modal fade" id="editModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-dialog modal-dialog-scrollable" style="max-height:95vh;">
         <div class="modal-content">
             <div class="modal-header">
                 <h6 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Setting PPPoE Router</h6>
@@ -369,6 +336,15 @@
                 @method('PATCH')
                 <div class="modal-body">
                     <p class="text-muted small mb-3">Router: <strong id="editRouterNama"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">IP Address Router</label>
+                        <input type="text" name="ip_address" id="editIpAddress" class="form-control form-control-sm" placeholder="Contoh: 192.168.1.1 atau 10.10.10.x">
+                        <div class="form-text" style="font-size:0.7rem;">IP publik atau WireGuard IP router</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Port API</label>
+                        <input type="number" name="port" id="editPort" class="form-control form-control-sm" placeholder="8728">
+                    </div>
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">Local Address (gateway PPPoE)</label>
                         <input type="text" name="local_address" id="editLocalAddress" class="form-control form-control-sm" placeholder="Contoh: 103.x.x.1">
@@ -524,17 +500,118 @@
     </div>
 </div>
 
+<!-- MODAL WIREGUARD -->
+<div class="modal fade" id="wgModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#6f42c1;color:white;">
+                <h6 class="modal-title"><i class="fas fa-shield-alt me-2"></i>Setup WireGuard</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">Router: <strong id="wgRouterNama"></strong></p>
+                <div id="wgLoading" class="text-center py-3">
+                    <i class="fas fa-spinner fa-spin fa-2x" style="color:#6f42c1;"></i>
+                    <p class="mt-2 small">Membuat konfigurasi WireGuard...</p>
+                </div>
+                <div id="wgResult" style="display:none;">
+                    <div class="alert alert-success py-2 small">
+                        <i class="fas fa-check-circle me-1"></i>
+                        WireGuard berhasil dikonfigurasi! IP Tunnel: <strong id="wgIp"></strong>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">
+                            <i class="fas fa-terminal me-1"></i>
+                            Paste command berikut di terminal Mikrotik (New Terminal di Winbox):
+                        </label>
+                        <textarea id="wgConfig" class="form-control form-control-sm font-monospace" rows="4" readonly style="font-size:0.75rem;background:#1e1e1e;color:#00ff00;"></textarea>
+                    </div>
+                    <div class="alert alert-info py-2 small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Setelah paste di Mikrotik, update IP Address router ini di billing menjadi <strong id="wgIpInfo"></strong> dan port <strong>18728</strong>.
+                    </div>
+                </div>
+                <div id="wgError" style="display:none;" class="text-center py-2">
+                    <i class="fas fa-times-circle fa-2x text-danger"></i>
+                    <p class="mt-2 small fw-semibold text-danger" id="wgErrorMsg"></p>
+                </div>
+            </div>
+            <div class="modal-footer" id="wgFooter" style="display:none;">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+                <button type="button" class="btn btn-sm text-white" style="background:#6f42c1;" onclick="copyWgConfig()">
+                    <i class="fas fa-copy me-1"></i> Copy Config
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// ===== HAMBURGER MENU (sama dengan show.blade) =====
-var hamburgerBtn   = document.getElementById('hamburgerBtn');
-var sidebar        = document.getElementById('sidebar');
-var sidebarOverlay = document.getElementById('sidebarOverlay');
-
-hamburgerBtn.addEventListener('click', function () {
-    sidebar.classList.toggle('open');
-    sidebarOverlay.classList.toggle('show');
+document.addEventListener("DOMContentLoaded", function() {
+    var hamburgerBtn = document.getElementById("hamburgerBtn");
+    var sidebar = document.getElementById("sidebar");
+    var sidebarOverlay = document.getElementById("sidebarOverlay");
+    if(hamburgerBtn) {
+        hamburgerBtn.addEventListener("click", function() {
+            sidebar.classList.toggle("open");
+            sidebarOverlay.classList.toggle("show");
+        });
+        sidebarOverlay.addEventListener("click", function() {
+            sidebar.classList.remove("open");
+            sidebarOverlay.classList.remove("show");
+        });
+    }
 });
+</script>
+<script>
+// ===== HAMBURGER MENU (sama dengan show.blade) =====
+// ===== WIREGUARD =====
+let currentWgRouterId = null;
+
+function setupWireguard(id, nama) {
+    currentWgRouterId = id;
+    document.getElementById('wgRouterNama').textContent = nama;
+    document.getElementById('wgLoading').style.display = 'block';
+    document.getElementById('wgResult').style.display = 'none';
+    document.getElementById('wgError').style.display = 'none';
+    document.getElementById('wgFooter').style.display = 'none';
+
+    new bootstrap.Modal(document.getElementById('wgModal')).show();
+
+    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    fetch('/admin/mikrotik/' + id + '/wireguard/setup', {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': token, 'Content-Type': 'application/json' },
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('wgLoading').style.display = 'none';
+        if (!data.status) {
+            document.getElementById('wgError').style.display = 'block';
+            document.getElementById('wgErrorMsg').textContent = data.message || 'Gagal setup WireGuard';
+            return;
+        }
+        document.getElementById('wgIp').textContent = data.wg_ip;
+        document.getElementById('wgIpInfo').textContent = data.wg_ip;
+        document.getElementById('wgConfig').value = data.config;
+        document.getElementById('wgResult').style.display = 'block';
+        document.getElementById('wgFooter').style.display = 'flex';
+    })
+    .catch(() => {
+        document.getElementById('wgLoading').style.display = 'none';
+        document.getElementById('wgError').style.display = 'block';
+        document.getElementById('wgErrorMsg').textContent = 'Gagal koneksi ke server';
+    });
+}
+
+function copyWgConfig() {
+    const config = document.getElementById('wgConfig');
+    config.select();
+    document.execCommand('copy');
+    alert('Config berhasil dicopy!');
+}
+
 sidebarOverlay.addEventListener('click', function () {
     sidebar.classList.remove('open');
     sidebarOverlay.classList.remove('show');
@@ -637,8 +714,10 @@ function testKoneksi(id, nama) {
         });
 }
 
-function editRouter(id, nama, local, remote, dns) {
+function editRouter(id, nama, local, remote, dns, ip, port) {
     document.getElementById('editRouterNama').textContent = nama;
+    document.getElementById('editIpAddress').value = ip || '';
+    document.getElementById('editPort').value = port || '8728';
     document.getElementById('editLocalAddress').value = local || '';
     document.getElementById('editRemoteAddress').value = remote || '';
     document.getElementById('editDnsServer').value = dns || '';
