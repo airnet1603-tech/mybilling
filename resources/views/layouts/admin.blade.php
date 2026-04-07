@@ -127,6 +127,12 @@
                 </a>
             </li>
             <li class="nav-item">
+                            <li class="nav-item">
+                <a href="/admin/topologi" class="nav-link {{ request()->is('admin/topologi*') ? 'active' : '' }}">
+                    <i class="fas fa-project-diagram"></i> OLT
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="/admin/pelanggan" class="nav-link {{ request()->is('admin/pelanggan') || (request()->is('admin/pelanggan/*') && !request()->is('admin/pelanggan/peta')) ? 'active' : '' }}">
                     <i class="fas fa-users"></i> Pelanggan
                 </a>

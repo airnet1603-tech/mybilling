@@ -118,3 +118,19 @@ Route::prefix('admin/csv')->middleware(['auth', 'role:admin,operator'])->group(f
 });
 Route::post('/admin/mikrotik/{router}/wireguard/setup', [App\Http\Controllers\Admin\MikrotikController::class, 'setupWireguard'])->name('mikrotik.wireguard.setup');
 Route::get('/admin/mikrotik/{router}/wireguard/config', [App\Http\Controllers\Admin\MikrotikController::class, 'getWireguardConfig'])->name('mikrotik.wireguard.config');
+
+// Topologi OLT
+Route::prefix('admin/topologi')->middleware(['auth', 'role:admin,operator'])->group(function () {
+    Route::get('/', [App\Http\Controllers\Admin\TopologiController::class, 'index'])->name('topologi.index');
+    
+
+    Route::get('/olt/{id}/edit', [App\Http\Controllers\Admin\TopologiController::class, 'editOlt'])->name('topologi.olt.edit');
+    Route::put('/olt/{id}', [App\Http\Controllers\Admin\TopologiController::class, 'updateOlt'])->name('topologi.olt.update');
+    Route::delete('/olt/{id}', [App\Http\Controllers\Admin\TopologiController::class, 'destroyOlt'])->name('topologi.olt.destroy');
+    Route::get('/olt/create', [App\Http\Controllers\Admin\TopologiController::class, 'createOlt'])->name('topologi.olt.create');
+    Route::post('/olt/store', [App\Http\Controllers\Admin\TopologiController::class, 'storeOlt'])->name('topologi.olt.store');
+    Route::get('/olt/{id}', [App\Http\Controllers\Admin\TopologiController::class, 'showOlt'])->name('topologi.olt');
+    Route::post('/sync-onu/{olt_id}', [App\Http\Controllers\Admin\TopologiController::class, 'syncOnu'])->name('topologi.sync');
+    Route::get('/api/nodes', [App\Http\Controllers\Admin\TopologiController::class, 'apiNodes'])->name('topologi.api.nodes');
+});
+

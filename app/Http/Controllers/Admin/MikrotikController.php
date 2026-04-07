@@ -425,7 +425,10 @@ class MikrotikController extends Controller
                 return response()->json(['status' => true, 'wg_ip' => $router->wg_ip, 'config' => $config, 'message' => "WireGuard sudah terkonfigurasi. IP tunnel: {$router->wg_ip}"]);
             }
             $keypair   = $wg->generateKeypair();
-            $wgIp      = $wg->getNextAvailableIp();
+            $subnet    = request()->input("subnet", "10.10.10");
+            // Pastikan subnet valid
+            if (!in_array($subnet, ["10.10.10", "172.16.10"])) $subnet = "10.10.10";
+            $wgIp      = $wg->getNextAvailableIp($subnet);
 
             $router->update([
                 'use_wireguard'  => true,

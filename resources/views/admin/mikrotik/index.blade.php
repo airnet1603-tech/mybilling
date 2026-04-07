@@ -510,6 +510,13 @@
             </div>
             <div class="modal-body">
                 <p class="text-muted small mb-3">Router: <strong id="wgRouterNama"></strong></p>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold"><i class="fas fa-network-wired me-1"></i>Pilih Subnet WireGuard</label>
+                    <select id="wgSubnet" class="form-select form-select-sm">
+                        <option value="10.10.10">10.10.10.x (Default)</option>
+                        <option value="172.16.10">172.16.10.x (Non-Publik)</option>
+                    </select>
+                </div>
                 <div id="wgLoading" class="text-center py-3">
                     <i class="fas fa-spinner fa-spin fa-2x" style="color:#6f42c1;"></i>
                     <p class="mt-2 small">Membuat konfigurasi WireGuard...</p>
@@ -583,6 +590,7 @@ function setupWireguard(id, nama) {
     fetch('/admin/mikrotik/' + id + '/wireguard/setup', {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subnet: document.getElementById('wgSubnet').value }),
     })
     .then(r => r.json())
     .then(data => {
