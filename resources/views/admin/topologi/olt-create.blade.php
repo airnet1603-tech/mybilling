@@ -38,7 +38,23 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Model</label>
-                        <input type="text" name="model" class="form-control" placeholder="4P1GM" value="4P1GM">
+                        <select name="model" class="form-select" required>
+                            <option value="">-- Pilih Model --</option>
+                            @foreach([
+                                'HisFocus 4P1GM'  => 'HisFocus 4P1GM',
+                                'HisFocus 8P2GM'  => 'HisFocus 8P2GM',
+                                'HiOSO'           => 'HiOSO',
+                                'HSGQ'            => 'HSGQ',
+                                'ZTE C300'        => 'ZTE C300',
+                                'ZTE C320'        => 'ZTE C320',
+                                'Huawei MA5608T'  => 'Huawei MA5608T',
+                                'Huawei MA5800'   => 'Huawei MA5800',
+                                'FiberHome'       => 'FiberHome',
+                                'Nokia'           => 'Nokia',
+                            ] as $val => $label)
+                                <option value="{{ $val }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col">
@@ -48,6 +64,22 @@
                         <div class="col">
                             <label class="form-label fw-semibold">Password</label>
                             <input type="password" name="password" class="form-control" value="admin" required>
+                        </div>
+                    </div>
+
+                    <!-- Settings Tambahan -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">SNMP Community</label>
+                            <input type="text" name="snmp_community" class="form-control" placeholder="public" value="public">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">API Endpoint</label>
+                            <input type="text" name="api_endpoint" class="form-control" placeholder="/onuAllPonOnuList.asp" value="/onuAllPonOnuList.asp">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Sync Interval (menit)</label>
+                            <input type="number" name="sync_interval" class="form-control" placeholder="60" value="60" min="1">
                         </div>
                     </div>
 

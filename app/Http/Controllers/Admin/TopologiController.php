@@ -33,7 +33,7 @@ class TopologiController extends Controller
             'username'   => 'required',
             'password'   => 'required',
         ]);
-        $olt->update($request->only(['name','ip_address','username','password','lat','lng','model']));
+        $olt->update($request->only(['name','ip_address','username','password','snmp_community','api_endpoint','sync_interval','lat','lng','model']));
         return redirect('/admin/topologi')->with('success', 'OLT berhasil diupdate!');
     }
 
@@ -56,7 +56,7 @@ class TopologiController extends Controller
             'password'   => 'required',
         ]);
 
-        Olt::create($request->only(['name','ip_address','username','password','lat','lng','model']));
+        Olt::create($request->only(['name','ip_address','username','password','snmp_community','api_endpoint','sync_interval','lat','lng','model']));
 
         return redirect('/admin/topologi')->with('success', 'OLT berhasil ditambahkan!');
     }
@@ -122,12 +122,13 @@ class TopologiController extends Controller
             ]);
 
             // Ambil data ONU dari onuOverview.asp
-            $res  = $client->get('/onuOverview.asp');
+            // Gunakan api_endpoint dari setting OLT
+            $endpoint = $olt->api_endpoint ?? '/onuAllPonOnuList.asp';
+            $res  = $client->get($endpoint);
             $html = (string) $res->getBody();
 
             // Parse array JS: '0/1/1:1','name','mac','Up','fw','chip','port'
-            preg_match_all("/'([\d\/\:]+)','([^']*)','([0-9a-fA-F:]+)','(Up|Down)','([^']*)','([^']*)','([^']*)'/", $html, $m);
-
+            preg_match_all("/'([\d\/\:]+)','([^']*)','([0-9a-fA-F:]+)','(Up|Down)'/", $html, $m);
             $synced = 0;
             foreach ($m[1] as $i => $onuId) {
                 Onu::updateOrCreate(
@@ -136,7 +137,6 @@ class TopologiController extends Controller
                         'name'        => $m[2][$i],
                         'mac_address' => $m[3][$i],
                         'status'      => $m[4][$i],
-                        'port'        => $m[7][$i],
                     ]
                 );
                 $synced++;

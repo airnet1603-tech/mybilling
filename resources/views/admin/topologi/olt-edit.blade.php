@@ -35,8 +35,24 @@
                         <small class="text-muted">Contoh: 157.15.67.51:8088</small>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Model</label>
-                        <input type="text" name="model" class="form-control" value="{{ $olt->model }}">
+                        <label class="form-label fw-semibold">Model / Tipe OLT</label>
+                        <select name="model" class="form-select" required>
+                            <option value="">-- Pilih Model --</option>
+                            @foreach([
+                                'HisFocus 4P1GM'  => 'HisFocus 4P1GM',
+                                'HisFocus 8P2GM'  => 'HisFocus 8P2GM',
+                                'HiOSO'           => 'HiOSO',
+                                'HSGQ'            => 'HSGQ',
+                                'ZTE C300'        => 'ZTE C300',
+                                'ZTE C320'        => 'ZTE C320',
+                                'Huawei MA5608T'  => 'Huawei MA5608T',
+                                'Huawei MA5800'   => 'Huawei MA5800',
+                                'FiberHome'       => 'FiberHome',
+                                'Nokia'           => 'Nokia',
+                            ] as $val => $label)
+                                <option value="{{ $val }}" {{ $olt->model == $val ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col">
@@ -48,6 +64,23 @@
                             <input type="text" name="password" class="form-control" value="{{ $olt->password }}" required>
                         </div>
                     </div>
+
+                    <!-- Settings Tambahan -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">SNMP Community</label>
+                            <input type="text" name="snmp_community" class="form-control" value="{{ $olt->snmp_community ?? 'public' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">API Endpoint</label>
+                            <input type="text" name="api_endpoint" class="form-control" value="{{ $olt->api_endpoint ?? '/onuAllPonOnuList.asp' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Sync Interval (menit)</label>
+                            <input type="number" name="sync_interval" class="form-control" value="{{ $olt->sync_interval ?? 60 }}" min="1">
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Lokasi <small class="text-muted">(klik peta)</small></label>
                         <div class="coord-box mb-2 d-flex gap-3">
