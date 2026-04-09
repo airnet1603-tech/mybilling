@@ -63,6 +63,12 @@
                     <i class="fas fa-network-wired"></i> Mikrotik
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="/admin/topologi" class="nav-link {{ request()->is('admin/topologi') ? 'active' : '' }}">
+                    <i class="fas fa-server"></i> OLT
+                </a>
+            </li>
+
         </ul>
 
         <div class="sidebar-divider"></div>

@@ -80,27 +80,6 @@
                             <input type="number" name="sync_interval" class="form-control" value="{{ $olt->sync_interval ?? 60 }}" min="1">
                         </div>
                     </div>
-                    <div class="mb-3" id="hsgq-key-field" style="{{ $olt->model == 'HSGQ' ? '' : 'display:none' }}">
-                        <label class="form-label fw-semibold">HSGQ Key</label>
-                        <div class="input-group">
-                            <input type="text" name="hsgq_key" id="hsgq_key_input" class="form-control font-monospace" value="{{ $olt->hsgq_key }}" placeholder="contoh: 1761d487ba0cde5f285059b5cca9a22c">
-                            <button type="button" class="btn btn-outline-primary" id="btn-fetch-key" onclick="fetchHsgqKey()">
-                                <i class="fas fa-key"></i> Fetch Key Otomatis
-                            </button>
-                        </div>
-                        <div id="fetch-key-result" class="mt-1"></div>
-                        <div class="mt-2 p-2 bg-light border rounded small">
-                            <b><i class="fas fa-info-circle text-primary"></i> Cara ambil HSGQ Key manual:</b>
-                            <ol class="mb-1 mt-1 ps-3">
-                                <li>Buka browser, akses IP OLT: <code>http://<b>IP_LOKAL_OLT</b></code> (tanyakan ke teknisi jika tidak tahu IP lokalnya)</li>
-                                <li>Tekan <kbd>F12</kbd> → pilih tab <b>Network</b></li>
-                                <li>Login ke OLT seperti biasa</li>
-                                <li>Cari request <code>userlogin?form=login</code> (method POST)</li>
-                                <li>Klik request tersebut → tab <b>Request</b> → lihat nilai <code>key</code></li>
-                                <li>Copy nilai <code>key</code>, paste ke kolom HSGQ Key di atas, klik Update</li>
-                            </ol>
-                        </div>
-                    </div>
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Lokasi <small class="text-muted">(klik peta)</small></label>
@@ -161,32 +140,6 @@ map.on('click', function(e) {
     document.getElementById('lng-display').textContent = lng.toFixed(6);
     marker.setLatLng([lat, lng]);
 });
-
-function fetchHsgqKey() {
-    const btn = document.getElementById('btn-fetch-key');
-    const result = document.getElementById('fetch-key-result');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fetching...';
-    result.innerHTML = '';
-    fetch('/admin/topologi/olt/{{ $olt->id }}/fetch-hsgq-key', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
-        body: JSON.stringify({})
-    }).then(r => r.json()).then(data => {
-        if (data.success) {
-            document.getElementById('hsgq_key_input').value = data.key;
-            result.innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> ' + data.message + '</span>';
-        } else {
-            result.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle"></i> ' + data.error + '</span>';
-        }
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-key"></i> Fetch Key Otomatis';
-    }).catch(e => {
-        result.innerHTML = '<span class="text-danger">Error: ' + e.message + '</span>';
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-key"></i> Fetch Key Otomatis';
-    });
-}
 
 function hapusOlt() {
     if (confirm('Yakin hapus OLT {{ $olt->name }}? Semua ONU akan ikut terhapus!')) {

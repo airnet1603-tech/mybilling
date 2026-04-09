@@ -2,14 +2,13 @@
 @section('title', 'Topologi OLT')
 
 @push('head')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC33huzSRZbZ02tihkJmqqrGhP9Kml32uM&libraries=places" defer></script>
 <style>
 #map { height: calc(100vh - 140px); border-radius: 12px; }
 .olt-card { cursor: pointer; transition: 0.2s; border-left: 4px solid #e94560; }
 .olt-card:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
 .badge-up   { background:#d4edda; color:#155724; padding:2px 10px; border-radius:20px; font-size:0.75rem; }
 .badge-down { background:#f8d7da; color:#721c24; padding:2px 10px; border-radius:20px; font-size:0.75rem; }
-.legend { position:absolute; bottom:30px; left:50px; z-index:999; background:#fff; padding:10px 14px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.15); font-size:0.8rem; }
 .dot { width:12px; height:12px; border-radius:50%; display:inline-block; margin-right:6px; }
 </style>
 @endpush
@@ -21,6 +20,9 @@
         <small class="text-muted">Peta jaringan fiber optik</small>
     </div>
     <div class="d-flex gap-2">
+        <a href="/admin/topologi/peta" class="btn btn-warning btn-sm">
+            <i class="fas fa-map-marked-alt"></i> Peta Topologi
+        </a>
         <button class="btn btn-success btn-sm" onclick="syncAllOnu()">
             <i class="fas fa-sync"></i> Sync ONU
         </button>
@@ -68,7 +70,7 @@
         <div class="card">
             <div class="card-body p-2">
                 <div id="map"></div>
-                <div class="legend">
+                <div style="position:absolute;bottom:40px;right:20px;z-index:999;background:#fff;padding:10px 14px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.15);font-size:0.8rem;">
                     <div><span class="dot" style="background:#e94560"></span> OLT</div>
                     <div><span class="dot" style="background:#f59e0b"></span> ODP</div>
                     <div><span class="dot" style="background:#10b981"></span> ONU Online</div>
@@ -84,61 +86,102 @@
 @endsection
 
 @push('scripts')
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const map = L.map('map').setView([-7.5, 111.9], 13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
-}).addTo(map);
+var gmap = null;
+var infoWindow = null;
+var nodeMap = {};
+var allPolylines = [];
 
-const icons = {
-    OLT: L.divIcon({ html: '<div style="background:#e94560;width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 6px rgba(0,0,0,0.4)"></div>', className:'', iconAnchor:[8,8] }),
-    ODP: L.divIcon({ html: '<div style="background:#f59e0b;width:13px;height:13px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 4px rgba(0,0,0,0.3)"></div>', className:'', iconAnchor:[6,6] }),
-    ONT_UP:   L.divIcon({ html: '<div style="background:#10b981;width:10px;height:10px;border-radius:50%;border:2px solid #fff"></div>', className:'', iconAnchor:[5,5] }),
-    ONT_DOWN: L.divIcon({ html: '<div style="background:#ef4444;width:10px;height:10px;border-radius:50%;border:2px solid #fff"></div>', className:'', iconAnchor:[5,5] }),
-};
-
-const markersLayer = L.layerGroup().addTo(map);
-const linesLayer   = L.layerGroup().addTo(map);
-const nodeMap      = {};
+function initMap() {
+    gmap = new google.maps.Map(document.getElementById('map'), {
+        center          : { lat: -7.5, lng: 111.9 },
+        zoom            : 13,
+        mapTypeId       : 'hybrid',
+        gestureHandling : 'greedy',
+        fullscreenControl: true,
+        streetViewControl: true,
+        mapTypeControl  : true,
+    });
+    infoWindow = new google.maps.InfoWindow();
+    loadNodes();
+}
 
 function loadNodes() {
     fetch('/admin/topologi/api/nodes')
     .then(r => r.json())
     .then(data => {
-        markersLayer.clearLayers();
-        linesLayer.clearLayers();
+        // Clear polylines
+        allPolylines.forEach(p => p.setMap(null));
+        allPolylines = [];
 
         // OLT markers
         data.olts.forEach(o => {
             if (!o.lat || !o.lng) return;
-            nodeMap[o.id] = [o.lat, o.lng];
-            L.marker([o.lat, o.lng], {icon: icons.OLT})
-             .bindPopup(`<b>🔴 OLT: ${o.name}</b><br>IP: ${o.ip}`)
-             .addTo(markersLayer);
+            nodeMap[o.id] = { lat: parseFloat(o.lat), lng: parseFloat(o.lng) };
+            var marker = new google.maps.Marker({
+                position : { lat: parseFloat(o.lat), lng: parseFloat(o.lng) },
+                map      : gmap,
+                title    : o.name,
+                icon     : { url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png', scaledSize: new google.maps.Size(40,40) },
+                zIndex   : 10,
+            });
+            marker.addListener('click', function() {
+                infoWindow.setContent('<div style="font-family:Segoe UI,sans-serif;min-width:160px;"><b>🔴 OLT: ' + o.name + '</b><br><small>IP: ' + o.ip + '</small></div>');
+                infoWindow.open(gmap, marker);
+            });
         });
 
         // ODP markers + garis ke OLT
         data.odps.forEach(o => {
             if (!o.lat || !o.lng) return;
-            nodeMap[o.id] = [o.lat, o.lng];
-            L.marker([o.lat, o.lng], {icon: icons.ODP})
-             .bindPopup(`<b>🟡 ${o.type}: ${o.name}</b>`)
-             .addTo(markersLayer);
+            nodeMap[o.id] = { lat: parseFloat(o.lat), lng: parseFloat(o.lng) };
+            var marker = new google.maps.Marker({
+                position : { lat: parseFloat(o.lat), lng: parseFloat(o.lng) },
+                map      : gmap,
+                title    : o.name,
+                icon     : { url: 'http://maps.google.com/mapfiles/ms/icons/orange-dot.png', scaledSize: new google.maps.Size(32,32) },
+                zIndex   : 5,
+            });
+            marker.addListener('click', function() {
+                infoWindow.setContent('<div style="font-family:Segoe UI,sans-serif;min-width:160px;"><b>🟡 ' + o.type + ': ' + o.name + '</b></div>');
+                infoWindow.open(gmap, marker);
+            });
             if (nodeMap[o.olt_id]) {
-                L.polyline([nodeMap[o.olt_id], [o.lat, o.lng]], {color:'#f59e0b', weight:2, opacity:0.7}).addTo(linesLayer);
+                var line = new google.maps.Polyline({
+                    path          : [nodeMap[o.olt_id], { lat: parseFloat(o.lat), lng: parseFloat(o.lng) }],
+                    strokeColor   : '#f59e0b',
+                    strokeWeight  : 2,
+                    strokeOpacity : 0.8,
+                    map           : gmap,
+                });
+                allPolylines.push(line);
             }
         });
 
-        // ONT markers + garis ke ODP
+        // ONU markers + garis ke ODP
         data.onus.forEach(o => {
             if (!o.lat || !o.lng) return;
-            const icon = o.status === 'Up' ? icons.ONT_UP : icons.ONT_DOWN;
-            L.marker([o.lat, o.lng], {icon})
-             .bindPopup(`<b>📡 ONU: ${o.name}</b><br>MAC: ${o.mac}<br>Status: ${o.status}<br>Pelanggan: ${o.pelanggan ?? '-'}`)
-             .addTo(markersLayer);
+            var isUp  = o.status === 'Up';
+            var marker = new google.maps.Marker({
+                position : { lat: parseFloat(o.lat), lng: parseFloat(o.lng) },
+                map      : gmap,
+                title    : o.name,
+                icon     : { url: isUp ? 'http://maps.google.com/mapfiles/ms/icons/green-dot.png' : 'http://maps.google.com/mapfiles/ms/icons/red-dot.png', scaledSize: new google.maps.Size(24,24) },
+                zIndex   : 1,
+            });
+            marker.addListener('click', function() {
+                infoWindow.setContent('<div style="font-family:Segoe UI,sans-serif;min-width:180px;"><b>📡 ONU: ' + o.name + '</b><br><small>MAC: ' + o.mac + '<br>Status: ' + o.status + '<br>Pelanggan: ' + (o.pelanggan || '-') + '</small></div>');
+                infoWindow.open(gmap, marker);
+            });
             if (o.odp_id && nodeMap[o.odp_id]) {
-                L.polyline([nodeMap[o.odp_id], [o.lat, o.lng]], {color: o.status==='Up'?'#10b981':'#ef4444', weight:1.5, opacity:0.6}).addTo(linesLayer);
+                var line = new google.maps.Polyline({
+                    path          : [nodeMap[o.odp_id], { lat: parseFloat(o.lat), lng: parseFloat(o.lng) }],
+                    strokeColor   : isUp ? '#10b981' : '#ef4444',
+                    strokeWeight  : 1.5,
+                    strokeOpacity : 0.6,
+                    map           : gmap,
+                });
+                allPolylines.push(line);
             }
         });
     });
@@ -146,8 +189,18 @@ function loadNodes() {
 
 function focusOlt(lat, lng, name) {
     if (!lat || !lng) { toast('OLT belum punya koordinat!'); return; }
-    map.flyTo([lat, lng], 15);
+    gmap.panTo({ lat: parseFloat(lat), lng: parseFloat(lng) });
+    gmap.setZoom(16);
 }
+
+window.addEventListener('load', function() {
+    var check = setInterval(function() {
+        if (typeof google !== 'undefined' && google.maps && google.maps.Map) {
+            clearInterval(check);
+            initMap();
+        }
+    }, 100);
+});
 
 function syncOnu(olt_id, e) {
     e.stopPropagation();
