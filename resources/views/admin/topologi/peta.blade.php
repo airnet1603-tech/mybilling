@@ -167,10 +167,14 @@ var polylines = [];
 var nodeMap   = {};
 var infoWindow, petaMap;
 var activeOltId = null;
+var urlParams  = new URLSearchParams(window.location.search);
+var oltIdParam = urlParams.get('olt_id');
+var odcIdParam = urlParams.get('odc_id');
+var odpIdParam = urlParams.get('odp_id');
 
 function initMap() {
     petaMap = new google.maps.Map(document.getElementById('petaMap'), {
-        center           : { lat: -7.5, lng: 111.9 },
+        center           : { lat: -8.207019, lng: 112.019980 },
         zoom             : 12,
         mapTypeId        : 'hybrid',
         gestureHandling  : 'greedy',
@@ -213,6 +217,7 @@ function loadNodes() {
                     '</div>' +
                     '<div style="margin-top:4px;"><small>ODP: ' + (info.odp_count||0) + ' | Total ONU: ' + (info.onu_total||0) + '</small></div>' +
                     '<a href="/admin/topologi/olt/' + o.id.replace('olt-','') + '" style="display:block;margin-top:8px;text-align:center;background:#dc3545;color:white;padding:5px;border-radius:6px;text-decoration:none;font-size:12px;">Detail OLT</a>' +
+                    '<a href="https://www.google.com/maps?q=' + o.lat + ',' + o.lng + '" target="_blank" style="display:block;margin-top:4px;text-align:center;background:#4285f4;color:white;padding:5px;border-radius:6px;text-decoration:none;font-size:12px;">📍 Buka di Google Maps</a>' +
                     '</div>'
                 );
                 infoWindow.open(petaMap, marker);
@@ -238,12 +243,14 @@ function loadNodes() {
                 },
                 zIndex   : 7,
                 oltId    : o.olt_id ? o.olt_id.replace('olt-','') : null,
+                odcId    : o.id.replace('odc-',''),
             });
             marker.addListener('click', function() {
                 infoWindow.setContent(
                     '<div style="font-family:Segoe UI,sans-serif;min-width:180px;">' +
                     '<b style="color:#6f42c1;">🟣 ' + o.name + '</b><br>' +
                     '<small>Tipe: ODC</small>' +
+                    '<br><a href="https://www.google.com/maps?q=' + o.lat + ',' + o.lng + '" target="_blank" style="display:block;margin-top:8px;text-align:center;background:#4285f4;color:white;padding:5px;border-radius:6px;text-decoration:none;font-size:12px;">📍 Buka di Google Maps</a>' +
                     '</div>'
                 );
                 infoWindow.open(petaMap, marker);
@@ -271,6 +278,7 @@ function loadNodes() {
                 icon     : { url: 'http://maps.google.com/mapfiles/ms/icons/orange-dot.png', scaledSize: new google.maps.Size(34,34) },
                 zIndex   : 5,
                 oltId    : o.olt_id ? o.olt_id.replace('olt-','') : null,
+                odpId    : o.id.replace('odp-',''),
             });
             marker.addListener('click', function() {
                 infoWindow.setContent(
@@ -279,16 +287,17 @@ function loadNodes() {
                     '<small>Tipe: ODP</small><br>' +
                     '<small>Kapasitas: ' + (o.kapasitas||'-') + '</small>' +
                     (o.keterangan ? '<br><small>' + o.keterangan + '</small>' : '') +
+                    '<br><a href="https://www.google.com/maps?q=' + o.lat + ',' + o.lng + '" target="_blank" style="display:block;margin-top:8px;text-align:center;background:#4285f4;color:white;padding:5px;border-radius:6px;text-decoration:none;font-size:12px;">📍 Buka di Google Maps</a>' +
                     '</div>'
                 );
                 infoWindow.open(petaMap, marker);
             });
             markers.odp.push(marker);
-            // Garis: ODC → ODP (oranye) atau OLT → ODP (kuning) jika tidak ada ODC
-            var parentKey = o.odc_id ? o.odc_id : o.olt_id;
+            // Garis: parent_odp → ODP (hijau) atau ODC → ODP (oranye) atau OLT → ODP (kuning)
+            var parentKey = o.parent_odp_id ? o.parent_odp_id : (o.odc_id ? o.odc_id : o.olt_id);
             var parentPos = nodeMap[parentKey];
             if (parentPos) {
-                var lineColor = o.odc_id ? '#fd7e14' : '#ffc107';
+                var lineColor = o.parent_odp_id ? '#28a745' : (o.odc_id ? '#fd7e14' : '#ffc107');
                 var line = new google.maps.Polyline({
                     path: [parentPos, { lat: parseFloat(o.lat), lng: parseFloat(o.lng) }],
                     strokeColor: lineColor, strokeWeight: 1.8, strokeOpacity: 0.8, map: petaMap,
@@ -329,6 +338,41 @@ function loadNodes() {
 
         updatePinCount();
         fitBounds();
+        // Auto-filter dan tampilkan layer sesuai parameter URL
+        setTimeout(function() {
+        if (odpIdParam) {
+            // Detail ODP: tampilkan OLT, ODC, ODP saja - sembunyikan ONU
+            document.getElementById('showOnuUp').checked   = false;
+            document.getElementById('showOnuDown').checked = false;
+            toggleLayer('onuUp');
+            toggleLayer('onuDown');
+            // Zoom ke ODP
+            var odpMarker = markers.odp.find(function(m) { return String(m.odpId) === String(odpIdParam); });
+            if (odpMarker) {
+                petaMap.panTo(odpMarker.getPosition());
+                petaMap.setZoom(16);
+                google.maps.event.trigger(odpMarker, 'click');
+            }
+        } else if (odcIdParam) {
+            // Detail ODC: tampilkan OLT dan ODC saja - sembunyikan ODP dan ONU
+            document.getElementById('showOdp').checked    = false;
+            document.getElementById('showOnuUp').checked  = false;
+            document.getElementById('showOnuDown').checked = false;
+            toggleLayer('odp');
+            toggleLayer('onuUp');
+            toggleLayer('onuDown');
+            // Zoom ke ODC
+            var odcMarker = markers.odc.find(function(m) { return String(m.odcId) === String(odcIdParam); });
+            if (odcMarker) {
+                petaMap.panTo(odcMarker.getPosition());
+                petaMap.setZoom(16);
+                google.maps.event.trigger(odcMarker, 'click');
+            }
+        } else if (oltIdParam) {
+            document.getElementById('filterOlt').value = oltIdParam;
+            filterByOlt();
+        }
+        }, 1500);
     });
 }
 

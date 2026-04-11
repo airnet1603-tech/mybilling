@@ -14,7 +14,9 @@ class TopologiController extends Controller
     public function index()
     {
         $olts = Olt::withCount(['odps', 'onus'])->get();
-        return view('admin.topologi.index', compact('olts'));
+        $odcs = Odp::where('type', 'ODC')->get();
+        $odps = Odp::where('type', 'ODP')->get();
+        return view('admin.topologi.index', compact('olts', 'odcs', 'odps'));
     }
 
     // ─── OLT CRUD ─────────────────────────────────────────
@@ -152,13 +154,16 @@ class TopologiController extends Controller
         ]);
 
         $odps = $allOdps->where('type', 'ODP')->map(fn($o) => [
-            'id'     => 'odp-'.$o->id,
-            'type'   => 'ODP',
-            'name'   => $o->name,
-            'lat'    => $o->lat,
-            'lng'    => $o->lng,
-            'olt_id' => 'olt-'.$o->olt_id,
-            'odc_id' => $o->odc_id ? 'odc-'.$o->odc_id : null,
+            'id'            => 'odp-'.$o->id,
+            'type'          => 'ODP',
+            'name'          => $o->name,
+            'lat'           => $o->lat,
+            'lng'           => $o->lng,
+            'kapasitas'     => $o->kapasitas,
+            'keterangan'    => $o->keterangan,
+            'olt_id'        => 'olt-'.$o->olt_id,
+            'odc_id'        => $o->odc_id ? 'odc-'.$o->odc_id : null,
+            'parent_odp_id' => $o->parent_odp_id ? 'odp-'.$o->parent_odp_id : null,
         ]);
 
         $onus = Onu::with('pelanggan')->get()->map(fn($o) => [
@@ -174,10 +179,10 @@ class TopologiController extends Controller
         ]);
 
         return response()->json([
-            'olts' => $olts,
-            'odcs' => $odcs,
-            'odps' => $odps,
-            'onus' => $onus,
+            'olts' => $olts->values(),
+            'odcs' => $odcs->values(),
+            'odps' => $odps->values(),
+            'onus' => $onus->values(),
         ]);
     }
 
@@ -299,5 +304,68 @@ class TopologiController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()]);
         }
+    }
+
+    // ─── ODP CRUD ─────────────────────────────────────────
+    public function createOdp()
+    {
+        $olts = Olt::all();
+        $odcs = Odp::where('type', 'ODC')->get();
+        $odps = Odp::where('type', 'ODP')->get();
+        return view('admin.topologi.odp-create', compact('olts', 'odcs', 'odps'));
+    }
+    public function storeOdp(Request $request)
+    {
+        $request->validate([
+            'name'   => 'required',
+            'olt_id' => 'required|exists:olts,id',
+            'lat'    => 'required|numeric',
+            'lng'    => 'required|numeric',
+        ]);
+        Odp::create([
+            'name'       => $request->name,
+            'type'       => 'ODP',
+            'olt_id'     => $request->olt_id,
+            'odc_id'        => $request->odc_id ?: null,
+            'parent_odp_id' => $request->parent_odp_id ?: null,
+            'lat'           => $request->lat,
+            'lng'           => $request->lng,
+            'kapasitas'     => $request->kapasitas ?? 8,
+            'keterangan'    => $request->keterangan,
+        ]);
+        return redirect('/admin/topologi')->with('success', 'ODP berhasil ditambahkan!');
+    }
+    public function editOdp($id)
+    {
+        $odp  = Odp::where('type', 'ODP')->findOrFail($id);
+        $olts = Olt::all();
+        $odcs = Odp::where('type', 'ODC')->get();
+        return view('admin.topologi.odp-edit', compact('odp', 'olts', 'odcs'));
+    }
+    public function updateOdp(Request $request, $id)
+    {
+        $odp = Odp::where('type', 'ODP')->findOrFail($id);
+        $request->validate([
+            'name'   => 'required',
+            'olt_id' => 'required|exists:olts,id',
+            'lat'    => 'required|numeric',
+            'lng'    => 'required|numeric',
+        ]);
+        $odp->update([
+            'name'       => $request->name,
+            'olt_id'     => $request->olt_id,
+            'odc_id'        => $request->odc_id ?: null,
+            'parent_odp_id' => $request->parent_odp_id ?: null,
+            'lat'           => $request->lat,
+            'lng'           => $request->lng,
+            'kapasitas'     => $request->kapasitas ?? 8,
+            'keterangan'    => $request->keterangan,
+        ]);
+        return redirect('/admin/topologi')->with('success', 'ODP berhasil diupdate!');
+    }
+    public function destroyOdp($id)
+    {
+        Odp::where('type', 'ODP')->findOrFail($id)->delete();
+        return redirect('/admin/topologi')->with('success', 'ODP berhasil dihapus!');
     }
 }

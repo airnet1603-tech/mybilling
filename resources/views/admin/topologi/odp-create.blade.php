@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit ODC - ISP Billing</title>
+    <title>Tambah ODP - ISP Billing</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC33huzSRZbZ02tihkJmqqrGhP9Kml32uM&libraries=places" defer></script>
@@ -23,7 +23,7 @@
         .main-content { margin-left:var(--sidebar-width); padding:24px; }
         #pickMap { height:380px; border-radius:12px; border:2px solid #dee2e6; }
         .coord-box { background:#f8f9fa; border-radius:10px; padding:12px 16px; border:1px solid #dee2e6; }
-        .pin-hint { background:#e8d5f5; color:#6f42c1; border-radius:8px; padding:10px 14px; font-size:0.85rem; }
+        .pin-hint { background:#fff3cd; color:#856404; border-radius:8px; padding:10px 14px; font-size:0.85rem; }
     </style>
 </head>
 <body>
@@ -32,7 +32,7 @@
 <div class="main-content">
     <div class="d-flex align-items-center gap-2 mb-4">
         <a href="/admin/topologi" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left"></i></a>
-        <h5 class="fw-bold mb-0"><i class="fas fa-sitemap me-2" style="color:#6f42c1;"></i>Edit ODC: {{ $odc->name }}</h5>
+        <h5 class="fw-bold mb-0"><i class="fas fa-project-diagram me-2 text-warning"></i>Tambah ODP Baru</h5>
     </div>
 
     @if($errors->any())
@@ -40,17 +40,15 @@
     @endif
 
     <div class="row g-4">
-        <!-- FORM -->
         <div class="col-md-5">
             <div class="card border-0 shadow-sm" style="border-radius:14px;">
                 <div class="card-body p-4">
-                    <form method="POST" action="/admin/topologi/odc/{{ $odc->id }}">
+                    <form method="POST" action="/admin/topologi/odp/store">
                         @csrf
-                        @method('PUT')
 
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">Nama ODC <span class="text-danger">*</span></label>
-                            <input type="text" name="name" class="form-control" value="{{ old('name', $odc->name) }}" required>
+                            <label class="form-label fw-semibold">Nama ODP <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" value="{{ old('name') }}" placeholder="Contoh: ODP-A01" required>
                         </div>
 
                         <div class="mb-3">
@@ -58,7 +56,7 @@
                             <select name="olt_id" class="form-select" required>
                                 <option value="">-- Pilih OLT --</option>
                                 @foreach($olts as $olt)
-                                <option value="{{ $olt->id }}" {{ old('olt_id', $odc->olt_id) == $olt->id ? 'selected' : '' }}>
+                                <option value="{{ $olt->id }}" {{ old('olt_id') == $olt->id ? 'selected' : '' }}>
                                     {{ $olt->name }} ({{ $olt->ip_address }})
                                 </option>
                                 @endforeach
@@ -66,55 +64,68 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label fw-semibold">ODC Induk <small class="text-muted">(opsional)</small></label>
+                            <select name="odc_id" class="form-select">
+                                <option value="">-- Langsung ke OLT --</option>
+                                @foreach($odcs as $odc)
+                                <option value="{{ $odc->id }}" {{ old('odc_id') == $odc->id ? 'selected' : '' }}>
+                                    {{ $odc->name }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">ODP Induk <small class="text-muted">(opsional)</small></label>
+                            <select name="parent_odp_id" id="parent_odp_id" class="form-select">
+                                <option value="">-- Tidak ada --</option>
+                                @foreach($odps as $odp)
+                                <option value="{{ $odp->id }}" {{ old('parent_odp_id') == $odp->id ? 'selected' : '' }}>
+                                    {{ $odp->name }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
                             <label class="form-label fw-semibold">Kapasitas Port</label>
-                            <input type="number" name="kapasitas" class="form-control" value="{{ old('kapasitas', $odc->kapasitas) }}">
+                            <input type="number" name="kapasitas" class="form-control" value="{{ old('kapasitas', 8) }}">
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Keterangan</label>
-                            <input type="text" name="keterangan" class="form-control" value="{{ old('keterangan', $odc->keterangan) }}">
+                            <input type="text" name="keterangan" class="form-control" value="{{ old('keterangan') }}">
                         </div>
 
                         <div class="coord-box mb-4">
-                            <div class="fw-semibold small mb-2"><i class="fas fa-map-pin me-1" style="color:#6f42c1;"></i>Koordinat Lokasi</div>
+                            <div class="fw-semibold small mb-2"><i class="fas fa-map-pin me-1 text-warning"></i>Koordinat Lokasi</div>
                             <div class="row g-2">
                                 <div class="col-6">
                                     <label class="form-label small mb-1">Latitude</label>
-                                    <input type="text" name="lat" id="inputLat" class="form-control form-control-sm" value="{{ old('lat', $odc->lat) }}" required readonly>
+                                    <input type="text" name="lat" id="inputLat" class="form-control form-control-sm" value="{{ old('lat') }}" required readonly placeholder="Klik peta">
                                 </div>
                                 <div class="col-6">
                                     <label class="form-label small mb-1">Longitude</label>
-                                    <input type="text" name="lng" id="inputLng" class="form-control form-control-sm" value="{{ old('lng', $odc->lng) }}" required readonly>
+                                    <input type="text" name="lng" id="inputLng" class="form-control form-control-sm" value="{{ old('lng') }}" required readonly placeholder="Klik peta">
                                 </div>
                             </div>
                         </div>
 
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-success flex-fill">
-                                <i class="fas fa-save me-1"></i> Update ODC
+                            <button type="submit" class="btn btn-warning flex-fill text-white">
+                                <i class="fas fa-save me-1"></i> Simpan ODP
                             </button>
                             <a href="/admin/topologi" class="btn btn-outline-secondary">Batal</a>
                         </div>
-                    </form>
-
-                    <!-- Hapus ODC -->
-                    <hr>
-                    <form method="POST" action="/admin/topologi/odc/{{ $odc->id }}" onsubmit="return confirm('Yakin hapus ODC {{ $odc->name }}?')">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-outline-danger w-100">
-                            <i class="fas fa-trash me-1"></i> Hapus ODC Ini
-                        </button>
                     </form>
                 </div>
             </div>
         </div>
 
-        <!-- PETA PICKER -->
         <div class="col-md-7">
             <div class="pin-hint mb-2">
                 <i class="fas fa-hand-pointer me-1"></i>
-                <strong>Klik pada peta</strong> untuk mengubah lokasi ODC. Geser titik ungu ke posisi yang benar.
+                <strong>Klik pada peta</strong> untuk menentukan lokasi ODP. Geser titik oranye jika perlu.
             </div>
             <div id="pickMap"></div>
             <div class="text-muted small mt-2"><i class="fas fa-info-circle me-1"></i>Bisa juga ketik nama lokasi di kotak pencarian di peta.</div>
@@ -125,52 +136,15 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 var pickMarker = null;
-var currentLat = {{ $odc->lat ?? -8.207019 }};
-var currentLng = {{ $odc->lng ?? 112.019980 }};
 
 function initPickMap() {
     var map = new google.maps.Map(document.getElementById('pickMap'), {
-        center          : { lat: currentLat, lng: currentLng },
-        zoom            : 15,
-        mapTypeId       : 'hybrid',
-        gestureHandling : 'greedy',
-        fullscreenControl: false,
+        center: { lat: -8.207019, lng: 112.019980 },
+        zoom: 13, mapTypeId: 'hybrid', gestureHandling: 'greedy',
     });
 
-    // Custom fullscreen button dengan search box
-    var fsBtn = document.createElement('div');
-    fsBtn.style.cssText = 'margin:10px;cursor:pointer;background:#fff;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,0.3);width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:18px;';
-    fsBtn.innerHTML = '⛶';
-    fsBtn.title = 'Fullscreen';
-    map.controls[google.maps.ControlPosition.TOP_RIGHT].push(fsBtn);
-
-    var isFs = false;
-    var mapDiv = document.getElementById('pickMap');
-    var origStyle = {};
-
-    fsBtn.addEventListener('click', function() {
-        if (!isFs) {
-            origStyle = { position: mapDiv.style.position, top: mapDiv.style.top, left: mapDiv.style.left, width: mapDiv.style.width, height: mapDiv.style.height, zIndex: mapDiv.style.zIndex, borderRadius: mapDiv.style.borderRadius };
-            mapDiv.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99999;border-radius:0;';
-            fsBtn.innerHTML = '✕';
-            isFs = true;
-        } else {
-            mapDiv.style.position = origStyle.position || '';
-            mapDiv.style.top = origStyle.top || '';
-            mapDiv.style.left = origStyle.left || '';
-            mapDiv.style.width = origStyle.width || '';
-            mapDiv.style.height = origStyle.height || '380px';
-            mapDiv.style.zIndex = origStyle.zIndex || '';
-            mapDiv.style.borderRadius = origStyle.borderRadius || '12px';
-            fsBtn.innerHTML = '⛶';
-            isFs = false;
-        }
-        google.maps.event.trigger(map, 'resize');
-    });
-
-    // Search box
-    var input   = document.createElement('input');
-    input.type  = 'text';
+    var input = document.createElement('input');
+    input.type = 'text';
     input.placeholder = '🔍 Cari lokasi...';
     input.style.cssText = 'margin:10px;padding:8px 12px;width:250px;border-radius:8px;border:1px solid #ccc;font-size:13px;';
     map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
@@ -184,10 +158,6 @@ function initPickMap() {
         placeMarker(map, loc.lat(), loc.lng());
     });
 
-    // Tampilkan posisi ODC saat ini
-    placeMarker(map, currentLat, currentLng);
-
-    // Klik peta
     map.addListener('click', function(e) {
         placeMarker(map, e.latLng.lat(), e.latLng.lng());
     });
@@ -196,24 +166,13 @@ function initPickMap() {
 function placeMarker(map, lat, lng) {
     if (pickMarker) pickMarker.setMap(null);
     pickMarker = new google.maps.Marker({
-        position  : { lat: lat, lng: lng },
-        map       : map,
-        title     : 'Lokasi ODC',
-        draggable : true,
-        icon      : {
-            path        : google.maps.SymbolPath.CIRCLE,
-            scale       : 12,
-            fillColor   : '#6f42c1',
-            fillOpacity : 1,
-            strokeColor : '#fff',
-            strokeWeight: 2.5,
-        },
-        animation : google.maps.Animation.DROP,
+        position: { lat: lat, lng: lng }, map: map,
+        title: 'Lokasi ODP', draggable: true,
+        icon: { url: 'http://maps.google.com/mapfiles/ms/icons/orange-dot.png', scaledSize: new google.maps.Size(40,40) },
+        animation: google.maps.Animation.DROP,
     });
     document.getElementById('inputLat').value = lat.toFixed(8);
     document.getElementById('inputLng').value = lng.toFixed(8);
-
-    // Drag marker juga update koordinat
     pickMarker.addListener('dragend', function(e) {
         document.getElementById('inputLat').value = e.latLng.lat().toFixed(8);
         document.getElementById('inputLng').value = e.latLng.lng().toFixed(8);
@@ -223,8 +182,7 @@ function placeMarker(map, lat, lng) {
 window.addEventListener('load', function() {
     var check = setInterval(function() {
         if (typeof google !== 'undefined' && google.maps && google.maps.Map) {
-            clearInterval(check);
-            initPickMap();
+            clearInterval(check); initPickMap();
         }
     }, 100);
 });

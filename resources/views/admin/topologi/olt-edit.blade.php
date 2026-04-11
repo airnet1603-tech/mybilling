@@ -2,7 +2,7 @@
 @section('title', 'Edit OLT')
 
 @push('head')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC33huzSRZbZ02tihkJmqqrGhP9Kml32uM&libraries=places" defer></script>
 <style>
 #map-picker { height: 350px; border-radius: 10px; cursor: crosshair; }
 .coord-box { background:#f8f9fa; border-radius:8px; padding:10px 14px; font-size:0.85rem; }
@@ -144,22 +144,53 @@
 @endsection
 
 @push('scripts')
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const lat = {{ $olt->lat ?? -7.5 }};
-const lng = {{ $olt->lng ?? 111.9 }};
-const map = L.map('map-picker').setView([lat, lng], 14);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+var oltLat = {{ $olt->lat ?? -8.207014 }};
+var oltLng = {{ $olt->lng ?? 112.019986 }};
+var gmap, gmarker;
 
-let marker = L.marker([lat, lng]).addTo(map).bindPopup('{{ $olt->name }}').openPopup();
+function initMapPicker() {
+    var center = { lat: oltLat, lng: oltLng };
+    gmap = new google.maps.Map(document.getElementById('map-picker'), {
+        center: center,
+        zoom: 15,
+        mapTypeId: 'hybrid',
+        gestureHandling: 'greedy',
+        fullscreenControl: true,
+        streetViewControl: false,
+        mapTypeControl: true,
+    });
+    gmarker = new google.maps.Marker({
+        position: center,
+        map: gmap,
+        title: '{{ addslashes($olt->name) }}',
+        draggable: true,
+        icon: { url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png', scaledSize: new google.maps.Size(44,44) },
+    });
+    gmarker.addListener('dragend', function() {
+        var pos = gmarker.getPosition();
+        document.getElementById('lat-input').value = pos.lat().toFixed(8);
+        document.getElementById('lng-input').value = pos.lng().toFixed(8);
+        document.getElementById('lat-display').textContent = pos.lat().toFixed(6);
+        document.getElementById('lng-display').textContent = pos.lng().toFixed(6);
+    });
+    gmap.addListener('click', function(e) {
+        var pos = e.latLng;
+        gmarker.setPosition(pos);
+        document.getElementById('lat-input').value = pos.lat().toFixed(8);
+        document.getElementById('lng-input').value = pos.lng().toFixed(8);
+        document.getElementById('lat-display').textContent = pos.lat().toFixed(6);
+        document.getElementById('lng-display').textContent = pos.lng().toFixed(6);
+    });
+}
 
-map.on('click', function(e) {
-    const { lat, lng } = e.latlng;
-    document.getElementById('lat-input').value = lat.toFixed(8);
-    document.getElementById('lng-input').value = lng.toFixed(8);
-    document.getElementById('lat-display').textContent = lat.toFixed(6);
-    document.getElementById('lng-display').textContent = lng.toFixed(6);
-    marker.setLatLng([lat, lng]);
+window.addEventListener('load', function() {
+    var check = setInterval(function() {
+        if (typeof google !== 'undefined' && google.maps && google.maps.Map) {
+            clearInterval(check);
+            initMapPicker();
+        }
+    }, 100);
 });
 
 function fetchHsgqKey() {
@@ -187,7 +218,6 @@ function fetchHsgqKey() {
         btn.innerHTML = '<i class="fas fa-key"></i> Fetch Key Otomatis';
     });
 }
-
 function hapusOlt() {
     if (confirm('Yakin hapus OLT {{ $olt->name }}? Semua ONU akan ikut terhapus!')) {
         document.getElementById('form-hapus').submit();

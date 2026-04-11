@@ -138,6 +138,11 @@ Route::prefix('admin/topologi')->middleware(['auth', 'role:admin,operator'])->gr
     Route::get('/odc/{id}/edit', [App\Http\Controllers\Admin\TopologiController::class, 'editOdc'])->name('topologi.odc.edit');
     Route::put('/odc/{id}', [App\Http\Controllers\Admin\TopologiController::class, 'updateOdc'])->name('topologi.odc.update');
     Route::delete('/odc/{id}', [App\Http\Controllers\Admin\TopologiController::class, 'destroyOdc'])->name('topologi.odc.destroy');
+    Route::get('/odp/create', [App\Http\Controllers\Admin\TopologiController::class, 'createOdp'])->name('topologi.odp.create');
+    Route::post('/odp/store', [App\Http\Controllers\Admin\TopologiController::class, 'storeOdp'])->name('topologi.odp.store');
+    Route::get('/odp/{id}/edit', [App\Http\Controllers\Admin\TopologiController::class, 'editOdp'])->name('topologi.odp.edit');
+    Route::put('/odp/{id}', [App\Http\Controllers\Admin\TopologiController::class, 'updateOdp'])->name('topologi.odp.update');
+    Route::delete('/odp/{id}', [App\Http\Controllers\Admin\TopologiController::class, 'destroyOdp'])->name('topologi.odp.destroy');
     Route::post('/olt/{id}/fetch-hsgq-key', [App\Http\Controllers\Admin\TopologiController::class, 'fetchHsgqKey'])->name('topologi.olt.fetchHsgqKey');
 });
 

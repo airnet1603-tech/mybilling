@@ -2,7 +2,7 @@
 @section('title', 'Detail OLT - '.$olt->name)
 
 @push('head')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC33huzSRZbZ02tihkJmqqrGhP9Kml32uM&libraries=places" defer></script>
 <style>
 #map { height: 400px; border-radius: 10px; }
 .badge-up   { background:#d4edda; color:#155724; padding:2px 10px; border-radius:20px; font-size:0.75rem; }
@@ -18,6 +18,9 @@
         <small class="text-muted">{{ $olt->ip_address }} &bull; {{ $olt->model }}</small>
     </div>
     <div class="ms-auto">
+        <a href="/admin/topologi/peta?olt_id={{ $olt->id }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-map-marked-alt"></i> Lihat di Peta
+        </a>
         <button class="btn btn-success btn-sm" onclick="syncOnu()">
             <i class="fas fa-sync"></i> Sync ONU
         </button>
@@ -52,7 +55,6 @@
 </div>
 
 <div class="row g-3">
-    {{-- Peta --}}
     <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-white fw-semibold border-0">🗺️ Peta Lokasi</div>
@@ -61,8 +63,6 @@
             </div>
         </div>
     </div>
-
-    {{-- Tabel ONU --}}
     <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-white fw-semibold border-0">📡 Daftar ONU</div>
@@ -71,11 +71,7 @@
                 <table class="table table-sm table-hover mb-0">
                     <thead class="table-light sticky-top">
                         <tr>
-                            <th>ID</th>
-                            <th>Nama</th>
-                            <th>MAC</th>
-                            <th>Status</th>
-                            <th>Pelanggan</th>
+                            <th>ID</th><th>Nama</th><th>MAC</th><th>Status</th><th>Pelanggan</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -102,16 +98,39 @@
 @endsection
 
 @push('scripts')
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const map = L.map('map').setView([{{ $olt->lat ?? -7.5 }}, {{ $olt->lng ?? 111.9 }}], 14);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+var oltLat = {{ $olt->lat ?? -8.207019 }};
+var oltLng = {{ $olt->lng ?? 112.019980 }};
+var oltName = '{{ addslashes($olt->name) }}';
+var oltIp = '{{ $olt->ip_address }}';
 
-@if($olt->lat && $olt->lng)
-L.marker([{{ $olt->lat }}, {{ $olt->lng }}], {
-    icon: L.divIcon({ html: '<div style="background:#e94560;width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 6px rgba(0,0,0,0.4)"></div>', className:'', iconAnchor:[8,8] })
-}).addTo(map).bindPopup('<b>{{ $olt->name }}</b><br>{{ $olt->ip_address }}').openPopup();
-@endif
+function initMap() {
+    var center = { lat: oltLat, lng: oltLng };
+    var map = new google.maps.Map(document.getElementById('map'), {
+        center: center, zoom: 14, mapTypeId: 'hybrid',
+        gestureHandling: 'greedy', fullscreenControl: true,
+        streetViewControl: true, mapTypeControl: true,
+    });
+    @if($olt->lat && $olt->lng)
+    var marker = new google.maps.Marker({
+        position: center, map: map, title: oltName,
+        icon: { url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png', scaledSize: new google.maps.Size(44,44) },
+    });
+    var infoWindow = new google.maps.InfoWindow({
+        content: '<b>' + oltName + '</b><br><small>' + oltIp + '</small>'
+    });
+    infoWindow.open(map, marker);
+    marker.addListener('click', function() { infoWindow.open(map, marker); });
+    @endif
+}
+
+window.addEventListener('load', function() {
+    var check = setInterval(function() {
+        if (typeof google !== 'undefined' && google.maps && google.maps.Map) {
+            clearInterval(check); initMap();
+        }
+    }, 100);
+});
 
 function syncOnu() {
     toast('Sync ONU dari OLT...');
@@ -126,8 +145,7 @@ function syncOnu() {
 
 function toast(msg) {
     const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.style.display = 'block';
+    t.textContent = msg; t.style.display = 'block';
     setTimeout(() => t.style.display = 'none', 3000);
 }
 </script>
