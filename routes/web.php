@@ -144,5 +144,12 @@ Route::prefix('admin/topologi')->middleware(['auth', 'role:admin,operator'])->gr
     Route::put('/odp/{id}', [App\Http\Controllers\Admin\TopologiController::class, 'updateOdp'])->name('topologi.odp.update');
     Route::delete('/odp/{id}', [App\Http\Controllers\Admin\TopologiController::class, 'destroyOdp'])->name('topologi.odp.destroy');
     Route::post('/olt/{id}/fetch-hsgq-key', [App\Http\Controllers\Admin\TopologiController::class, 'fetchHsgqKey'])->name('topologi.olt.fetchHsgqKey');
+    // SFP
+    Route::get('/sfp/create', [App\Http\Controllers\Admin\TopologiController::class, 'createSfp'])->name('topologi.sfp.create');
+    Route::post('/sfp/store', [App\Http\Controllers\Admin\TopologiController::class, 'storeSfp'])->name('topologi.sfp.store');
+    Route::get('/sfp/{id}/edit', [App\Http\Controllers\Admin\TopologiController::class, 'editSfp'])->name('topologi.sfp.edit');
+    Route::put('/sfp/{id}', [App\Http\Controllers\Admin\TopologiController::class, 'updateSfp'])->name('topologi.sfp.update');
+    Route::delete('/sfp/{id}', [App\Http\Controllers\Admin\TopologiController::class, 'destroySfp'])->name('topologi.sfp.destroy');
+    Route::get('/api/sfp-by-olt/{olt_id}', [App\Http\Controllers\Admin\TopologiController::class, 'apiSfpByOlt'])->name('topologi.api.sfp');
 });
 

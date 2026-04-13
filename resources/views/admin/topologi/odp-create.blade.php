@@ -21,7 +21,7 @@
         .sidebar-nav .nav-link:hover, .sidebar-nav .nav-link.active { background:rgba(233,69,96,0.25); color:#fff; }
         .sidebar-divider { border-top:1px solid rgba(255,255,255,0.08); margin:6px 14px; }
         .main-content { margin-left:var(--sidebar-width); padding:24px; }
-        #pickMap { height:380px; border-radius:12px; border:2px solid #dee2e6; }
+        #pickMap { height:500px; border-radius:12px; border:2px solid #dee2e6; }
         .coord-box { background:#f8f9fa; border-radius:10px; padding:12px 16px; border:1px solid #dee2e6; }
         .pin-hint { background:#fff3cd; color:#856404; border-radius:8px; padding:10px 14px; font-size:0.85rem; }
     </style>
@@ -145,9 +145,9 @@ function initPickMap() {
 
     var input = document.createElement('input');
     input.type = 'text';
-    input.placeholder = '🔍 Cari lokasi...';
-    input.style.cssText = 'margin:10px;padding:8px 12px;width:250px;border-radius:8px;border:1px solid #ccc;font-size:13px;';
-    map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+    input.placeholder = '🔍 Cari lokasi di sini...';
+    input.style.cssText = 'margin:10px;padding:8px 14px;width:320px;border-radius:8px;border:2px solid #fd7e14;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,0.2);outline:none;';
+    map.controls[google.maps.ControlPosition.TOP_CENTER].push(input);
     var searchBox = new google.maps.places.SearchBox(input);
     searchBox.addListener('places_changed', function() {
         var places = searchBox.getPlaces();

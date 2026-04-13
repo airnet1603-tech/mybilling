@@ -21,8 +21,8 @@
         .sidebar-nav .nav-link i { width:16px; font-size:0.82rem; }
         .sidebar-nav .nav-link:hover, .sidebar-nav .nav-link.active { background:rgba(233,69,96,0.25); color:#fff; }
         .sidebar-divider { border-top:1px solid rgba(255,255,255,0.08); margin:6px 14px; }
-        .main-content { margin-left:var(--sidebar-width); padding:20px 24px; }
-        #petaMap { height:calc(100vh - 300px); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
+        .main-content { margin-left:var(--sidebar-width); padding:6px 16px; }
+        #petaMap { height:calc(100vh - 200px); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
         .stat-card { border:none; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.07); transition:0.2s; }
         .dot { width:12px; height:12px; border-radius:50%; display:inline-block; margin-right:6px; }
         @media (max-width:768px) {
@@ -38,7 +38,7 @@
 @include('admin.partials.sidebar')
 
 <div class="main-content">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-1">
         <div>
             <h5 class="fw-bold mb-0"><i class="fas fa-map-marked-alt me-2 text-danger"></i>Peta Topologi Jaringan</h5>
             <small class="text-muted">Sebaran OLT, ODC, ODP, dan ONU</small>
@@ -57,7 +57,7 @@
     </div>
 
     <!-- Stat Cards -->
-    <div class="row g-3 mb-3">
+    <div class="row g-2 mb-1">
         <div class="col-6 col-md">
             <div class="stat-card card">
                 <div class="card-body py-2 px-3 d-flex align-items-center gap-3">
@@ -126,7 +126,7 @@
     </div>
 
     <!-- Filter Layer -->
-    <div class="card mb-3" style="border:none;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.07);">
+    <div class="card mb-1" style="border:none;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.07);">
         <div class="card-body py-2 px-3 d-flex gap-3 flex-wrap align-items-center">
             <div class="form-check form-switch mb-0">
                 <input class="form-check-input" type="checkbox" id="showOlt" checked onchange="toggleLayer('olt')">

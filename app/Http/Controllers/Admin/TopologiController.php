@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Olt;
 use App\Models\Odp;
 use App\Models\Onu;
+use App\Models\Sfp;
 use Illuminate\Http\Request;
 
 class TopologiController extends Controller
@@ -16,7 +17,8 @@ class TopologiController extends Controller
         $olts = Olt::withCount(['odps', 'onus'])->get();
         $odcs = Odp::where('type', 'ODC')->get();
         $odps = Odp::where('type', 'ODP')->get();
-        return view('admin.topologi.index', compact('olts', 'odcs', 'odps'));
+        $sfps = Sfp::with('olt')->get();
+        return view('admin.topologi.index', compact('olts', 'odcs', 'odps', 'sfps'));
     }
 
     // ─── OLT CRUD ─────────────────────────────────────────
@@ -74,7 +76,8 @@ class TopologiController extends Controller
     public function createOdc()
     {
         $olts = Olt::all();
-        return view('admin.topologi.odc-create', compact('olts'));
+        $sfps = Sfp::with('olt')->get();
+        return view('admin.topologi.odc-create', compact('olts', 'sfps'));
     }
 
     public function storeOdc(Request $request)
@@ -89,6 +92,7 @@ class TopologiController extends Controller
             'name'       => $request->name,
             'type'       => 'ODC',
             'olt_id'     => $request->olt_id,
+            'sfp_id'     => $request->sfp_id ?: null,
             'lat'        => $request->lat,
             'lng'        => $request->lng,
             'kapasitas'  => $request->kapasitas ?? 16,
@@ -101,7 +105,8 @@ class TopologiController extends Controller
     {
         $odc  = Odp::where('type', 'ODC')->findOrFail($id);
         $olts = Olt::all();
-        return view('admin.topologi.odc-edit', compact('odc', 'olts'));
+        $sfps = Sfp::with('olt')->get();
+        return view('admin.topologi.odc-edit', compact('odc', 'olts', 'sfps'));
     }
 
     public function updateOdc(Request $request, $id)
@@ -116,6 +121,7 @@ class TopologiController extends Controller
         $odc->update([
             'name'       => $request->name,
             'olt_id'     => $request->olt_id,
+            'sfp_id'     => $request->sfp_id ?: null,
             'lat'        => $request->lat,
             'lng'        => $request->lng,
             'kapasitas'  => $request->kapasitas ?? 16,
@@ -312,7 +318,8 @@ class TopologiController extends Controller
         $olts = Olt::all();
         $odcs = Odp::where('type', 'ODC')->get();
         $odps = Odp::where('type', 'ODP')->get();
-        return view('admin.topologi.odp-create', compact('olts', 'odcs', 'odps'));
+        $sfps = Sfp::with('olt')->get();
+        return view('admin.topologi.odp-create', compact('olts', 'odcs', 'odps', 'sfps'));
     }
     public function storeOdp(Request $request)
     {
@@ -326,6 +333,7 @@ class TopologiController extends Controller
             'name'       => $request->name,
             'type'       => 'ODP',
             'olt_id'     => $request->olt_id,
+            'sfp_id'        => $request->sfp_id ?: null,
             'odc_id'        => $request->odc_id ?: null,
             'parent_odp_id' => $request->parent_odp_id ?: null,
             'lat'           => $request->lat,
@@ -340,7 +348,8 @@ class TopologiController extends Controller
         $odp  = Odp::where('type', 'ODP')->findOrFail($id);
         $olts = Olt::all();
         $odcs = Odp::where('type', 'ODC')->get();
-        return view('admin.topologi.odp-edit', compact('odp', 'olts', 'odcs'));
+        $sfps = Sfp::with('olt')->get();
+        return view('admin.topologi.odp-edit', compact('odp', 'olts', 'odcs', 'sfps'));
     }
     public function updateOdp(Request $request, $id)
     {
@@ -354,6 +363,7 @@ class TopologiController extends Controller
         $odp->update([
             'name'       => $request->name,
             'olt_id'     => $request->olt_id,
+            'sfp_id'        => $request->sfp_id ?: null,
             'odc_id'        => $request->odc_id ?: null,
             'parent_odp_id' => $request->parent_odp_id ?: null,
             'lat'           => $request->lat,
@@ -368,4 +378,52 @@ class TopologiController extends Controller
         Odp::where('type', 'ODP')->findOrFail($id)->delete();
         return redirect('/admin/topologi')->with('success', 'ODP berhasil dihapus!');
     }
+
+    // ─── SFP CRUD ─────────────────────────────────────────
+    public function createSfp()
+    {
+        $olts = Olt::all();
+        return view('admin.topologi.sfp-create', compact('olts'));
+    }
+
+    public function storeSfp(Request $request)
+    {
+        $request->validate([
+            'name'   => 'required',
+            'olt_id' => 'required|exists:olts,id',
+        ]);
+        Sfp::create($request->only(['name','olt_id','port','keterangan','lat','lng']));
+        return redirect('/admin/topologi')->with('success', 'SFP berhasil ditambahkan!');
+    }
+
+    public function editSfp($id)
+    {
+        $sfp  = Sfp::findOrFail($id);
+        $olts = Olt::all();
+        return view('admin.topologi.sfp-edit', compact('sfp', 'olts'));
+    }
+
+    public function updateSfp(Request $request, $id)
+    {
+        $sfp = Sfp::findOrFail($id);
+        $request->validate([
+            'name'   => 'required',
+            'olt_id' => 'required|exists:olts,id',
+        ]);
+        $sfp->update($request->only(['name','olt_id','port','keterangan','lat','lng']));
+        return redirect('/admin/topologi')->with('success', 'SFP berhasil diupdate!');
+    }
+
+    public function destroySfp($id)
+    {
+        Sfp::findOrFail($id)->delete();
+        return redirect('/admin/topologi')->with('success', 'SFP berhasil dihapus!');
+    }
+
+    public function apiSfpByOlt($olt_id)
+    {
+        $sfps = Sfp::where('olt_id', $olt_id)->get();
+        return response()->json($sfps);
+    }
+
 }
