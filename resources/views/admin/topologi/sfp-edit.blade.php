@@ -4,7 +4,7 @@
 @section('content')
 <div class="d-flex align-items-center gap-2 mb-4">
     <a href="/admin/topologi" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left"></i></a>
-    <h5 class="fw-bold mb-0"><i class="fas fa-plug me-2 text-primary"></i>Edit SFP</h5>
+    <h5 class="fw-bold mb-0"><i class="fas fa-plug me-2 text-primary"></i>Edit SFP: {{ $sfp->name }}</h5>
 </div>
 
 @if($errors->any())
@@ -12,12 +12,13 @@
 @endif
 
 <div class="row justify-content-center">
-    <div class="col-md-6">
+    <div class="col-md-7">
         <div class="card border-0 shadow-sm" style="border-radius:14px;">
             <div class="card-body p-4">
                 <form method="POST" action="/admin/topologi/sfp/{{ $sfp->id }}">
                     @csrf
                     @method('PUT')
+
                     <div class="mb-3">
                         <label class="form-label fw-semibold">OLT Induk <span class="text-danger">*</span></label>
                         <select name="olt_id" class="form-select" required>
@@ -29,18 +30,22 @@
                             @endforeach
                         </select>
                     </div>
+
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Nama SFP <span class="text-danger">*</span></label>
                         <input type="text" name="name" class="form-control" value="{{ old('name', $sfp->name) }}" required>
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Nomor Port</label>
-                        <input type="text" name="port" class="form-control" value="{{ old('port', $sfp->port) }}">
+                        <label class="form-label fw-semibold">Nomor Port <small class="text-muted">(opsional)</small></label>
+                        <input type="text" name="port" class="form-control" value="{{ old('port', $sfp->port) }}" placeholder="Contoh: 0/1, 1">
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Keterangan</label>
+                        <label class="form-label fw-semibold">Keterangan <small class="text-muted">(opsional)</small></label>
                         <input type="text" name="keterangan" class="form-control" value="{{ old('keterangan', $sfp->keterangan) }}">
                     </div>
+
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-warning flex-fill text-white">
                             <i class="fas fa-save me-1"></i> Update SFP

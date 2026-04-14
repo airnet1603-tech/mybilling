@@ -6,6 +6,14 @@
 <style>
 #map-picker { height: 350px; border-radius: 10px; cursor: crosshair; }
 .coord-box { background:#f8f9fa; border-radius:8px; padding:10px 14px; font-size:0.85rem; }
+.color-option { width:26px;height:26px;border-radius:50%;cursor:pointer;border:3px solid transparent;display:inline-block;transition:0.2s;flex-shrink:0; }
+.color-option.selected { border-color:#333;transform:scale(1.2); }
+.icon-option { width:36px;height:36px;border-radius:8px;cursor:pointer;border:2px solid #dee2e6;display:inline-flex;align-items:center;justify-content:center;font-size:16px;transition:0.2s;background:#fff; }
+.icon-option.selected { border-color:#0d6efd;background:#e8f0fe; }
+.icon-option:hover { border-color:#0d6efd; }
+.visual-section { border:1px solid #e9ecef;border-radius:10px;padding:14px;margin-bottom:12px; }
+.visual-section-title { font-size:0.85rem;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px; }
+.preview-dot { width:20px;height:20px;border-radius:50%;display:inline-block;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.2); }
 </style>
 @endpush
 
@@ -38,18 +46,7 @@
                         <label class="form-label fw-semibold">Model / Tipe OLT</label>
                         <select name="model" class="form-select" required>
                             <option value="">-- Pilih Model --</option>
-                            @foreach([
-                                'HisFocus 4P1GM'  => 'HisFocus 4P1GM',
-                                'HisFocus 8P2GM'  => 'HisFocus 8P2GM',
-                                'HiOSO'           => 'HiOSO',
-                                'HSGQ'            => 'HSGQ',
-                                'ZTE C300'        => 'ZTE C300',
-                                'ZTE C320'        => 'ZTE C320',
-                                'Huawei MA5608T'  => 'Huawei MA5608T',
-                                'Huawei MA5800'   => 'Huawei MA5800',
-                                'FiberHome'       => 'FiberHome',
-                                'Nokia'           => 'Nokia',
-                            ] as $val => $label)
+                            @foreach(['HisFocus 4P1GM'=>'HisFocus 4P1GM','HisFocus 8P2GM'=>'HisFocus 8P2GM','HiOSO'=>'HiOSO','HSGQ'=>'HSGQ','ZTE C300'=>'ZTE C300','ZTE C320'=>'ZTE C320','Huawei MA5608T'=>'Huawei MA5608T','Huawei MA5800'=>'Huawei MA5800','FiberHome'=>'FiberHome','Nokia'=>'Nokia'] as $val => $label)
                                 <option value="{{ $val }}" {{ $olt->model == $val ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
@@ -64,8 +61,6 @@
                             <input type="text" name="password" class="form-control" value="{{ $olt->password }}" required>
                         </div>
                     </div>
-
-                    <!-- Settings Tambahan -->
                     <div class="row mb-3">
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">SNMP Community</label>
@@ -89,19 +84,7 @@
                             </button>
                         </div>
                         <div id="fetch-key-result" class="mt-1"></div>
-                        <div class="mt-2 p-2 bg-light border rounded small">
-                            <b><i class="fas fa-info-circle text-primary"></i> Cara ambil HSGQ Key manual:</b>
-                            <ol class="mb-1 mt-1 ps-3">
-                                <li>Buka browser, akses IP OLT: <code>http://<b>IP_LOKAL_OLT</b></code> (tanyakan ke teknisi jika tidak tahu IP lokalnya)</li>
-                                <li>Tekan <kbd>F12</kbd> → pilih tab <b>Network</b></li>
-                                <li>Login ke OLT seperti biasa</li>
-                                <li>Cari request <code>userlogin?form=login</code> (method POST)</li>
-                                <li>Klik request tersebut → tab <b>Request</b> → lihat nilai <code>key</code></li>
-                                <li>Copy nilai <code>key</code>, paste ke kolom HSGQ Key di atas, klik Update</li>
-                            </ol>
-                        </div>
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Lokasi <small class="text-muted">(klik peta)</small></label>
                         <div class="coord-box mb-2 d-flex gap-3">
@@ -111,7 +94,80 @@
                         <input type="hidden" name="lat" id="lat-input" value="{{ $olt->lat }}">
                         <input type="hidden" name="lng" id="lng-input" value="{{ $olt->lng }}">
                     </div>
-                    <div class="d-flex gap-2">
+
+                    {{-- ===== VISUAL SETTINGS ===== --}}
+                    <hr>
+                    <div class="fw-semibold mb-3"><i class="fas fa-palette text-primary me-2"></i>Pengaturan Tampilan Peta</div>
+
+                    @php
+                    $colorOptions = ['#dc3545','#fd7e14','#ffc107','#28a745','#17a2b8','#0d6efd','#6f42c1','#e83e8c','#20c997','#343a40','#795548','#607d8b','#ff5722','#fff'];
+                    $iconOptions = ['dot'=>'⬤','circle_empty'=>'○','star'=>'★','square'=>'■','triangle'=>'▲','diamond'=>'◆','cross'=>'✚','pin'=>'📍','wifi'=>'📶','tower'=>'📡','home'=>'🏠','building'=>'🏢'];
+                    $sections = [
+                        ['key'=>'olt',  'label'=>'OLT',  'color_field'=>'olt_color',  'icon_field'=>'olt_icon',  'default_color'=>'#dc3545', 'emoji'=>'🔴'],
+                        ['key'=>'odc',  'label'=>'ODC',  'color_field'=>'odc_color',  'icon_field'=>'odc_icon',  'default_color'=>'#6f42c1', 'emoji'=>'🟣'],
+                        ['key'=>'odp',  'label'=>'ODP',  'color_field'=>'odp_color',  'icon_field'=>'odp_icon',  'default_color'=>'#fd7e14', 'emoji'=>'🟠'],
+                    ];
+                    @endphp
+
+                    @foreach($sections as $sec)
+                    @php
+                        $curColor = old($sec['color_field'], $olt->{$sec['color_field']} ?? $sec['default_color']);
+                        $curIcon  = old($sec['icon_field'],  $olt->{$sec['icon_field']}  ?? 'dot');
+                    @endphp
+                    <div class="visual-section">
+                        <div class="visual-section-title">
+                            {{ $sec['emoji'] }} {{ $sec['label'] }}
+                            <span class="preview-dot ms-auto" id="preview-dot-{{ $sec['key'] }}" style="background:{{ $curColor }};"></span>
+                        </div>
+                        <input type="hidden" name="{{ $sec['color_field'] }}" id="color-{{ $sec['key'] }}" value="{{ $curColor }}">
+                        <input type="hidden" name="{{ $sec['icon_field'] }}"  id="icon-{{ $sec['key'] }}"  value="{{ $curIcon }}">
+                        <div class="d-flex gap-1 flex-wrap mb-2">
+                            @foreach($colorOptions as $hex)
+                            <div class="color-option {{ $curColor==$hex?'selected':'' }}"
+                                style="background:{{ $hex }};{{ $hex=='#fff'?'border-color:#dee2e6;':'' }}"
+                                onclick="selectColor('{{ $sec['key'] }}','{{ $hex }}',this)"></div>
+                            @endforeach
+                            <input type="color" value="{{ $curColor }}" class="form-control form-control-color" style="width:26px;height:26px;padding:1px;border-radius:50%;" oninput="selectColorCustom('{{ $sec['key'] }}',this.value)">
+                        </div>
+                        <div class="d-flex gap-1 flex-wrap">
+                            @foreach($iconOptions as $ikey => $iemoji)
+                            <div class="icon-option {{ $curIcon==$ikey?'selected':'' }}"
+                                title="{{ $ikey }}"
+                                onclick="selectIcon('{{ $sec['key'] }}','{{ $ikey }}',this)">{{ $iemoji }}</div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endforeach
+
+                    {{-- Warna Garis --}}
+                    <div class="visual-section">
+                        <div class="visual-section-title">➖ Warna Garis Penghubung</div>
+                        @php
+                        $lines = [
+                            ['field'=>'line_olt_odc','label'=>'OLT → ODC','default'=>'#6f42c1'],
+                            ['field'=>'line_odc_odp','label'=>'ODC → ODP','default'=>'#fd7e14'],
+                            ['field'=>'line_odp_odp','label'=>'ODP → ODP','default'=>'#28a745'],
+                        ];
+                        @endphp
+                        @foreach($lines as $line)
+                        @php $curLine = old($line['field'], $olt->{$line['field']} ?? $line['default']); @endphp
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <small class="fw-semibold" style="width:100px;">{{ $line['label'] }}</small>
+                            <div class="d-flex gap-1 flex-wrap flex-fill">
+                                @foreach($colorOptions as $hex)
+                                <div class="color-option {{ $curLine==$hex?'selected':'' }}"
+                                    style="background:{{ $hex }};{{ $hex=='#fff'?'border-color:#dee2e6;':'' }}"
+                                    onclick="selectColor('line-{{ $loop->index }}-{{ $line['field'] }}','{{ $hex }}',this,'{{ $line['field'] }}')"></div>
+                                @endforeach
+                                <input type="color" value="{{ $curLine }}" class="form-control form-control-color" style="width:26px;height:26px;padding:1px;border-radius:50%;" oninput="selectColorLine('{{ $line['field'] }}',this.value)">
+                            </div>
+                            <input type="hidden" name="{{ $line['field'] }}" id="line-{{ $line['field'] }}" value="{{ $curLine }}">
+                            <span class="preview-dot" id="preview-line-{{ $line['field'] }}" style="background:{{ $curLine }};border-radius:3px;height:6px;width:30px;"></span>
+                        </div>
+                        @endforeach
+                    </div>
+
+                    <div class="d-flex gap-2 mt-3">
                         <button type="submit" class="btn btn-primary flex-fill">
                             <i class="fas fa-save"></i> Update
                         </button>
@@ -120,8 +176,6 @@
                         </button>
                     </div>
                 </form>
-
-                {{-- Form hapus --}}
                 <form id="form-hapus" action="/admin/topologi/olt/{{ $olt->id }}" method="POST" style="display:none">
                     @csrf
                     @method('DELETE')
@@ -152,19 +206,13 @@ var gmap, gmarker;
 function initMapPicker() {
     var center = { lat: oltLat, lng: oltLng };
     gmap = new google.maps.Map(document.getElementById('map-picker'), {
-        center: center,
-        zoom: 15,
-        mapTypeId: 'hybrid',
-        gestureHandling: 'greedy',
-        fullscreenControl: true,
-        streetViewControl: false,
-        mapTypeControl: true,
+        center: center, zoom: 15, mapTypeId: 'hybrid',
+        gestureHandling: 'greedy', fullscreenControl: true,
+        streetViewControl: false, mapTypeControl: true,
     });
     gmarker = new google.maps.Marker({
-        position: center,
-        map: gmap,
-        title: '{{ addslashes($olt->name) }}',
-        draggable: true,
+        position: center, map: gmap,
+        title: '{{ addslashes($olt->name) }}', draggable: true,
         icon: { url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png', scaledSize: new google.maps.Size(44,44) },
     });
     gmarker.addListener('dragend', function() {
@@ -187,37 +235,68 @@ function initMapPicker() {
 window.addEventListener('load', function() {
     var check = setInterval(function() {
         if (typeof google !== 'undefined' && google.maps && google.maps.Map) {
-            clearInterval(check);
-            initMapPicker();
+            clearInterval(check); initMapPicker();
         }
     }, 100);
 });
+
+function selectColor(key, hex, el, fieldOverride) {
+    var field = fieldOverride || key;
+    document.getElementById('color-'+key) && (document.getElementById('color-'+key).value = hex);
+    if (fieldOverride) document.getElementById('line-'+fieldOverride).value = hex;
+    // update preview dot
+    var dot = document.getElementById('preview-dot-'+key);
+    if (dot) dot.style.background = hex;
+    var lineDot = document.getElementById('preview-line-'+field);
+    if (lineDot) lineDot.style.background = hex;
+    // update selected state (hanya dalam parent yang sama)
+    var parent = el.parentElement;
+    parent.querySelectorAll('.color-option').forEach(function(e){ e.classList.remove('selected'); });
+    el.classList.add('selected');
+}
+
+function selectColorCustom(key, hex) {
+    document.getElementById('color-'+key).value = hex;
+    var dot = document.getElementById('preview-dot-'+key);
+    if (dot) dot.style.background = hex;
+    var parent = document.getElementById('color-'+key).closest('.visual-section');
+    if (parent) parent.querySelectorAll('.color-option').forEach(function(e){ e.classList.remove('selected'); });
+}
+
+function selectColorLine(field, hex) {
+    document.getElementById('line-'+field).value = hex;
+    var dot = document.getElementById('preview-line-'+field);
+    if (dot) dot.style.background = hex;
+}
+
+function selectIcon(key, ikey, el) {
+    document.getElementById('icon-'+key).value = ikey;
+    var parent = el.parentElement;
+    parent.querySelectorAll('.icon-option').forEach(function(e){ e.classList.remove('selected'); });
+    el.classList.add('selected');
+}
 
 function fetchHsgqKey() {
     const btn = document.getElementById('btn-fetch-key');
     const result = document.getElementById('fetch-key-result');
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fetching...';
-    result.innerHTML = '';
     fetch('/admin/topologi/olt/{{ $olt->id }}/fetch-hsgq-key', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}'},
+        headers: {'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}'},
         body: JSON.stringify({})
-    }).then(r => r.json()).then(data => {
+    }).then(r=>r.json()).then(data=>{
         if (data.success) {
             document.getElementById('hsgq_key_input').value = data.key;
-            result.innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> ' + data.message + '</span>';
+            result.innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> '+data.message+'</span>';
         } else {
-            result.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle"></i> ' + data.error + '</span>';
+            result.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle"></i> '+data.error+'</span>';
         }
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-key"></i> Fetch Key Otomatis';
-    }).catch(e => {
-        result.innerHTML = '<span class="text-danger">Error: ' + e.message + '</span>';
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-key"></i> Fetch Key Otomatis';
     });
 }
+
 function hapusOlt() {
     if (confirm('Yakin hapus OLT {{ $olt->name }}? Semua ONU akan ikut terhapus!')) {
         document.getElementById('form-hapus').submit();

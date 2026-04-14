@@ -65,6 +65,18 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label fw-semibold">SFP Port <small class="text-muted">(opsional)</small></label>
+                            <select name="sfp_id" id="sfp_id" class="form-select">
+                                <option value="">-- Pilih SFP --</option>
+                                @foreach($sfps as $sfp)
+                                <option value="{{ $sfp->id }}" data-olt="{{ $sfp->olt_id }}" {{ old('sfp_id', $odp->sfp_id) == $sfp->id ? 'selected' : '' }}>
+                                    {{ $sfp->olt->name }} - {{ $sfp->name }} ({{ $sfp->port ?? '-' }})
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
                             <label class="form-label fw-semibold">ODC Induk <small class="text-muted">(opsional)</small></label>
                             <select name="odc_id" class="form-select">
                                 <option value="">-- Langsung ke OLT --</option>
@@ -179,6 +191,23 @@ function placeMarker(map, lat, lng) {
         document.getElementById('inputLng').value = e.latLng.lng().toFixed(8);
     });
 }
+
+function filterSfp(oltId) {
+    var select = document.getElementById('sfp_id');
+    var options = select.querySelectorAll('option');
+    options.forEach(function(opt) {
+        if (!opt.value) return;
+        opt.style.display = (!oltId || opt.dataset.olt == oltId) ? '' : 'none';
+    });
+    var selected = select.options[select.selectedIndex];
+    if (selected && selected.value && selected.dataset.olt != oltId) {
+        select.value = '';
+    }
+}
+document.addEventListener('DOMContentLoaded', function() {
+    var oltId = document.getElementById('olt_id').value;
+    if (oltId) filterSfp(oltId);
+});
 
 window.addEventListener('load', function() {
     var check = setInterval(function() {

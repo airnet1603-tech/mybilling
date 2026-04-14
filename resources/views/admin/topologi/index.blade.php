@@ -120,8 +120,8 @@
 
 @push('scripts')
 <script>
-var odcData = {!! json_encode($odcs->map(fn($o) => ['id'=>$o->id,'name'=>$o->name,'olt_id'=>$o->olt_id,'kapasitas'=>$o->kapasitas,'lat'=>$o->lat,'lng'=>$o->lng])) !!};
-var odpData = {!! json_encode($odps->map(fn($o) => ['id'=>$o->id,'name'=>$o->name,'olt_id'=>$o->olt_id,'odc_id'=>$o->odc_id,'parent_odp_id'=>$o->parent_odp_id,'kapasitas'=>$o->kapasitas,'lat'=>$o->lat,'lng'=>$o->lng])) !!};
+var odcData = {!! json_encode($odcs->map(fn($o) => ['id'=>$o->id,'name'=>$o->name,'olt_id'=>$o->olt_id,'sfp_id'=>$o->sfp_id,'kapasitas'=>$o->kapasitas,'lat'=>$o->lat,'lng'=>$o->lng])) !!};
+var odpData = {!! json_encode($odps->map(fn($o) => ['id'=>$o->id,'name'=>$o->name,'olt_id'=>$o->olt_id,'sfp_id'=>$o->sfp_id,'odc_id'=>$o->odc_id,'parent_odp_id'=>$o->parent_odp_id,'kapasitas'=>$o->kapasitas,'lat'=>$o->lat,'lng'=>$o->lng])) !!};
 var activeOltId = null;
 var activeOdcId = null;
 
@@ -134,7 +134,8 @@ function setActiveCard(oltId) {
 function showSfp(oltId, e) {
     e.stopPropagation();
     var token = document.querySelector('meta[name="csrf-token"]').content;
-    if (activeOltId == oltId && document.getElementById('panel-sfp').classList.contains('show')) {
+    var sfpPanelOpen = document.getElementById('panel-sfp').classList.contains('show');
+    if (activeOltId == oltId && sfpPanelOpen) {
         closePanel('sfp');
         return;
     }
@@ -162,13 +163,67 @@ function showSfp(oltId, e) {
             '<small class="text-muted">' + (s.keterangan||'') + '</small>' +
             '<div class="mt-1 d-flex gap-1 flex-wrap">' +
             '<a href="/admin/topologi/sfp/' + s.id + '/edit" class="btn btn-xs btn-outline-warning" style="font-size:0.65rem;padding:1px 6px;">Edit</a>' +
-            '<form method="POST" action="/admin/topologi/sfp/' + s.id + '" style="display:inline;" onsubmit="return confirm('Hapus SFP ' + s.name + '?')">' +
+            '<button onclick="showOdcBySfp(' + s.id + ', ' + oltId + ', \'' + s.name + '\', event)" class="btn btn-xs" style="font-size:0.65rem;padding:1px 6px;background:#6f42c1;color:#fff;border:none;">ODC</button>' +
+            '<button onclick="showOdpBySfp(' + s.id + ', ' + oltId + ', \'' + s.name + '\', event)" class="btn btn-xs btn-outline-warning" style="font-size:0.65rem;padding:1px 6px;">ODP</button>' +
+            '<form method="POST" action="/admin/topologi/sfp/' + s.id + '" style="display:inline;" onsubmit="return confirm(\'Hapus SFP \' + s.name + \'?\')">' +
             '<input type="hidden" name="_token" value="' + token + '">' +
             '<input type="hidden" name="_method" value="DELETE">' +
             '<button type="submit" class="btn btn-xs btn-outline-danger" style="font-size:0.65rem;padding:1px 6px;">Hapus</button></form>' +
             '</div></div>'
         ).join('') : '<div class="text-center text-muted py-3"><small>Belum ada SFP untuk OLT ini.</small><br><a href="/admin/topologi/sfp/create" class="btn btn-sm btn-outline-primary mt-2" style="font-size:0.75rem;">+ Tambah SFP</a></div>';
     });
+}
+
+function showOdcBySfp(sfpId, oltId, sfpName, e) {
+    e.stopPropagation();
+    var token = document.querySelector('meta[name="csrf-token"]').content;
+    document.getElementById('odc-olt-label').textContent = '— SFP: ' + sfpName;
+    var odcs = odcData.filter(o => o.sfp_id == sfpId || (o.olt_id == oltId && !o.sfp_id));
+    // Filter hanya yang sfp_id cocok
+    var odcsBySfp = odcData.filter(o => o.sfp_id == sfpId);
+    var list = document.getElementById('odc-list-main');
+    list.innerHTML = odcsBySfp.length ? odcsBySfp.map(o =>
+        '<div class="card mb-2 p-2" style="border-left:3px solid #6f42c1;font-size:0.82rem;">' +
+        '<div class="fw-semibold">' + o.name + '</div>' +
+        '<small class="text-muted">Kapasitas: ' + (o.kapasitas||'-') + '</small>' +
+        '<div class="mt-1 d-flex gap-1 flex-wrap">' +
+        '<a href="/admin/topologi/odc/' + o.id + '/edit" class="btn btn-xs btn-outline-warning" style="font-size:0.65rem;padding:1px 6px;">Edit</a>' +
+        '<a href="/admin/topologi/peta?odc_id=' + o.id + '&olt_id=' + oltId + '" class="btn btn-xs btn-outline-primary" style="font-size:0.65rem;padding:1px 6px;">Detail</a>' +
+        '<button onclick="showOdpByOdc(' + o.id + ', ' + oltId + ', \'' + o.name + '\', event)" class="btn btn-xs" style="font-size:0.65rem;padding:1px 6px;background:#fd7e14;color:#fff;border:none;">ODP</button>' +
+        '<form method="POST" action="/admin/topologi/odc/' + o.id + '" style="display:inline;" onsubmit="return confirm(\'Hapus ODC ' + o.name + '?\')">' +
+        '<input type="hidden" name="_token" value="' + token + '">' +
+        '<input type="hidden" name="_method" value="DELETE">' +
+        '<button type="submit" class="btn btn-xs btn-outline-danger" style="font-size:0.65rem;padding:1px 6px;">Hapus</button></form>' +
+        '</div></div>'
+    ).join('') : '<div class="text-center text-muted py-3"><small>Belum ada ODC untuk SFP ini.</small><br><a href="/admin/topologi/odc/create" class="btn btn-sm btn-outline-secondary mt-2" style="font-size:0.75rem;">+ Tambah ODC</a></div>';
+    document.getElementById('panel-odc').classList.add('show');
+    document.getElementById('panel-odp').classList.remove('show');
+}
+
+function showOdpBySfp(sfpId, oltId, sfpName, e) {
+    e.stopPropagation();
+    var token = document.querySelector('meta[name="csrf-token"]').content;
+    document.getElementById('odp-label').textContent = '— SFP: ' + sfpName;
+    // Ambil ODC yang terhubung ke SFP ini
+    var odcIds = odcData.filter(o => o.sfp_id == sfpId).map(o => o.id);
+    // Tampilkan ODP yang sfp_id cocok ATAU odc_id-nya terhubung ke SFP ini
+    var odps = odpData.filter(o => o.sfp_id == sfpId || odcIds.includes(o.odc_id));
+    var list = document.getElementById('odp-list-main');
+    list.innerHTML = odps.length ? odps.map(o =>
+        '<div class="card mb-2 p-2" style="border-left:3px solid #fd7e14;font-size:0.82rem;">' +
+        '<div class="fw-semibold">' + o.name + '</div>' +
+        '<small class="text-muted">Kapasitas: ' + (o.kapasitas||'-') + '</small>' +
+        '<div class="mt-1 d-flex gap-1 flex-wrap">' +
+        '<a href="/admin/topologi/odp/' + o.id + '/edit" class="btn btn-xs btn-outline-warning" style="font-size:0.65rem;padding:1px 6px;">Edit</a>' +
+        '<a href="/admin/topologi/peta?odp_id=' + o.id + '" class="btn btn-xs btn-outline-primary" style="font-size:0.65rem;padding:1px 6px;">Detail</a>' +
+        '<form method="POST" action="/admin/topologi/odp/' + o.id + '" style="display:inline;" onsubmit="return confirm(\'Hapus ODP ' + o.name + '?\')">' +
+        '<input type="hidden" name="_token" value="' + token + '">' +
+        '<input type="hidden" name="_method" value="DELETE">' +
+        '<button type="submit" class="btn btn-xs btn-outline-danger" style="font-size:0.65rem;padding:1px 6px;">Hapus</button></form>' +
+        '</div></div>'
+    ).join('') : '<div class="text-center text-muted py-3"><small>Belum ada ODP untuk SFP ini.</small><br><a href="/admin/topologi/odp/create" class="btn btn-sm btn-outline-secondary mt-2" style="font-size:0.75rem;">+ Tambah ODP</a></div>';
+    document.getElementById('panel-odp').classList.add('show');
+    document.getElementById('panel-odc').classList.remove('show');
 }
 
 function closePanel(type) {
@@ -227,7 +282,9 @@ function showOdc(oltId, e) {
 function showOdp(oltId, e) {
     e.stopPropagation();
     var token = document.querySelector('meta[name="csrf-token"]').content;
-    if (activeOltId == oltId && activeOdcId == null && document.getElementById('panel-odp').classList.contains('show') && !document.getElementById('panel-odc').classList.contains('show')) {
+    var odpPanelOpen = document.getElementById('panel-odp').classList.contains('show');
+    var odcPanelOpen2 = document.getElementById('panel-odc').classList.contains('show');
+    if (activeOltId == oltId && activeOdcId == null && odpPanelOpen && !odcPanelOpen2) {
         closePanel('odp');
         return;
     }
@@ -324,9 +381,10 @@ function syncOnu(olt_id, e) {
 
 function syncAllOnu() {
     toast('Sync semua ONU...');
-    @foreach($olts as $olt)
-    syncOnu({{ $olt->id }}, { stopPropagation: function(){} });
-    @endforeach
+    document.querySelectorAll('[id^="olt-card-"]').forEach(function(card) {
+        var oltId = card.id.replace('olt-card-', '');
+        syncOnu(oltId, { stopPropagation: function(){} });
+    });
 }
 
 function toast(msg) {

@@ -37,7 +37,7 @@ class TopologiController extends Controller
             'username'   => 'required',
             'password'   => 'required',
         ]);
-        $olt->update($request->only(['name','ip_address','username','password','snmp_community','hsgq_key','api_endpoint','sync_interval','lat','lng','model']));
+        $olt->update($request->only(['name','ip_address','username','password','snmp_community','hsgq_key','api_endpoint','sync_interval','lat','lng','model','olt_color','olt_icon','odc_color','odc_icon','odp_color','odp_icon','line_olt_odc','line_odc_odp','line_odp_odp']));
         return redirect('/admin/topologi')->with('success', 'OLT berhasil diupdate!');
     }
 
@@ -150,27 +150,41 @@ class TopologiController extends Controller
 
         $allOdps = Odp::all();
 
-        $odcs = $allOdps->where('type', 'ODC')->map(fn($o) => [
-            'id'     => 'odc-'.$o->id,
-            'type'   => 'ODC',
-            'name'   => $o->name,
-            'lat'    => $o->lat,
-            'lng'    => $o->lng,
-            'olt_id' => 'olt-'.$o->olt_id,
-        ]);
+        $oltMap = \App\Models\Olt::all()->keyBy('id');
+        $odcs = $allOdps->where('type', 'ODC')->map(function($o) use ($oltMap) {
+            $olt = $oltMap->get($o->olt_id);
+            return [
+                'id'     => 'odc-'.$o->id,
+                'type'   => 'ODC',
+                'name'   => $o->name,
+                'lat'    => $o->lat,
+                'lng'    => $o->lng,
+                'olt_id' => 'olt-'.$o->olt_id,
+                'color'  => $olt ? ($olt->odc_color ?? '#6f42c1') : '#6f42c1',
+                'icon'   => $olt ? ($olt->odc_icon  ?? 'dot')     : 'dot',
+                'line_color' => $olt ? ($olt->line_olt_odc ?? '#6f42c1') : '#6f42c1',
+            ];
+        });
 
-        $odps = $allOdps->where('type', 'ODP')->map(fn($o) => [
-            'id'            => 'odp-'.$o->id,
-            'type'          => 'ODP',
-            'name'          => $o->name,
-            'lat'           => $o->lat,
-            'lng'           => $o->lng,
-            'kapasitas'     => $o->kapasitas,
-            'keterangan'    => $o->keterangan,
-            'olt_id'        => 'olt-'.$o->olt_id,
-            'odc_id'        => $o->odc_id ? 'odc-'.$o->odc_id : null,
-            'parent_odp_id' => $o->parent_odp_id ? 'odp-'.$o->parent_odp_id : null,
-        ]);
+        $odps = $allOdps->where('type', 'ODP')->map(function($o) use ($oltMap) {
+            $olt = $oltMap->get($o->olt_id);
+            return [
+                'id'            => 'odp-'.$o->id,
+                'type'          => 'ODP',
+                'name'          => $o->name,
+                'lat'           => $o->lat,
+                'lng'           => $o->lng,
+                'kapasitas'     => $o->kapasitas,
+                'keterangan'    => $o->keterangan,
+                'olt_id'        => 'olt-'.$o->olt_id,
+                'odc_id'        => $o->odc_id ? 'odc-'.$o->odc_id : null,
+                'parent_odp_id' => $o->parent_odp_id ? 'odp-'.$o->parent_odp_id : null,
+                'color'         => $olt ? ($olt->odp_color ?? '#fd7e14') : '#fd7e14',
+                'icon'          => $olt ? ($olt->odp_icon  ?? 'dot')     : 'dot',
+                'line_color'    => $olt ? ($olt->line_odc_odp ?? '#fd7e14') : '#fd7e14',
+                'line_color_odp'=> $olt ? ($olt->line_odp_odp ?? '#28a745') : '#28a745',
+            ];
+        });
 
         $onus = Onu::with('pelanggan')->get()->map(fn($o) => [
             'id'        => 'onu-'.$o->id,
@@ -392,7 +406,7 @@ class TopologiController extends Controller
             'name'   => 'required',
             'olt_id' => 'required|exists:olts,id',
         ]);
-        Sfp::create($request->only(['name','olt_id','port','keterangan','lat','lng']));
+        Sfp::create($request->only(['name','olt_id','port','keterangan','lat','lng','color','icon']));
         return redirect('/admin/topologi')->with('success', 'SFP berhasil ditambahkan!');
     }
 
@@ -410,7 +424,7 @@ class TopologiController extends Controller
             'name'   => 'required',
             'olt_id' => 'required|exists:olts,id',
         ]);
-        $sfp->update($request->only(['name','olt_id','port','keterangan','lat','lng']));
+        $sfp->update($request->only(['name','olt_id','port','keterangan','lat','lng','color','icon']));
         return redirect('/admin/topologi')->with('success', 'SFP berhasil diupdate!');
     }
 

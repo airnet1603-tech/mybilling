@@ -172,6 +172,38 @@ var oltIdParam = urlParams.get('olt_id');
 var odcIdParam = urlParams.get('odc_id');
 var odpIdParam = urlParams.get('odp_id');
 
+function makeMarkerIcon(color, icon, size) {
+    size = size || 24;
+    var half = size / 2;
+    var shapes = {
+        dot     : '<circle cx="'+half+'" cy="'+half+'" r="5" fill="#fff"/>',
+        circle_empty: '<circle cx="'+half+'" cy="'+half+'" r="5" fill="none" stroke="#fff" stroke-width="2"/>',
+        square  : '<rect x="'+(half-4)+'" y="'+(half-4)+'" width="8" height="8" fill="#fff"/>',
+        triangle: '<polygon points="'+half+','+(half-5)+' '+(half+5)+','+(half+4)+' '+(half-5)+','+(half+4)+'" fill="#fff"/>',
+        diamond : '<polygon points="'+half+','+(half-6)+' '+(half+5)+','+half+' '+half+','+(half+6)+' '+(half-5)+','+half+'" fill="#fff"/>',
+        star    : '<text x="'+half+'" y="'+(half+4)+'" text-anchor="middle" font-size="10" fill="#fff">★</text>',
+        cross   : '<text x="'+half+'" y="'+(half+4)+'" text-anchor="middle" font-size="11" fill="#fff">✚</text>',
+        wifi    : '<text x="'+half+'" y="'+(half+4)+'" text-anchor="middle" font-size="10" fill="#fff">W</text>',
+        tower   : '<text x="'+half+'" y="'+(half+4)+'" text-anchor="middle" font-size="10" fill="#fff">T</text>',
+        home    : '<text x="'+half+'" y="'+(half+4)+'" text-anchor="middle" font-size="10" fill="#fff">H</text>',
+        building: '<text x="'+half+'" y="'+(half+4)+'" text-anchor="middle" font-size="10" fill="#fff">B</text>',
+        pin     : '<text x="'+half+'" y="'+(half+4)+'" text-anchor="middle" font-size="10" fill="#fff">P</text>',
+    };
+    var inner = shapes[icon] || shapes['dot'];
+    var h = size + 6;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+size+'" height="'+h+'" viewBox="0 0 '+size+' '+h+'">' +
+        '<path d="M'+half+' 0 C'+(half*0.3)+' 0 0 '+(half*0.3)+' 0 '+half+' C0 '+(half*1.6)+' '+half+' '+h+' '+half+' '+h+' C'+half+' '+h+' '+size+' '+(half*1.6)+' '+size+' '+half+' C'+size+' '+(half*0.3)+' '+(half*1.7)+' 0 '+half+' 0Z" fill="'+color+'" stroke="#fff" stroke-width="1.5"/>' +
+        inner +
+        '</svg>';
+    return {
+        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+        scaledSize: new google.maps.Size(size, h),
+        anchor: new google.maps.Point(half, h),
+    };
+}
+function makeOdpIcon(color, icon) { return makeMarkerIcon(color, icon, 22); }
+function makeOdcIcon(color, icon) { return makeMarkerIcon(color, icon, 26); }
+
 function initMap() {
     petaMap = new google.maps.Map(document.getElementById('petaMap'), {
         center           : { lat: -8.207019, lng: 112.019980 },
@@ -233,14 +265,7 @@ function loadNodes() {
                 position : { lat: parseFloat(o.lat), lng: parseFloat(o.lng) },
                 map      : petaMap,
                 title    : o.name,
-                icon     : {
-                    path        : google.maps.SymbolPath.CIRCLE,
-                    scale       : 10,
-                    fillColor   : '#6f42c1',
-                    fillOpacity : 1,
-                    strokeColor : '#fff',
-                    strokeWeight: 2,
-                },
+                icon     : makeOdcIcon(o.color || '#6f42c1', o.icon || 'dot'),
                 zIndex   : 7,
                 oltId    : o.olt_id ? o.olt_id.replace('olt-','') : null,
                 odcId    : o.id.replace('odc-',''),
@@ -261,7 +286,7 @@ function loadNodes() {
             if (oltPos) {
                 var line = new google.maps.Polyline({
                     path: [oltPos, { lat: parseFloat(o.lat), lng: parseFloat(o.lng) }],
-                    strokeColor: '#6f42c1', strokeWeight: 2.5, strokeOpacity: 0.9, map: petaMap,
+                    strokeColor: o.line_color || '#6f42c1', strokeWeight: 2.5, strokeOpacity: 0.9, map: petaMap,
                 });
                 polylines.push({ line: line, oltId: o.olt_id ? o.olt_id.replace('olt-','') : null });
             }
@@ -271,11 +296,12 @@ function loadNodes() {
         data.odps.forEach(function(o) {
             if (!o.lat || !o.lng) return;
             nodeMap[o.id] = { lat: parseFloat(o.lat), lng: parseFloat(o.lng) };
+            var odpIcon = makeOdpIcon(o.color || '#fd7e14', o.icon || 'dot');
             var marker = new google.maps.Marker({
                 position : { lat: parseFloat(o.lat), lng: parseFloat(o.lng) },
                 map      : petaMap,
                 title    : o.name,
-                icon     : { url: 'http://maps.google.com/mapfiles/ms/icons/orange-dot.png', scaledSize: new google.maps.Size(34,34) },
+                icon     : odpIcon,
                 zIndex   : 5,
                 oltId    : o.olt_id ? o.olt_id.replace('olt-','') : null,
                 odpId    : o.id.replace('odp-',''),
@@ -297,7 +323,7 @@ function loadNodes() {
             var parentKey = o.parent_odp_id ? o.parent_odp_id : (o.odc_id ? o.odc_id : o.olt_id);
             var parentPos = nodeMap[parentKey];
             if (parentPos) {
-                var lineColor = o.parent_odp_id ? '#28a745' : (o.odc_id ? '#fd7e14' : '#ffc107');
+                var lineColor = o.parent_odp_id ? (o.line_color_odp || '#28a745') : (o.odc_id ? (o.line_color || '#fd7e14') : '#ffc107');
                 var line = new google.maps.Polyline({
                     path: [parentPos, { lat: parseFloat(o.lat), lng: parseFloat(o.lng) }],
                     strokeColor: lineColor, strokeWeight: 1.8, strokeOpacity: 0.8, map: petaMap,

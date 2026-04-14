@@ -53,11 +53,23 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-semibold">OLT Induk <span class="text-danger">*</span></label>
-                            <select name="olt_id" class="form-select" required>
+                            <select name="olt_id" id="olt_id" class="form-select" required onchange="filterSfp(this.value)">
                                 <option value="">-- Pilih OLT --</option>
                                 @foreach($olts as $olt)
                                 <option value="{{ $olt->id }}" {{ old('olt_id') == $olt->id ? 'selected' : '' }}>
                                     {{ $olt->name }} ({{ $olt->ip_address }})
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">SFP Port <small class="text-muted">(opsional)</small></label>
+                            <select name="sfp_id" id="sfp_id" class="form-select">
+                                <option value="">-- Pilih SFP --</option>
+                                @foreach($sfps as $sfp)
+                                <option value="{{ $sfp->id }}" data-olt="{{ $sfp->olt_id }}" {{ old('sfp_id') == $sfp->id ? 'selected' : '' }}>
+                                    {{ $sfp->olt->name }} - {{ $sfp->name }} ({{ $sfp->port ?? '-' }})
                                 </option>
                                 @endforeach
                             </select>

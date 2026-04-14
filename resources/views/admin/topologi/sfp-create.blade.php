@@ -1,6 +1,8 @@
 @extends('layouts.admin')
 @section('title', 'Tambah SFP')
 
+
+
 @section('content')
 <div class="d-flex align-items-center gap-2 mb-4">
     <a href="/admin/topologi" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left"></i></a>
@@ -12,7 +14,7 @@
 @endif
 
 <div class="row justify-content-center">
-    <div class="col-md-6">
+    <div class="col-md-7">
         <div class="card border-0 shadow-sm" style="border-radius:14px;">
             <div class="card-body p-4">
                 <form method="POST" action="/admin/topologi/sfp/store">
@@ -38,9 +40,10 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Keterangan <small class="text-muted">(opsional)</small></label>
-                        <input type="text" name="keterangan" class="form-control" value="{{ old('keterangan') }}" placeholder="Contoh: Arah utara">
-                    </div>
-                    <div class="d-flex gap-2">
+                        <input type="text" name="keterangan" class="form-control" value="{{ old('keterangan') }}">
+                    </div>                            @endforeach
+                        </div>
+                    </div>                    <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary flex-fill">
                             <i class="fas fa-save me-1"></i> Simpan SFP
                         </button>
@@ -51,4 +54,6 @@
         </div>
     </div>
 </div>
+
+
 @endsection
