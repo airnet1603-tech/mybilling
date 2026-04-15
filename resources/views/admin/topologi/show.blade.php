@@ -7,6 +7,8 @@
 #map { height: 400px; border-radius: 10px; }
 .badge-up   { background:#d4edda; color:#155724; padding:2px 10px; border-radius:20px; font-size:0.75rem; }
 .badge-down { background:#f8d7da; color:#721c24; padding:2px 10px; border-radius:20px; font-size:0.75rem; }
+.odp-select { font-size:0.75rem; padding:2px 4px; border-radius:6px; border:1px solid #dee2e6; max-width:140px; }
+.odp-select:focus { outline:none; border-color:#0d6efd; box-shadow:0 0 0 2px rgba(13,110,253,.15); }
 </style>
 @endpush
 
@@ -65,23 +67,49 @@
     </div>
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header bg-white fw-semibold border-0">📡 Daftar ONU</div>
+            <div class="card-header bg-white fw-semibold border-0 d-flex align-items-center justify-content-between">
+                <span>📡 Daftar ONU</span>
+                <div class="d-flex gap-2 align-items-center">
+                    <input type="text" id="searchOnu" class="form-control form-control-sm" placeholder="Cari nama/MAC..." style="width:160px" oninput="filterOnu()">
+                    <select id="filterStatus" class="form-select form-select-sm" style="width:110px" onchange="filterOnu()">
+                        <option value="">Semua</option>
+                        <option value="Up">Online</option>
+                        <option value="Down">Offline</option>
+                    </select>
+                </div>
+            </div>
             <div class="card-body p-0">
-                <div style="max-height:400px;overflow-y:auto;">
-                <table class="table table-sm table-hover mb-0">
+                <div style="max-height:500px;overflow-y:auto;">
+                <table class="table table-sm table-hover mb-0" id="onuTable">
                     <thead class="table-light sticky-top">
                         <tr>
-                            <th>ID</th><th>Nama</th><th>MAC</th><th>Status</th><th>Pelanggan</th>
+                            <th>ID</th>
+                            <th>Nama</th>
+                            <th>Status</th>
+                            <th>ODP</th>
+                            <th>Pelanggan</th>
                         </tr>
                     </thead>
                     <tbody>
                     @forelse($onus as $onu)
-                    <tr>
-                        <td><small>{{ $onu->onu_id }}</small></td>
-                        <td>{{ $onu->name ?? '-' }}</td>
-                        <td><small class="text-muted">{{ $onu->mac_address }}</small></td>
+                    <tr data-status="{{ $onu->status }}" data-name="{{ strtolower($onu->name.$onu->mac_address) }}">
+                        <td><small class="text-muted">{{ $onu->onu_id }}</small></td>
+                        <td>
+                            <div>{{ $onu->name ?? '-' }}</div>
+                            <small class="text-muted" style="font-size:0.7rem;">{{ $onu->mac_address }}</small>
+                        </td>
                         <td><span class="badge-{{ strtolower($onu->status) }}">{{ $onu->status }}</span></td>
-                        <td>{{ $onu->pelanggan?->nama ?? '-' }}</td>
+                        <td>
+                            <select class="odp-select" onchange="assignOdp({{ $onu->id }}, this.value)">
+                                <option value="">-- ODP --</option>
+                                @foreach($odps as $odp)
+                                <option value="{{ $odp->id }}" {{ $onu->odp_id == $odp->id ? 'selected' : '' }}>
+                                    {{ $odp->name }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td><small>{{ $onu->pelanggan?->nama ?? '-' }}</small></td>
                     </tr>
                     @empty
                     <tr><td colspan="5" class="text-center text-muted py-3">Belum ada ONU. Klik Sync ONU.</td></tr>
@@ -103,25 +131,89 @@ var oltLat = {{ $olt->lat ?? -8.207019 }};
 var oltLng = {{ $olt->lng ?? 112.019980 }};
 var oltName = '{{ addslashes($olt->name) }}';
 var oltIp = '{{ $olt->ip_address }}';
+var csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+function filterOnu() {
+    var search = document.getElementById('searchOnu').value.toLowerCase();
+    var status = document.getElementById('filterStatus').value;
+    document.querySelectorAll('#onuTable tbody tr').forEach(function(row) {
+        var name = row.getAttribute('data-name') || '';
+        var st   = row.getAttribute('data-status') || '';
+        var show = (!search || name.includes(search)) && (!status || st === status);
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+function assignOdp(onuId, odpId) {
+    fetch('/admin/topologi/onu/' + onuId + '/assign-odp', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
+        },
+        body: JSON.stringify({ odp_id: odpId || null })
+    }).then(r => r.json()).then(d => {
+        toast(d.success ? '✅ ODP berhasil disimpan!' : '❌ Gagal menyimpan');
+    }).catch(() => toast('❌ Error koneksi'));
+}
+
+function makeMarkerIcon(color, icon, size) {
+    size = size || 24;
+    var h = Math.round(size * 1.4);
+    var cx = size / 2;
+    var cy = size * 0.42;
+    var r  = size * 0.36;
+    var s = size * 0.28;
+    var shapes = {
+        dot  : '<circle cx="'+cx+'" cy="'+cy+'" r="'+(r*0.4)+'" fill="#fff"/>',
+        wifi : '<path d="M'+(cx-r*0.55)+','+(cy-r*0.1)+' Q'+cx+','+(cy-r*0.7)+' '+(cx+r*0.55)+','+(cy-r*0.1)+'" fill="none" stroke="#fff" stroke-width="'+(size*0.07)+'"/><path d="M'+(cx-r*0.35)+','+(cy+r*0.15)+' Q'+cx+','+(cy-r*0.2)+' '+(cx+r*0.35)+','+(cy+r*0.15)+'" fill="none" stroke="#fff" stroke-width="'+(size*0.07)+'"/><circle cx="'+cx+'" cy="'+(cy+r*0.4)+'" r="'+(r*0.15)+'" fill="#fff"/>',
+        pin  : '<circle cx="'+cx+'" cy="'+(cy-r*0.15)+'" r="'+(r*0.45)+'" fill="#fff"/><line x1="'+cx+'" y1="'+(cy+r*0.3)+'" x2="'+cx+'" y2="'+(cy+r*0.6)+'" stroke="#fff" stroke-width="'+(size*0.1)+'"/>',
+    };
+    var inner = shapes[icon] || shapes["dot"];
+    var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='"+size+"' height='"+h+"' viewBox='0 0 "+size+" "+h+"'>" +
+        "<circle cx='"+cx+"' cy='"+cy+"' r='"+r+"' fill='"+color+"' stroke='#fff' stroke-width='1.5'/>"+
+        "<polygon points='"+(cx-r*0.35)+","+(cy+r*0.7)+" "+(cx+r*0.35)+","+(cy+r*0.7)+" "+cx+","+h+"' fill='"+color+"'/>"+
+        inner + "</svg>";
+    return {
+        url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg),
+        scaledSize: new google.maps.Size(size, h),
+        anchor: new google.maps.Point(cx, h),
+    };
+}
 
 function initMap() {
     var center = { lat: oltLat, lng: oltLng };
     var map = new google.maps.Map(document.getElementById('map'), {
         center: center, zoom: 14, mapTypeId: 'hybrid',
         gestureHandling: 'greedy', fullscreenControl: true,
-        streetViewControl: true, mapTypeControl: true,
     });
     @if($olt->lat && $olt->lng)
     var marker = new google.maps.Marker({
         position: center, map: map, title: oltName,
-        icon: { url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png', scaledSize: new google.maps.Size(44,44) },
+        icon: makeMarkerIcon('{{ $olt->olt_color ?? "#dc3545" }}', 'wifi', 28),
     });
-    var infoWindow = new google.maps.InfoWindow({
-        content: '<b>' + oltName + '</b><br><small>' + oltIp + '</small>'
-    });
+    var infoWindow = new google.maps.InfoWindow({ content: '<b>'+oltName+'</b><br><small>'+oltIp+'</small>' });
     infoWindow.open(map, marker);
     marker.addListener('click', function() { infoWindow.open(map, marker); });
     @endif
+
+    // Tampilkan ODP di peta
+    @foreach($odps as $odp)
+    @if($odp->lat && $odp->lng)
+    (function() {
+        var odpMarker = new google.maps.Marker({
+            position: { lat: {{ $odp->lat }}, lng: {{ $odp->lng }} },
+            map: map,
+            title: '{{ addslashes($odp->name) }}',
+            icon: makeMarkerIcon('#fd7e14', 'pin', 22),
+        });
+        var odpInfo = new google.maps.InfoWindow({
+            content: '<b>{{ addslashes($odp->name) }}</b><br><small>ODP</small>'
+        });
+        odpMarker.addListener('click', function() { odpInfo.open(map, odpMarker); });
+    })();
+    @endif
+    @endforeach
 }
 
 window.addEventListener('load', function() {
@@ -136,9 +228,9 @@ function syncOnu() {
     toast('Sync ONU dari OLT...');
     fetch('/admin/topologi/sync-onu/{{ $olt->id }}', {
         method: 'POST',
-        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+        headers: { 'X-CSRF-TOKEN': csrfToken }
     }).then(r => r.json()).then(d => {
-        toast(d.success ? `✅ Sync berhasil: ${d.synced} ONU` : `❌ ${d.error}`);
+        toast(d.success ? '✅ Sync berhasil: '+d.synced+' ONU' : '❌ '+d.error);
         setTimeout(() => location.reload(), 2000);
     });
 }

@@ -1,10 +1,10 @@
 @extends('layouts.admin')
 
 @section('title', 'Dashboard - ISP Billing')
+@section('page_title', 'Dashboard')
 
 @push('styles')
 <style>
-    .topbar { background: white; padding: 12px 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); margin-bottom: 20px; }
     .stat-card { border: none; border-radius: 12px; padding: 18px 20px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.12); }
     .stat-card.pelanggan  { background: linear-gradient(135deg, #667eea, #764ba2); }
     .stat-card.aktif      { background: linear-gradient(135deg, #11998e, #38ef7d); }
@@ -13,11 +13,6 @@
     .stat-card .icon { font-size: 2rem; opacity: 0.25; }
     .stat-card .stat-number { font-size: 1.8rem; font-weight: 700; line-height: 1; }
     .stat-card .stat-label  { font-size: 0.8rem; opacity: 0.85; margin-top: 4px; }
-    .badge-aktif    { background: #d4edda; color: #155724; }
-    .badge-isolir   { background: #f8d7da; color: #721c24; }
-    .badge-suspend  { background: #fff3cd; color: #856404; }
-    .badge-nonaktif { background: #e2e3e5; color: #383d41; }
-    .badge-status { font-size: 0.72rem; font-weight: 600; padding: 3px 9px; }
     .overdue-item { padding: 10px 16px; border-bottom: 1px solid #f0f2f5; transition: background 0.15s; }
     .overdue-item:last-child { border-bottom: none; }
     .overdue-item:hover { background: #fafafa; }
@@ -25,32 +20,6 @@
 @endpush
 
 @section('content')
-<div class="topbar d-flex justify-content-between align-items-center">
-    <div>
-        <h5 class="mb-0 fw-bold">Dashboard</h5>
-        <small class="text-muted">{{ now()->isoFormat('dddd, D MMMM Y') }}</small>
-    </div>
-    <div class="d-flex align-items-center gap-2">
-        @if(auth()->user()->isAdmin())
-        <a href="/admin/users" style="display:flex;align-items:center;gap:6px;color:#444;font-size:0.82rem;text-decoration:none;font-weight:500;">
-            <i class="fas fa-user-cog" style="font-size:1rem;"></i> Kelola User
-        </a>
-        @else
-        <span style="display:flex;align-items:center;gap:6px;color:#bbb;font-size:0.82rem;font-weight:500;cursor:not-allowed;">
-            <i class="fas fa-user-cog" style="font-size:1rem;"></i> Kelola User
-        </span>
-        @endif
-        <span style="color:#ccc;font-size:1rem;">|</span>
-        <div class="d-flex align-items-center justify-content-center rounded-circle bg-secondary text-white" style="width:36px;height:36px;font-size:1rem;">
-            <i class="fas fa-user"></i>
-        </div>
-        <div>
-            <div class="fw-semibold small">{{ auth()->user()->name }}</div>
-            <small class="text-muted">Administrator</small>
-        </div>
-    </div>
-</div>
-
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-card pelanggan">

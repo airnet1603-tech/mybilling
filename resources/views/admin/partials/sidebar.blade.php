@@ -1,4 +1,4 @@
-{{-- Topbar Mobile --}}
+{{-- Mobile Topbar --}}
 <div class="mobile-topbar">
     <button class="hamburger-btn" id="hamburgerBtn">
         <i class="fas fa-bars"></i>
@@ -6,10 +6,10 @@
     <span class="brand-title">ISP Billing</span>
 </div>
 
-<!-- Overlay -->
+{{-- Overlay --}}
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-<!-- SIDEBAR -->
+{{-- Sidebar --}}
 <div class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <div class="brand-icon">
@@ -31,6 +31,11 @@
             <li class="nav-item">
                 <a href="/admin/pelanggan/peta" class="nav-link {{ request()->is('admin/pelanggan/peta') ? 'active' : '' }}">
                     <i class="fas fa-map-marked-alt"></i> Peta
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/topologi" class="nav-link {{ request()->is('admin/topologi*') ? 'active' : '' }}">
+                    <i class="fas fa-project-diagram"></i> OLT
                 </a>
             </li>
             <li class="nav-item">
@@ -63,12 +68,6 @@
                     <i class="fas fa-network-wired"></i> Mikrotik
                 </a>
             </li>
-            <li class="nav-item">
-                <a href="/admin/topologi" class="nav-link {{ request()->is('admin/topologi') ? 'active' : '' }}">
-                    <i class="fas fa-server"></i> OLT
-                </a>
-            </li>
-
         </ul>
 
         <div class="sidebar-divider"></div>
@@ -90,4 +89,3 @@
         </ul>
     </nav>
 </div>
-

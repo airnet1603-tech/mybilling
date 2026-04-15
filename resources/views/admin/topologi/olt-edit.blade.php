@@ -97,7 +97,11 @@
 
                     {{-- ===== VISUAL SETTINGS ===== --}}
                     <hr>
-                    <div class="fw-semibold mb-3"><i class="fas fa-palette text-primary me-2"></i>Pengaturan Tampilan Peta</div>
+                    <div class="d-flex align-items-center justify-content-between mb-2" style="cursor:pointer;" onclick="toggleVisual()" id="visual-toggle">
+                        <div class="fw-semibold"><i class="fas fa-palette text-primary me-2"></i>Pengaturan Tampilan Peta</div>
+                        <span id="visual-arrow" class="text-muted"><i class="fas fa-chevron-down"></i></span>
+                    </div>
+                    <div id="visual-settings" style="display:none;">
 
                     @php
                     $colorOptions = ['#dc3545','#fd7e14','#ffc107','#28a745','#17a2b8','#0d6efd','#6f42c1','#e83e8c','#20c997','#343a40','#795548','#607d8b','#ff5722','#fff'];
@@ -167,6 +171,7 @@
                         @endforeach
                     </div>
 
+                    </div>{{-- end visual-settings --}}
                     <div class="d-flex gap-2 mt-3">
                         <button type="submit" class="btn btn-primary flex-fill">
                             <i class="fas fa-save"></i> Update
@@ -295,6 +300,18 @@ function fetchHsgqKey() {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-key"></i> Fetch Key Otomatis';
     });
+}
+
+function toggleVisual() {
+    var el = document.getElementById("visual-settings");
+    var arrow = document.getElementById("visual-arrow");
+    if (el.style.display === "none") {
+        el.style.display = "block";
+        arrow.innerHTML = '<i class="fas fa-chevron-up"></i>';
+    } else {
+        el.style.display = "none";
+        arrow.innerHTML = '<i class="fas fa-chevron-down"></i>';
+    }
 }
 
 function hapusOlt() {

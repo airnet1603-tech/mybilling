@@ -174,31 +174,50 @@ var odpIdParam = urlParams.get('odp_id');
 
 function makeMarkerIcon(color, icon, size) {
     size = size || 24;
-    var half = size / 2;
+    var h = Math.round(size * 1.4);
+    var cx = size / 2;
+    var cy = size * 0.42;
+    var r  = size * 0.36;
+    // Inner shape di dalam lingkaran
+    var s = r * 0.55; // ukuran simbol
     var shapes = {
-        dot     : '<circle cx="'+half+'" cy="'+half+'" r="5" fill="#fff"/>',
-        circle_empty: '<circle cx="'+half+'" cy="'+half+'" r="5" fill="none" stroke="#fff" stroke-width="2"/>',
-        square  : '<rect x="'+(half-4)+'" y="'+(half-4)+'" width="8" height="8" fill="#fff"/>',
-        triangle: '<polygon points="'+half+','+(half-5)+' '+(half+5)+','+(half+4)+' '+(half-5)+','+(half+4)+'" fill="#fff"/>',
-        diamond : '<polygon points="'+half+','+(half-6)+' '+(half+5)+','+half+' '+half+','+(half+6)+' '+(half-5)+','+half+'" fill="#fff"/>',
-        star    : '<text x="'+half+'" y="'+(half+4)+'" text-anchor="middle" font-size="10" fill="#fff">★</text>',
-        cross   : '<text x="'+half+'" y="'+(half+4)+'" text-anchor="middle" font-size="11" fill="#fff">✚</text>',
-        wifi    : '<text x="'+half+'" y="'+(half+4)+'" text-anchor="middle" font-size="10" fill="#fff">W</text>',
-        tower   : '<text x="'+half+'" y="'+(half+4)+'" text-anchor="middle" font-size="10" fill="#fff">T</text>',
-        home    : '<text x="'+half+'" y="'+(half+4)+'" text-anchor="middle" font-size="10" fill="#fff">H</text>',
-        building: '<text x="'+half+'" y="'+(half+4)+'" text-anchor="middle" font-size="10" fill="#fff">B</text>',
-        pin     : '<text x="'+half+'" y="'+(half+4)+'" text-anchor="middle" font-size="10" fill="#fff">P</text>',
+        dot         : '<circle cx="'+cx+'" cy="'+cy+'" r="'+(r*0.4)+'" fill="#fff"/>',
+        circle_empty: '<circle cx="'+cx+'" cy="'+cy+'" r="'+(r*0.45)+'" fill="none" stroke="#fff" stroke-width="'+(size*0.07)+'"/>',
+        square      : '<rect x="'+(cx-s)+'" y="'+(cy-s)+'" width="'+(s*2)+'" height="'+(s*2)+'" fill="#fff"/>',
+        triangle    : '<polygon points="'+cx+','+(cy-r*0.6)+' '+(cx+r*0.6)+','+(cy+r*0.4)+' '+(cx-r*0.6)+','+(cy+r*0.4)+'" fill="#fff"/>',
+        diamond     : '<polygon points="'+cx+','+(cy-r*0.65)+' '+(cx+r*0.5)+','+cy+' '+cx+','+(cy+r*0.65)+' '+(cx-r*0.5)+','+cy+'" fill="#fff"/>',
+        star        : '<polygon points="'+
+            cx+','+(cy-r*0.6)+' '+
+            (cx+r*0.18)+','+(cy-r*0.2)+' '+
+            (cx+r*0.58)+','+(cy-r*0.2)+' '+
+            (cx+r*0.28)+','+(cy+r*0.1)+' '+
+            (cx+r*0.38)+','+(cy+r*0.55)+' '+
+            cx+','+(cy+r*0.28)+' '+
+            (cx-r*0.38)+','+(cy+r*0.55)+' '+
+            (cx-r*0.28)+','+(cy+r*0.1)+' '+
+            (cx-r*0.58)+','+(cy-r*0.2)+' '+
+            (cx-r*0.18)+','+(cy-r*0.2)+
+            '" fill="#fff"/>',
+        cross       : '<rect x="'+(cx-r*0.15)+'" y="'+(cy-r*0.6)+'" width="'+(r*0.3)+'" height="'+(r*1.2)+'" fill="#fff"/><rect x="'+(cx-r*0.6)+'" y="'+(cy-r*0.15)+'" width="'+(r*1.2)+'" height="'+(r*0.3)+'" fill="#fff"/>',
+        // Ikon network
+        wifi        : '<path d="M'+(cx-r*0.55)+','+(cy-r*0.1)+' Q'+cx+','+(cy-r*0.7)+' '+(cx+r*0.55)+','+(cy-r*0.1)+'" fill="none" stroke="#fff" stroke-width="'+(size*0.07)+'"/><path d="M'+(cx-r*0.35)+','+(cy+r*0.15)+' Q'+cx+','+(cy-r*0.2)+' '+(cx+r*0.35)+','+(cy+r*0.15)+'" fill="none" stroke="#fff" stroke-width="'+(size*0.07)+'"/><circle cx="'+cx+'" cy="'+(cy+r*0.4)+'" r="'+(r*0.15)+'" fill="#fff"/>',
+        tower       : '<line x1="'+cx+'" y1="'+(cy-r*0.6)+'" x2="'+cx+'" y2="'+(cy+r*0.5)+'" stroke="#fff" stroke-width="'+(size*0.07)+'"/><line x1="'+(cx-r*0.5)+'" y1="'+(cy-r*0.2)+'" x2="'+(cx+r*0.5)+'" y2="'+(cy-r*0.2)+'" stroke="#fff" stroke-width="'+(size*0.07)+'"/><line x1="'+(cx-r*0.35)+'" y1="'+(cy-r*0.5)+'" x2="'+cx+'" y2="'+(cy-r*0.2)+'" stroke="#fff" stroke-width="'+(size*0.07)+'"/><line x1="'+(cx+r*0.35)+'" y1="'+(cy-r*0.5)+'" x2="'+cx+'" y2="'+(cy-r*0.2)+'" stroke="#fff" stroke-width="'+(size*0.07)+'"/>',
+        home        : '<polygon points="'+cx+','+(cy-r*0.6)+' '+(cx+r*0.55)+','+cy+' '+(cx+r*0.4)+','+cy+' '+(cx+r*0.4)+','+(cy+r*0.5)+' '+(cx-r*0.4)+','+(cy+r*0.5)+' '+(cx-r*0.4)+','+cy+' '+(cx-r*0.55)+','+cy+'" fill="#fff"/>',
+        building    : '<rect x="'+(cx-r*0.45)+'" y="'+(cy-r*0.55)+'" width="'+(r*0.9)+'" height="'+(r*1.1)+'" fill="#fff"/><rect x="'+(cx-r*0.15)+'" y="'+(cy+r*0.1)+'" width="'+(r*0.3)+'" height="'+(r*0.45)+'" fill="'+color+'"/>',
+        pin         : '<circle cx="'+cx+'" cy="'+(cy-r*0.15)+'" r="'+(r*0.45)+'" fill="#fff"/><line x1="'+cx+'" y1="'+(cy+r*0.3)+'" x2="'+cx+'" y2="'+(cy+r*0.6)+'" stroke="#fff" stroke-width="'+(size*0.1)+'"/>',
     };
     var inner = shapes[icon] || shapes['dot'];
-    var h = size + 6;
+    // Teardrop path
     var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+size+'" height="'+h+'" viewBox="0 0 '+size+' '+h+'">' +
-        '<path d="M'+half+' 0 C'+(half*0.3)+' 0 0 '+(half*0.3)+' 0 '+half+' C0 '+(half*1.6)+' '+half+' '+h+' '+half+' '+h+' C'+half+' '+h+' '+size+' '+(half*1.6)+' '+size+' '+half+' C'+size+' '+(half*0.3)+' '+(half*1.7)+' 0 '+half+' 0Z" fill="'+color+'" stroke="#fff" stroke-width="1.5"/>' +
+        '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+color+'" stroke="#fff" stroke-width="1.5"/>' +
+        '<polygon points="'+(cx-r*0.35)+','+(cy+r*0.7)+' '+(cx+r*0.35)+','+(cy+r*0.7)+' '+cx+','+h+'" fill="'+color+'"/>' +
+        '<polygon points="'+(cx-r*0.2)+','+(cy+r*0.75)+' '+(cx+r*0.2)+','+(cy+r*0.75)+' '+cx+','+(h-1)+'" fill="'+color+'"/>' +
         inner +
         '</svg>';
     return {
         url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
         scaledSize: new google.maps.Size(size, h),
-        anchor: new google.maps.Point(half, h),
+        anchor: new google.maps.Point(cx, h),
     };
 }
 function makeOdpIcon(color, icon) { return makeMarkerIcon(color, icon, 22); }
@@ -233,7 +252,7 @@ function loadNodes() {
                 position : { lat: parseFloat(o.lat), lng: parseFloat(o.lng) },
                 map      : petaMap,
                 title    : o.name,
-                icon     : { url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png', scaledSize: new google.maps.Size(44,44) },
+                icon     : makeMarkerIcon(o.color || '#dc3545', o.icon || 'dot', 28),
                 zIndex   : 10,
                 oltId    : o.id.replace('olt-',''),
             });

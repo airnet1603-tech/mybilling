@@ -151,5 +151,6 @@ Route::prefix('admin/topologi')->middleware(['auth', 'role:admin,operator'])->gr
     Route::put('/sfp/{id}', [App\Http\Controllers\Admin\TopologiController::class, 'updateSfp'])->name('topologi.sfp.update');
     Route::delete('/sfp/{id}', [App\Http\Controllers\Admin\TopologiController::class, 'destroySfp'])->name('topologi.sfp.destroy');
     Route::get('/api/sfp-by-olt/{olt_id}', [App\Http\Controllers\Admin\TopologiController::class, 'apiSfpByOlt'])->name('topologi.api.sfp');
+    Route::post('/onu/{onu_id}/assign-odp', [App\Http\Controllers\Admin\TopologiController::class, 'assignOnu'])->name('topologi.onu.assign');
 });
 

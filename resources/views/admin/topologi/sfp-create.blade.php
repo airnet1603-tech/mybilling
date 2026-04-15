@@ -41,7 +41,7 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Keterangan <small class="text-muted">(opsional)</small></label>
                         <input type="text" name="keterangan" class="form-control" value="{{ old('keterangan') }}">
-                    </div>                            @endforeach
+
                         </div>
                     </div>                    <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary flex-fill">

@@ -140,12 +140,14 @@ class TopologiController extends Controller
     public function apiNodes()
     {
         $olts = Olt::all()->map(fn($o) => [
-            'id'   => 'olt-'.$o->id,
-            'type' => 'OLT',
-            'name' => $o->name,
-            'lat'  => $o->lat,
-            'lng'  => $o->lng,
-            'ip'   => $o->ip_address,
+            'id'    => 'olt-'.$o->id,
+            'type'  => 'OLT',
+            'name'  => $o->name,
+            'lat'   => $o->lat,
+            'lng'   => $o->lng,
+            'ip'    => $o->ip_address,
+            'color' => $o->olt_color ?? '#dc3545',
+            'icon'  => $o->olt_icon  ?? 'dot',
         ]);
 
         $allOdps = Odp::all();
@@ -432,6 +434,15 @@ class TopologiController extends Controller
     {
         Sfp::findOrFail($id)->delete();
         return redirect('/admin/topologi')->with('success', 'SFP berhasil dihapus!');
+    }
+
+    public function assignOnu(Request $request, $onu_id)
+    {
+        $onu = \App\Models\Onu::findOrFail($onu_id);
+        $onu->odp_id = $request->odp_id ?: null;
+        $onu->pelanggan_id = $request->pelanggan_id ?: null;
+        $onu->save();
+        return response()->json(["success" => true]);
     }
 
     public function apiSfpByOlt($olt_id)
