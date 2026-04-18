@@ -67,9 +67,11 @@ class TopologiController extends Controller
     public function showOlt($id)
     {
         $olt  = Olt::findOrFail($id);
-        $odps = Odp::where('olt_id', $id)->get();
-        $onus = Onu::where('olt_id', $id)->with('pelanggan')->get();
-        return view('admin.topologi.show', compact('olt', 'odps', 'onus'));
+        $sfps = \App\Models\Sfp::where('olt_id', $id)->get();
+        $odcs = Odp::where('olt_id', $id)->where('type','ODC')->get();
+        $odps = Odp::where('olt_id', $id)->where('type','ODP')->with(['odc','sfp'])->get();
+        $onus = Onu::where('olt_id', $id)->with(['pelanggan', 'odp'])->get();
+        return view('admin.topologi.show', compact('olt', 'sfps', 'odcs', 'odps', 'onus'));
     }
 
     // ─── ODC CRUD ─────────────────────────────────────────
@@ -188,18 +190,17 @@ class TopologiController extends Controller
             ];
         });
 
-        $onus = Onu::with('pelanggan')->get()->map(fn($o) => [
-            'id'        => 'onu-'.$o->id,
-            'type'      => 'ONT',
-            'name'      => $o->name ?? $o->onu_id,
-            'mac'       => $o->mac_address,
-            'status'    => $o->status,
-            'odp_id'    => $o->odp_id ? 'odp-'.$o->odp_id : null,
-            'pelanggan' => $o->pelanggan?->nama ?? null,
-            'lat'       => $o->pelanggan?->lat ?? null,
-            'lng'       => $o->pelanggan?->lng ?? null,
-        ]);
-
+$onus = Onu::with(['pelanggan', 'odp'])->get()->map(fn($o) => [
+    'id'        => 'onu-'.$o->id,
+    'type'      => 'ONT',
+    'name'      => $o->name ?? $o->onu_id,
+    'mac'       => $o->mac_address,
+    'status'    => $o->status,
+    'odp_id'    => $o->odp_id ? 'odp-'.$o->odp_id : null,
+    'pelanggan' => $o->pelanggan?->nama ?? null,
+    'lat'       => $o->pelanggan?->latitude ?? $o->odp?->lat ?? \App\Models\Olt::find($o->olt_id)?->lat ?? null,
+    'lng'       => $o->pelanggan?->longitude ?? $o->odp?->lng ?? \App\Models\Olt::find($o->olt_id)?->lng ?? null,
+]);
         return response()->json([
             'olts' => $olts->values(),
             'odcs' => $odcs->values(),

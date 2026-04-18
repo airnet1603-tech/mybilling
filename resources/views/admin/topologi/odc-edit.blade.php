@@ -1,140 +1,121 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit ODC - ISP Billing</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC33huzSRZbZ02tihkJmqqrGhP9Kml32uM&libraries=places" defer></script>
-    <style>
-        :root { --sidebar-width:230px; --sidebar-bg-start:#1a1a2e; --sidebar-bg-end:#0f3460; --accent:#e94560; }
-        body { background:#f0f2f5; font-family:'Segoe UI',sans-serif; }
-        .sidebar { background:linear-gradient(180deg,var(--sidebar-bg-start),var(--sidebar-bg-end)); min-height:100vh; width:var(--sidebar-width); position:fixed; top:0; left:0; z-index:1050; display:flex; flex-direction:column; }
-        .sidebar-brand { padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:10px; }
-        .sidebar-brand .brand-icon { width:70px; height:40px; background:rgba(233,69,96,0.25); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--accent); font-size:1rem; flex-shrink:0; }
-        .sidebar-brand .brand-title { color:#fff; font-weight:700; font-size:0.9rem; display:block; }
-        .sidebar-brand .brand-sub { color:rgba(255,255,255,0.45); font-size:0.7rem; }
-        .sidebar-nav { padding:8px 0; flex:1; }
-        .sidebar-nav .nav-link { color:rgba(255,255,255,0.65); padding:8px 14px; border-radius:7px; margin:1px 8px; font-size:0.83rem; display:flex; align-items:center; gap:9px; transition:background 0.2s,color 0.2s; text-decoration:none; }
-        .sidebar-nav .nav-link i { width:16px; font-size:0.82rem; }
-        .sidebar-nav .nav-link:hover, .sidebar-nav .nav-link.active { background:rgba(233,69,96,0.25); color:#fff; }
-        .sidebar-divider { border-top:1px solid rgba(255,255,255,0.08); margin:6px 14px; }
-        .main-content { margin-left:var(--sidebar-width); padding:24px; }
-        #pickMap { height:380px; border-radius:12px; border:2px solid #dee2e6; }
-        .coord-box { background:#f8f9fa; border-radius:10px; padding:12px 16px; border:1px solid #dee2e6; }
-        .pin-hint { background:#e8d5f5; color:#6f42c1; border-radius:8px; padding:10px 14px; font-size:0.85rem; }
-    </style>
-</head>
-<body>
-@include('admin.partials.sidebar')
+@extends('layouts.admin')
 
-<div class="main-content">
-    <div class="d-flex align-items-center gap-2 mb-4">
-        <a href="/admin/topologi" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left"></i></a>
-        <h5 class="fw-bold mb-0"><i class="fas fa-sitemap me-2" style="color:#6f42c1;"></i>Edit ODC: {{ $odc->name }}</h5>
-    </div>
+@push('styles')
+<style>
+    #pickMap { height:380px; border-radius:12px; border:2px solid #dee2e6; }
+    .coord-box { background:#f8f9fa; border-radius:10px; padding:12px 16px; border:1px solid #dee2e6; }
+    .pin-hint { background:#e8d5f5; color:#6f42c1; border-radius:8px; padding:10px 14px; font-size:0.85rem; }
+</style>
+@endpush
 
-    @if($errors->any())
-    <div class="alert alert-danger">{{ $errors->first() }}</div>
-    @endif
+@section('content')
 
-    <div class="row g-4">
-        <!-- FORM -->
-        <div class="col-md-5">
-            <div class="card border-0 shadow-sm" style="border-radius:14px;">
-                <div class="card-body p-4">
-                    <form method="POST" action="/admin/topologi/odc/{{ $odc->id }}">
-                        @csrf
-                        @method('PUT')
+<div class="d-flex align-items-center gap-2 mb-4">
+    <a href="/admin/topologi" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left"></i></a>
+    <h5 class="fw-bold mb-0"><i class="fas fa-sitemap me-2" style="color:#6f42c1;"></i>Edit ODC: {{ $odc->name }}</h5>
+</div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Nama ODC <span class="text-danger">*</span></label>
-                            <input type="text" name="name" class="form-control" value="{{ old('name', $odc->name) }}" required>
-                        </div>
+@if($errors->any())
+<div class="alert alert-danger">{{ $errors->first() }}</div>
+@endif
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">OLT Induk <span class="text-danger">*</span></label>
-                            <select name="olt_id" id="olt_id" class="form-select" required onchange="filterSfp(this.value)">
-                                <option value="">-- Pilih OLT --</option>
-                                @foreach($olts as $olt)
-                                <option value="{{ $olt->id }}" {{ old('olt_id', $odc->olt_id) == $olt->id ? 'selected' : '' }}>
-                                    {{ $olt->name }} ({{ $olt->ip_address }})
-                                </option>
-                                @endforeach
-                            </select>
-                        </div>
+<div class="row g-4">
+    <!-- FORM -->
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm" style="border-radius:14px;">
+            <div class="card-body p-4">
+                <form method="POST" action="/admin/topologi/odc/{{ $odc->id }}">
+                    @csrf
+                    @method('PUT')
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">SFP Port <small class="text-muted">(opsional)</small></label>
-                            <select name="sfp_id" id="sfp_id" class="form-select">
-                                <option value="">-- Pilih SFP --</option>
-                                @foreach($sfps as $sfp)
-                                <option value="{{ $sfp->id }}" data-olt="{{ $sfp->olt_id }}" {{ old('sfp_id', $odc->sfp_id) == $sfp->id ? 'selected' : '' }}>
-                                    {{ $sfp->olt->name }} - {{ $sfp->name }} ({{ $sfp->port ?? '-' }})
-                                </option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nama ODC <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" value="{{ old('name', $odc->name) }}" required>
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Kapasitas Port</label>
-                            <input type="number" name="kapasitas" class="form-control" value="{{ old('kapasitas', $odc->kapasitas) }}">
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">OLT Induk <span class="text-danger">*</span></label>
+                        <select name="olt_id" id="olt_id" class="form-select" required onchange="filterSfp(this.value)">
+                            <option value="">-- Pilih OLT --</option>
+                            @foreach($olts as $olt)
+                            <option value="{{ $olt->id }}" {{ old('olt_id', $odc->olt_id) == $olt->id ? 'selected' : '' }}>
+                                {{ $olt->name }} ({{ $olt->ip_address }})
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Keterangan</label>
-                            <input type="text" name="keterangan" class="form-control" value="{{ old('keterangan', $odc->keterangan) }}">
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">SFP Port <small class="text-muted">(opsional)</small></label>
+                        <select name="sfp_id" id="sfp_id" class="form-select">
+                            <option value="">-- Pilih SFP --</option>
+                            @foreach($sfps as $sfp)
+                            <option value="{{ $sfp->id }}" data-olt="{{ $sfp->olt_id }}" {{ old('sfp_id', $odc->sfp_id) == $sfp->id ? 'selected' : '' }}>
+                                {{ $sfp->olt->name }} - {{ $sfp->name }} ({{ $sfp->port ?? '-' }})
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                        <div class="coord-box mb-4">
-                            <div class="fw-semibold small mb-2"><i class="fas fa-map-pin me-1" style="color:#6f42c1;"></i>Koordinat Lokasi</div>
-                            <div class="row g-2">
-                                <div class="col-6">
-                                    <label class="form-label small mb-1">Latitude</label>
-                                    <input type="text" name="lat" id="inputLat" class="form-control form-control-sm" value="{{ old('lat', $odc->lat) }}" required readonly>
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label small mb-1">Longitude</label>
-                                    <input type="text" name="lng" id="inputLng" class="form-control form-control-sm" value="{{ old('lng', $odc->lng) }}" required readonly>
-                                </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Kapasitas Port</label>
+                        <input type="number" name="kapasitas" class="form-control" value="{{ old('kapasitas', $odc->kapasitas) }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Keterangan</label>
+                        <input type="text" name="keterangan" class="form-control" value="{{ old('keterangan', $odc->keterangan) }}">
+                    </div>
+
+                    <div class="coord-box mb-4">
+                        <div class="fw-semibold small mb-2"><i class="fas fa-map-pin me-1" style="color:#6f42c1;"></i>Koordinat Lokasi</div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label small mb-1">Latitude</label>
+                                <input type="text" name="lat" id="inputLat" class="form-control form-control-sm" value="{{ old('lat', $odc->lat) }}" required readonly>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small mb-1">Longitude</label>
+                                <input type="text" name="lng" id="inputLng" class="form-control form-control-sm" value="{{ old('lng', $odc->lng) }}" required readonly>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-success flex-fill">
-                                <i class="fas fa-save me-1"></i> Update ODC
-                            </button>
-                            <a href="/admin/topologi" class="btn btn-outline-secondary">Batal</a>
-                        </div>
-                    </form>
-
-                    <!-- Hapus ODC -->
-                    <hr>
-                    <form method="POST" action="/admin/topologi/odc/{{ $odc->id }}" onsubmit="return confirm('Yakin hapus ODC {{ $odc->name }}?')">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-outline-danger w-100">
-                            <i class="fas fa-trash me-1"></i> Hapus ODC Ini
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success flex-fill">
+                            <i class="fas fa-save me-1"></i> Update ODC
                         </button>
-                    </form>
-                </div>
-            </div>
-        </div>
+                        <a href="/admin/topologi" class="btn btn-outline-secondary">Batal</a>
+                    </div>
+                </form>
 
-        <!-- PETA PICKER -->
-        <div class="col-md-7">
-            <div class="pin-hint mb-2">
-                <i class="fas fa-hand-pointer me-1"></i>
-                <strong>Klik pada peta</strong> untuk mengubah lokasi ODC. Geser titik ungu ke posisi yang benar.
+                <hr>
+                <form method="POST" action="/admin/topologi/odc/{{ $odc->id }}" onsubmit="return confirm('Yakin hapus ODC {{ $odc->name }}?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-outline-danger w-100">
+                        <i class="fas fa-trash me-1"></i> Hapus ODC Ini
+                    </button>
+                </form>
             </div>
-            <div id="pickMap"></div>
-            <div class="text-muted small mt-2"><i class="fas fa-info-circle me-1"></i>Bisa juga ketik nama lokasi di kotak pencarian di peta.</div>
         </div>
+    </div>
+
+    <!-- PETA PICKER -->
+    <div class="col-md-7">
+        <div class="pin-hint mb-2">
+            <i class="fas fa-hand-pointer me-1"></i>
+            <strong>Klik pada peta</strong> untuk mengubah lokasi ODC. Geser titik ungu ke posisi yang benar.
+        </div>
+        <div id="pickMap"></div>
+        <div class="text-muted small mt-2"><i class="fas fa-info-circle me-1"></i>Bisa juga ketik nama lokasi di kotak pencarian di peta.</div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+@endsection
+
+@push('scripts')
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC33huzSRZbZ02tihkJmqqrGhP9Kml32uM&libraries=places&callback=initPickMap" async defer></script>
 <script>
 var pickMarker = null;
 var currentLat = {{ $odc->lat ?? -8.207019 }};
@@ -142,14 +123,14 @@ var currentLng = {{ $odc->lng ?? 112.019980 }};
 
 function initPickMap() {
     var map = new google.maps.Map(document.getElementById('pickMap'), {
-        center          : { lat: currentLat, lng: currentLng },
-        zoom            : 15,
-        mapTypeId       : 'hybrid',
-        gestureHandling : 'greedy',
+        center           : { lat: currentLat, lng: currentLng },
+        zoom             : 15,
+        mapTypeId        : 'hybrid',
+        gestureHandling  : 'greedy',
         fullscreenControl: false,
     });
 
-    // Custom fullscreen button dengan search box
+    // Custom fullscreen button
     var fsBtn = document.createElement('div');
     fsBtn.style.cssText = 'margin:10px;cursor:pointer;background:#fff;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,0.3);width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:18px;';
     fsBtn.innerHTML = '⛶';
@@ -167,13 +148,13 @@ function initPickMap() {
             fsBtn.innerHTML = '✕';
             isFs = true;
         } else {
-            mapDiv.style.position = origStyle.position || '';
-            mapDiv.style.top = origStyle.top || '';
-            mapDiv.style.left = origStyle.left || '';
-            mapDiv.style.width = origStyle.width || '';
-            mapDiv.style.height = origStyle.height || '380px';
-            mapDiv.style.zIndex = origStyle.zIndex || '';
-            mapDiv.style.borderRadius = origStyle.borderRadius || '12px';
+            mapDiv.style.position    = origStyle.position    || '';
+            mapDiv.style.top         = origStyle.top         || '';
+            mapDiv.style.left        = origStyle.left        || '';
+            mapDiv.style.width       = origStyle.width       || '';
+            mapDiv.style.height      = origStyle.height      || '380px';
+            mapDiv.style.zIndex      = origStyle.zIndex      || '';
+            mapDiv.style.borderRadius= origStyle.borderRadius|| '12px';
             fsBtn.innerHTML = '⛶';
             isFs = false;
         }
@@ -181,8 +162,8 @@ function initPickMap() {
     });
 
     // Search box
-    var input   = document.createElement('input');
-    input.type  = 'text';
+    var input = document.createElement('input');
+    input.type = 'text';
     input.placeholder = '🔍 Cari lokasi...';
     input.style.cssText = 'margin:10px;padding:8px 12px;width:250px;border-radius:8px;border:1px solid #ccc;font-size:13px;';
     map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
@@ -196,10 +177,8 @@ function initPickMap() {
         placeMarker(map, loc.lat(), loc.lng());
     });
 
-    // Tampilkan posisi ODC saat ini
     placeMarker(map, currentLat, currentLng);
 
-    // Klik peta
     map.addListener('click', function(e) {
         placeMarker(map, e.latLng.lat(), e.latLng.lng());
     });
@@ -225,7 +204,6 @@ function placeMarker(map, lat, lng) {
     document.getElementById('inputLat').value = lat.toFixed(8);
     document.getElementById('inputLng').value = lng.toFixed(8);
 
-    // Drag marker juga update koordinat
     pickMarker.addListener('dragend', function(e) {
         document.getElementById('inputLat').value = e.latLng.lat().toFixed(8);
         document.getElementById('inputLng').value = e.latLng.lng().toFixed(8);
@@ -234,31 +212,19 @@ function placeMarker(map, lat, lng) {
 
 function filterSfp(oltId) {
     var select = document.getElementById('sfp_id');
-    var options = select.querySelectorAll('option');
-    options.forEach(function(opt) {
+    select.querySelectorAll('option').forEach(function(opt) {
         if (!opt.value) return;
         opt.style.display = (!oltId || opt.dataset.olt == oltId) ? '' : 'none';
     });
-    // Reset pilihan jika SFP tidak cocok
     var selected = select.options[select.selectedIndex];
     if (selected && selected.value && selected.dataset.olt != oltId) {
         select.value = '';
     }
 }
-// Jalankan filter saat load
+
 document.addEventListener('DOMContentLoaded', function() {
     var oltId = document.getElementById('olt_id').value;
     if (oltId) filterSfp(oltId);
 });
-
-window.addEventListener('load', function() {
-    var check = setInterval(function() {
-        if (typeof google !== 'undefined' && google.maps && google.maps.Map) {
-            clearInterval(check);
-            initPickMap();
-        }
-    }, 100);
-});
 </script>
-</body>
-</html>
+@endpush

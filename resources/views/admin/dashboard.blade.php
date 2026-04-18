@@ -1,6 +1,7 @@
 @extends('layouts.admin')
 
 @section('title', 'Dashboard - ISP Billing')
+@section('show_topbar', true)
 @section('page_title', 'Dashboard')
 
 @push('styles')

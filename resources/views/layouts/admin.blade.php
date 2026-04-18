@@ -62,7 +62,9 @@
 @include('admin.partials.sidebar')
 
 <div class="main-content">
-    @include('admin.partials.topbar')
+    @hasSection('show_topbar')
+        @include('admin.partials.topbar')
+    @endif
     @yield('content')
 </div>
 

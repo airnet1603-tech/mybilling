@@ -3,12 +3,20 @@
 
 @push('head')
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC33huzSRZbZ02tihkJmqqrGhP9Kml32uM&libraries=places" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <style>
 #map { height: 400px; border-radius: 10px; }
 .badge-up   { background:#d4edda; color:#155724; padding:2px 10px; border-radius:20px; font-size:0.75rem; }
 .badge-down { background:#f8d7da; color:#721c24; padding:2px 10px; border-radius:20px; font-size:0.75rem; }
 .odp-select { font-size:0.75rem; padding:2px 4px; border-radius:6px; border:1px solid #dee2e6; max-width:140px; }
 .odp-select:focus { outline:none; border-color:#0d6efd; box-shadow:0 0 0 2px rgba(13,110,253,.15); }
+
+.select2-container .select2-selection--single { height: 28px !important; font-size: 0.75rem !important; }
+.select2-container .select2-selection__rendered { line-height: 26px !important; font-size: 0.75rem !important; }
+.select2-dropdown { font-size: 0.75rem !important; }
+.select2-search__field { font-size: 0.75rem !important; }
 </style>
 @endpush
 
@@ -109,7 +117,7 @@
                                 @endforeach
                             </select>
                         </td>
-                        <td><small>{{ $onu->pelanggan?->nama ?? '-' }}</small></td>
+                        <td><select class="pelanggan-select" data-onu-id="{{ $onu->id }}"><option value="">-- Pelanggan --</option>@foreach(\App\Models\Pelanggan::orderBy('nama')->get() as $p)<option value="{{ $p->id }}" {{ $onu->pelanggan_id == $p->id ? 'selected' : '' }}>{{ $p->nama }}</option>@endforeach</select></td>
                     </tr>
                     @empty
                     <tr><td colspan="5" class="text-center text-muted py-3">Belum ada ONU. Klik Sync ONU.</td></tr>
@@ -214,6 +222,109 @@ function initMap() {
     })();
     @endif
     @endforeach
+
+        // Marker ODC
+        @foreach($odcs as $odc)
+        @if($odc->lat && $odc->lng)
+        (function() {
+            var odcMarker = new google.maps.Marker({
+                position: { lat: {{ $odc->lat }}, lng: {{ $odc->lng }} },
+                map: map,
+                title: '{{ addslashes($odc->name) }}',
+                icon: makeMarkerIcon('{{ $olt->odc_color ?? "#6f42c1" }}', 'pin', 24),
+                zIndex: 8,
+            });
+            var odcInfo = new google.maps.InfoWindow({
+                content: '<b>🟣 {{ addslashes($odc->name) }}</b><br><small>Tipe: ODC</small><br><small>Kapasitas: {{ $odc->kapasitas }}</small>'
+            });
+            odcMarker.addListener('click', function() { odcInfo.open(map, odcMarker); });
+        })();
+        @endif
+        @endforeach
+
+        // Garis OLT ke ODC
+        @foreach($odcs as $odc)
+        @if($odc->lat && $odc->lng && $olt->lat && $olt->lng)
+        new google.maps.Polyline({
+            path: [{ lat: {{ $olt->lat }}, lng: {{ $olt->lng }} }, { lat: {{ $odc->lat }}, lng: {{ $odc->lng }} }],
+            strokeColor: '{{ $olt->line_olt_odc ?? "#6f42c1" }}', strokeWeight: 2.5, strokeOpacity: 0.9, map: map,
+        });
+        @endif
+        @endforeach
+
+        // Garis ODC/ODP ke ODP
+        @foreach($odps as $odp)
+        @if($odp->lat && $odp->lng)
+        @php
+            // Prioritas: parent_odp_id > odc_id > olt
+            $parentOdp = $odp->parent_odp_id ? $odps->firstWhere('id', $odp->parent_odp_id) : null;
+            if ($parentOdp) {
+                $parentLat = $parentOdp->lat;
+                $parentLng = $parentOdp->lng;
+                $lineColor = $olt->line_odp_odp ?? '#28a745';
+            } elseif ($odp->odc_id) {
+                $odc = $odcs->firstWhere('id', $odp->odc_id);
+                $parentLat = $odc?->lat ?? null;
+                $parentLng = $odc?->lng ?? null;
+                $lineColor = $olt->line_odc_odp ?? '#fd7e14';
+            } else {
+                $parentLat = $olt->lat;
+                $parentLng = $olt->lng;
+                $lineColor = '#ffc107';
+            }
+        @endphp
+        @if($parentLat && $parentLng)
+        new google.maps.Polyline({
+            path: [{ lat: {{ $parentLat }}, lng: {{ $parentLng }} }, { lat: {{ $odp->lat }}, lng: {{ $odp->lng }} }],
+            strokeColor: '{{ $lineColor }}', strokeWeight: 1.8, strokeOpacity: 0.8, map: map,
+        });
+        @endif
+        @endif
+        @endforeach
+
+        // Garis ODP ke ONU
+        @foreach($odps as $odp)
+        @if($odp->lat && $odp->lng)
+        @foreach($onus->where('odp_id', $odp->id) as $onu)
+        @php
+            $lat = $onu->pelanggan?->latitude ?? $onu->odp?->lat ?? null;
+            $lng = $onu->pelanggan?->longitude ?? $onu->odp?->lng ?? null;
+        @endphp
+        @if($lat && $lng)
+        new google.maps.Polyline({
+            path: [{ lat: {{ $odp->lat }}, lng: {{ $odp->lng }} }, { lat: {{ $lat }}, lng: {{ $lng }} }],
+            strokeColor: '{{ $olt->line_odp_odp ?? "#28a745" }}', strokeWeight: 1.5, strokeOpacity: 0.8, map: map,
+        });
+        @endif
+        @endforeach
+        @endif
+        @endforeach
+
+    // Tampilkan ONU di peta
+    @foreach($onus as $onu)
+    @php
+        $lat = $onu->pelanggan?->latitude ?? $onu->odp?->lat ?? null;
+        $lng = $onu->pelanggan?->longitude ?? $onu->odp?->lng ?? null;
+    @endphp
+    @if($lat && $lng)
+    (function() {
+        var onuMarker = new google.maps.Marker({
+            position: { lat: {{ $lat }}, lng: {{ $lng }} },
+            map: map,
+            title: '{{ addslashes($onu->name ?? $onu->onu_id) }}',
+            icon: makeMarkerIcon('{{ $onu->status === "Up" ? "#28a745" : "#dc3545" }}', 'wifi', 18),
+            zIndex: 1,
+        });
+        var onuInfo = new google.maps.InfoWindow({
+            content: '<b>📡 {{ addslashes($onu->name ?? $onu->onu_id) }}</b><br>' +
+                     '<small>Status: <b style="color:{{ $onu->status === "Up" ? "#28a745" : "#dc3545" }}">{{ $onu->status }}</b></small><br>' +
+                     '<small>MAC: {{ $onu->mac_address }}</small><br>' +
+                     '<small>Pelanggan: {{ addslashes($onu->pelanggan?->nama ?? "-") }}</small>'
+        });
+        onuMarker.addListener('click', function() { onuInfo.open(map, onuMarker); });
+    })();
+    @endif
+    @endforeach
 }
 
 window.addEventListener('load', function() {
@@ -239,6 +350,15 @@ function toast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg; t.style.display = 'block';
     setTimeout(() => t.style.display = 'none', 3000);
+}
+
+    // Init Select2 untuk dropdown pelanggan
+    $('.pelanggan-select').select2({ placeholder: '-- Pelanggan --', allowClear: true, width: '180px' });
+    $(document).on('change', '.pelanggan-select', function() {
+        assignPelanggan($(this).data('onu-id'), $(this).val());
+    });
+
+function assignPelanggan(onuId, pelangganId) {
 }
 </script>
 @endpush

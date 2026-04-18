@@ -1,55 +1,22 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoring Live – ISP Billing</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
-        :root { --sidebar-width:230px; --sidebar-bg-start:#1a1a2e; --sidebar-bg-end:#0f3460; --accent:#e94560; }
-        * { box-sizing:border-box; }
-        body { background:#f0f2f5; font-family:'Segoe UI',sans-serif; }
-        .sidebar { background:linear-gradient(180deg,var(--sidebar-bg-start) 0%,var(--sidebar-bg-end) 100%); min-height:100vh; width:var(--sidebar-width); position:fixed; top:0; left:0; z-index:1050; display:flex; flex-direction:column; transition:transform 0.3s ease; }
-        .sidebar-brand { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; }
-        .sidebar-brand .brand-icon { width: 70px; height: 40px; background: rgba(233,69,96,0.25); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 1rem; flex-shrink: 0; }
-        .sidebar-brand .brand-text { line-height: 1.2; }
-        .sidebar-brand .brand-title { color:#fff; font-weight:700; font-size:0.9rem; display:block; }
-        .sidebar-brand .brand-sub { color:rgba(255,255,255,0.45); font-size:0.7rem; }
-        .sidebar-nav { padding:8px 0; flex:1; }
-        .sidebar-nav .nav-link { color:rgba(255,255,255,0.65); padding:8px 14px; border-radius:7px; margin:1px 8px; font-size:0.83rem; display:flex; align-items:center; gap:9px; transition:background 0.2s,color 0.2s; white-space:nowrap; }
-        .sidebar-nav .nav-link i { width:16px; font-size:0.82rem; flex-shrink:0; }
-        .sidebar-nav .nav-link:hover,.sidebar-nav .nav-link.active { background:rgba(233,69,96,0.25); color:#fff; }
-        .sidebar-nav .nav-link.active { background:rgba(233,69,96,0.35); }
-        .sidebar-divider { border-top:1px solid rgba(255,255,255,0.08); margin:6px 14px; }
-        .sidebar-nav .logout-btn { color:rgba(255,255,255,0.65); padding:8px 14px; border-radius:7px; margin:1px 8px; font-size:0.83rem; display:flex; align-items:center; gap:9px; background:none; border:none; width:calc(100% - 16px); text-align:left; cursor:pointer; }
-        .sidebar-nav .logout-btn:hover { background:rgba(233,69,96,0.25); color:#fff; }
-        .mobile-topbar { display:none; position:fixed; top:0; left:0; right:0; height:54px; background:linear-gradient(90deg,var(--sidebar-bg-start),var(--sidebar-bg-end)); z-index:1060; align-items:center; padding:0 14px; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,0.2); }
-        .mobile-topbar .hamburger-btn { background:none; border:none; color:#fff; font-size:1.3rem; cursor:pointer; padding:4px 8px; border-radius:6px; }
-        .mobile-topbar .hamburger-btn:hover { background:rgba(255,255,255,0.15); }
-        .mobile-topbar .brand-title { color:#fff; font-weight:700; font-size:0.95rem; }
-        .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1045; }
-        .sidebar-overlay.show { display:block; }
-        .main-content { margin-left:var(--sidebar-width); padding:20px 24px; }
-        .card { border:none; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.07); }
-        .router-status-card { background:linear-gradient(135deg,var(--sidebar-bg-start),var(--sidebar-bg-end)); border-radius:12px; padding:16px 20px; color:white; margin-bottom:12px; }
-        .live-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#28a745; animation:blink 1.2s infinite; margin-right:6px; }
-        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
-        .stat-mini { background:rgba(255,255,255,0.1); border-radius:10px; padding:10px 14px; text-align:center; }
-        .speed-up { color:#28a745; font-weight:600; }
-        .speed-down { color:#0d6efd; font-weight:600; }
-        .search-box { max-width:260px; }
-        .pagination-wrap .btn { min-width:34px; }
-        @media (max-width:768px) {
-            .mobile-topbar { display:flex; }
-            .sidebar { transform:translateX(-100%); }
-            .sidebar.open { transform:translateX(0); }
-            .main-content { margin-left:0; padding:70px 14px 14px; }
-            .search-box { max-width:100%; }
-        }
-    </style>
-</head>
-<body>
+@extends('layouts.admin')
+
+@push('styles')
+<style>
+    .router-status-card { background:linear-gradient(135deg,#1a1a2e,#0f3460); border-radius:12px; padding:16px 20px; color:white; margin-bottom:12px; }
+    .live-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#28a745; animation:blink 1.2s infinite; margin-right:6px; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+    .stat-mini { background:rgba(255,255,255,0.1); border-radius:10px; padding:10px 14px; text-align:center; }
+    .speed-up { color:#28a745; font-weight:600; }
+    .speed-down { color:#0d6efd; font-weight:600; }
+    .search-box { max-width:260px; }
+    .pagination-wrap .btn { min-width:34px; }
+    @media (max-width:768px) {
+        .search-box { max-width:100%; }
+    }
+</style>
+@endpush
+
+@section('content')
 
 @php
     $routerId = request('router');
@@ -57,139 +24,116 @@
     $singleRouter = $routerId ? $filteredRouters->first() : null;
 @endphp
 
-@include('admin.partials.sidebar')
-<div class="main-content">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h5 class="fw-bold mb-0">
-                <span class="live-dot"></span> Monitoring Live
-                @if($singleRouter) &mdash; {{ $singleRouter->nama }} @endif
-            </h5>
-            <small class="text-muted">
-                @if($singleRouter) {{ $singleRouter->ip_address }}:{{ $singleRouter->port }}
-                @else Status realtime semua router Mikrotik @endif
-            </small>
-        </div>
-        <div class="d-flex gap-2 align-items-center">
-            <span class="badge bg-secondary" id="lastUpdate">–</span>
-            <button class="btn btn-outline-primary btn-sm" onclick="refreshAll()">
-                <i class="fas fa-sync-alt me-1"></i> Refresh
-            </button>
-            <a href="/admin/mikrotik" class="btn btn-secondary btn-sm">
-                <i class="fas fa-arrow-left me-1"></i> Kembali
-            </a>
-        </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h5 class="fw-bold mb-0">
+            <span class="live-dot"></span> Monitoring Live
+            @if($singleRouter) &mdash; {{ $singleRouter->nama }} @endif
+        </h5>
+        <small class="text-muted">
+            @if($singleRouter) {{ $singleRouter->ip_address }}:{{ $singleRouter->port }}
+            @else Status realtime semua router Mikrotik @endif
+        </small>
     </div>
-
-    @forelse($filteredRouters as $router)
-    <div class="router-status-card" id="router-card-{{ $router->id }}">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-            <div>
-                <div class="fw-bold fs-6"><i class="fas fa-network-wired me-2"></i>{{ $router->nama }}</div>
-                <div class="opacity-75 small"><code style="color:rgba(255,255,255,0.8);">{{ $router->ip_address }}:{{ $router->port }}</code></div>
-            </div>
-            <span class="badge" id="status-badge-{{ $router->id }}" style="background:rgba(255,255,255,0.2);">
-                <i class="fas fa-spinner fa-spin fa-xs me-1"></i> Memuat...
-            </span>
-        </div>
-        <div class="row g-2">
-            <div class="col-6 col-md-3"><div class="stat-mini"><div class="opacity-75" style="font-size:0.68rem;">CPU Load</div><div class="fw-bold" id="cpu-{{ $router->id }}">–</div></div></div>
-            <div class="col-6 col-md-3"><div class="stat-mini"><div class="opacity-75" style="font-size:0.68rem;">Memory</div><div class="fw-bold" id="mem-{{ $router->id }}">–</div></div></div>
-            <div class="col-6 col-md-3"><div class="stat-mini"><div class="opacity-75" style="font-size:0.68rem;">Uptime</div><div class="fw-bold" style="font-size:0.8rem;" id="uptime-{{ $router->id }}">–</div></div></div>
-            <div class="col-6 col-md-3"><div class="stat-mini"><div class="opacity-75" style="font-size:0.68rem;">PPPoE Online</div><div class="fw-bold text-warning" id="pppoe-count-{{ $router->id }}">–</div></div></div>
-        </div>
+    <div class="d-flex gap-2 align-items-center">
+        <span class="badge bg-secondary" id="lastUpdate">–</span>
+        <button class="btn btn-outline-primary btn-sm" onclick="refreshAll()">
+            <i class="fas fa-sync-alt me-1"></i> Refresh
+        </button>
+        <a href="/admin/mikrotik" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i> Kembali
+        </a>
     </div>
-
-    <!-- TABEL SESSION -->
-    <div class="card mb-4">
-        <div class="card-header bg-white border-0 pt-3 pb-2">
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <div class="fw-bold" style="font-size:0.88rem;">
-                    <i class="fas fa-users me-2 text-primary"></i>
-                    Session Aktif – {{ $router->nama }}
-                    <span class="badge bg-primary ms-1" id="session-count-{{ $router->id }}">0</span>
-                </div>
-                <!-- SEARCH -->
-                <div class="input-group search-box">
-                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted" style="font-size:0.8rem;"></i></span>
-                    <input type="text"
-                           id="search-{{ $router->id }}"
-                           class="form-control form-control-sm border-start-0 ps-0"
-                           placeholder="Cari username, IP, MAC..."
-                           oninput="onSearch({{ $router->id }})"
-                           style="font-size:0.82rem;">
-                    <button class="btn btn-outline-secondary btn-sm" onclick="clearSearch({{ $router->id }})" title="Reset">
-                        <i class="fas fa-times" style="font-size:0.75rem;"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-sm mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="ps-3 small">#</th>
-                            <th class="small">Username</th>
-                            <th class="small">IP Address</th>
-                            <th class="small">Uptime</th>
-                            <th class="small">⬇ Download</th>
-                            <th class="small">⬆ Upload</th>
-                            <th class="small">Speed ⬇/⬆</th>
-                            <th class="small">MAC Address</th>
-                        </tr>
-                    </thead>
-                    <tbody id="sessions-table-{{ $router->id }}">
-                        <tr><td colspan="8" class="text-center text-muted py-4 small"><i class="fas fa-spinner fa-spin me-2"></i>Memuat session...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-            <!-- PAGINATION -->
-            <div class="d-flex flex-wrap justify-content-between align-items-center px-3 py-2 border-top bg-light" id="pagination-wrap-{{ $router->id }}" style="display:none!important;">
-                <small class="text-muted" id="pagination-info-{{ $router->id }}"></small>
-                <div class="d-flex gap-1 flex-wrap pagination-wrap" id="pagination-btns-{{ $router->id }}"></div>
-            </div>
-        </div>
-    </div>
-
-    @empty
-    <div class="card">
-        <div class="card-body text-center py-5 text-muted">
-            <i class="fas fa-network-wired fa-3x mb-3 opacity-25"></i>
-            <h6>Router tidak ditemukan</h6>
-            <a href="/admin/mikrotik" class="btn btn-primary btn-sm mt-2"><i class="fas fa-arrow-left me-1"></i> Kembali</a>
-        </div>
-    </div>
-    @endforelse
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+@forelse($filteredRouters as $router)
+<div class="router-status-card" id="router-card-{{ $router->id }}">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+            <div class="fw-bold fs-6"><i class="fas fa-network-wired me-2"></i>{{ $router->nama }}</div>
+            <div class="opacity-75 small"><code style="color:rgba(255,255,255,0.8);">{{ $router->ip_address }}:{{ $router->port }}</code></div>
+        </div>
+        <span class="badge" id="status-badge-{{ $router->id }}" style="background:rgba(255,255,255,0.2);">
+            <i class="fas fa-spinner fa-spin fa-xs me-1"></i> Memuat...
+        </span>
+    </div>
+    <div class="row g-2">
+        <div class="col-6 col-md-3"><div class="stat-mini"><div class="opacity-75" style="font-size:0.68rem;">CPU Load</div><div class="fw-bold" id="cpu-{{ $router->id }}">–</div></div></div>
+        <div class="col-6 col-md-3"><div class="stat-mini"><div class="opacity-75" style="font-size:0.68rem;">Memory</div><div class="fw-bold" id="mem-{{ $router->id }}">–</div></div></div>
+        <div class="col-6 col-md-3"><div class="stat-mini"><div class="opacity-75" style="font-size:0.68rem;">Uptime</div><div class="fw-bold" style="font-size:0.8rem;" id="uptime-{{ $router->id }}">–</div></div></div>
+        <div class="col-6 col-md-3"><div class="stat-mini"><div class="opacity-75" style="font-size:0.68rem;">PPPoE Online</div><div class="fw-bold text-warning" id="pppoe-count-{{ $router->id }}">–</div></div></div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-white border-0 pt-3 pb-2">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="fw-bold" style="font-size:0.88rem;">
+                <i class="fas fa-users me-2 text-primary"></i>
+                Session Aktif – {{ $router->nama }}
+                <span class="badge bg-primary ms-1" id="session-count-{{ $router->id }}">0</span>
+            </div>
+            <div class="input-group search-box">
+                <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted" style="font-size:0.8rem;"></i></span>
+                <input type="text"
+                       id="search-{{ $router->id }}"
+                       class="form-control form-control-sm border-start-0 ps-0"
+                       placeholder="Cari username, IP, MAC..."
+                       oninput="onSearch({{ $router->id }})"
+                       style="font-size:0.82rem;">
+                <button class="btn btn-outline-secondary btn-sm" onclick="clearSearch({{ $router->id }})" title="Reset">
+                    <i class="fas fa-times" style="font-size:0.75rem;"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-sm mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3 small">#</th>
+                        <th class="small">Username</th>
+                        <th class="small">IP Address</th>
+                        <th class="small">Uptime</th>
+                        <th class="small">⬇ Download</th>
+                        <th class="small">⬆ Upload</th>
+                        <th class="small">Speed ⬇/⬆</th>
+                        <th class="small">MAC Address</th>
+                    </tr>
+                </thead>
+                <tbody id="sessions-table-{{ $router->id }}">
+                    <tr><td colspan="8" class="text-center text-muted py-4 small"><i class="fas fa-spinner fa-spin me-2"></i>Memuat session...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="d-flex flex-wrap justify-content-between align-items-center px-3 py-2 border-top bg-light" id="pagination-wrap-{{ $router->id }}" style="display:none!important;">
+            <small class="text-muted" id="pagination-info-{{ $router->id }}"></small>
+            <div class="d-flex gap-1 flex-wrap pagination-wrap" id="pagination-btns-{{ $router->id }}"></div>
+        </div>
+    </div>
+</div>
+
+@empty
+<div class="card">
+    <div class="card-body text-center py-5 text-muted">
+        <i class="fas fa-network-wired fa-3x mb-3 opacity-25"></i>
+        <h6>Router tidak ditemukan</h6>
+        <a href="/admin/mikrotik" class="btn btn-primary btn-sm mt-2"><i class="fas fa-arrow-left me-1"></i> Kembali</a>
+    </div>
+</div>
+@endforelse
+
+@endsection
+
+@push('scripts')
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    var hamburgerBtn = document.getElementById("hamburgerBtn");
-    var sidebar = document.getElementById("sidebar");
-    var sidebarOverlay = document.getElementById("sidebarOverlay");
-    if(hamburgerBtn) {
-        hamburgerBtn.addEventListener("click", function() {
-            sidebar.classList.toggle("open");
-            sidebarOverlay.classList.toggle("show");
-        });
-        sidebarOverlay.addEventListener("click", function() {
-            sidebar.classList.remove("open");
-            sidebarOverlay.classList.remove("show");
-        });
-    }
-});
-</script>
-<script>
-// ── State per router ─────────────────────────────────
 const routerIds = [@foreach($filteredRouters as $router){{ $router->id }},@endforeach];
 const state = {};
 routerIds.forEach(id => {
     state[id] = { page: 1, search: '', totalPages: 1, total: 0 };
 });
 
-// ── Format helpers ────────────────────────────────────
 function formatBytes(b) {
     if (!b || b == 0) return '0 B';
     const k = 1024, s = ['B','KB','MB','GB','TB'];
@@ -203,7 +147,6 @@ function formatSpeed(bps) {
     return parseFloat((bps / Math.pow(k, i)).toFixed(1)) + ' ' + s[i];
 }
 
-// ── Load router stats ────────────────────────────────
 function loadRouterStats(id) {
     fetch('/admin/mikrotik/' + id + '/stats')
         .then(r => r.json())
@@ -229,11 +172,9 @@ function loadRouterStats(id) {
         });
 }
 
-// ── Load sessions (dengan pagination & search) ────────
 function loadSessions(id) {
     const { page, search } = state[id];
     const params = new URLSearchParams({ page, search });
-
     fetch('/admin/mikrotik/' + id + '/sessions?' + params)
         .then(r => r.json())
         .then(data => {
@@ -242,18 +183,15 @@ function loadSessions(id) {
             const pWrap   = document.getElementById('pagination-wrap-' + id);
             const pInfo   = document.getElementById('pagination-info-' + id);
             const pBtns   = document.getElementById('pagination-btns-' + id);
-
             if (!data.sessions || data.sessions.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4 small">Tidak ada session aktif</td></tr>';
                 countEl.textContent = '0';
                 pWrap.style.display = 'none';
                 return;
             }
-
             state[id].totalPages = data.total_pages;
             state[id].total      = data.total;
             countEl.textContent  = data.total;
-
             const offset = (data.current_page - 1) * data.per_page;
             tbody.innerHTML = data.sessions.map((s, idx) => `
                 <tr>
@@ -263,7 +201,7 @@ function loadSessions(id) {
                     <td><small>${s.uptime ?? '-'}</small></td>
                     <td><small class="speed-down">${formatBytes(s.bytes_in ?? 0)}</small></td>
                     <td><small class="speed-up">${formatBytes(s.bytes_out ?? 0)}</small></td>
-                    <td style="font-size:0.78rem; white-space:nowrap;">
+                    <td style="font-size:0.78rem;white-space:nowrap;">
                         <span class="speed-down">${formatSpeed(s.rate_in ?? 0)}</span>
                         <span class="text-muted mx-1">/</span>
                         <span class="speed-up">${formatSpeed(s.rate_out ?? 0)}</span>
@@ -271,36 +209,23 @@ function loadSessions(id) {
                     <td><small class="text-muted">${s.mac_address ?? '-'}</small></td>
                 </tr>
             `).join('');
-
-            // Pagination UI
             pWrap.style.display = '';
             const cur   = data.current_page;
             const total = data.total_pages;
             pInfo.textContent = `Menampilkan ${offset + 1}–${Math.min(offset + data.per_page, data.total)} dari ${data.total} user`;
-
             let btns = '';
-            // Prev
-            btns += `<button class="btn btn-sm ${cur <= 1 ? 'btn-outline-secondary disabled' : 'btn-outline-primary'}"
-                        onclick="goPage(${id}, ${cur - 1})">
-                        <i class="fas fa-chevron-left" style="font-size:0.7rem;"></i>
-                     </button>`;
-            // Nomor halaman (max 5 tombol)
+            btns += `<button class="btn btn-sm ${cur <= 1 ? 'btn-outline-secondary disabled' : 'btn-outline-primary'}" onclick="goPage(${id}, ${cur - 1})"><i class="fas fa-chevron-left" style="font-size:0.7rem;"></i></button>`;
             let startP = Math.max(1, cur - 2);
             let endP   = Math.min(total, startP + 4);
             startP     = Math.max(1, endP - 4);
             if (startP > 1) btns += `<button class="btn btn-sm btn-outline-secondary" onclick="goPage(${id},1)">1</button>`;
             if (startP > 2) btns += `<span class="btn btn-sm btn-outline-secondary disabled">…</span>`;
             for (let p = startP; p <= endP; p++) {
-                btns += `<button class="btn btn-sm ${p === cur ? 'btn-primary' : 'btn-outline-primary'}"
-                            onclick="goPage(${id}, ${p})">${p}</button>`;
+                btns += `<button class="btn btn-sm ${p === cur ? 'btn-primary' : 'btn-outline-primary'}" onclick="goPage(${id}, ${p})">${p}</button>`;
             }
             if (endP < total - 1) btns += `<span class="btn btn-sm btn-outline-secondary disabled">…</span>`;
             if (endP < total)     btns += `<button class="btn btn-sm btn-outline-secondary" onclick="goPage(${id},${total})">${total}</button>`;
-            // Next
-            btns += `<button class="btn btn-sm ${cur >= total ? 'btn-outline-secondary disabled' : 'btn-outline-primary'}"
-                        onclick="goPage(${id}, ${cur + 1})">
-                        <i class="fas fa-chevron-right" style="font-size:0.7rem;"></i>
-                     </button>`;
+            btns += `<button class="btn btn-sm ${cur >= total ? 'btn-outline-secondary disabled' : 'btn-outline-primary'}" onclick="goPage(${id}, ${cur + 1})"><i class="fas fa-chevron-right" style="font-size:0.7rem;"></i></button>`;
             pBtns.innerHTML = btns;
         })
         .catch(() => {
@@ -309,7 +234,6 @@ function loadSessions(id) {
         });
 }
 
-// ── Pagination & Search actions ───────────────────────
 function goPage(id, page) {
     if (page < 1 || page > state[id].totalPages) return;
     state[id].page = page;
@@ -333,7 +257,6 @@ function clearSearch(id) {
     loadSessions(id);
 }
 
-// ── Refresh semua ────────────────────────────────────
 function refreshAll() {
     routerIds.forEach(id => {
         loadRouterStats(id);
@@ -346,5 +269,4 @@ function refreshAll() {
 refreshAll();
 setInterval(refreshAll, 2000);
 </script>
-</body>
-</html>
+@endpush
