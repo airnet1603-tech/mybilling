@@ -96,7 +96,6 @@
                             <th>Status</th>
                             <th>ODP</th>
                             <th>Pelanggan</th>
-                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -118,7 +117,6 @@
                                 @endforeach
                             </select>
                         </td>
-                        <td><button onclick="goToOnu({{ $onu->id }})" class="btn btn-sm" style="padding:1px 7px;font-size:0.75rem;background:#e8f4fd;border:1px solid #90cdf4;color:#2b6cb0;border-radius:6px;" title="Lihat di peta">📍</button></td>
                         <td><select class="pelanggan-select" data-onu-id="{{ $onu->id }}"><option value="">-- Pelanggan --</option>@foreach(\App\Models\Pelanggan::orderBy('nama')->get() as $p)<option value="{{ $p->id }}" {{ $onu->pelanggan_id == $p->id ? 'selected' : '' }}>{{ $p->nama }}</option>@endforeach</select></td>
                     </tr>
                     @empty
@@ -137,8 +135,6 @@
 
 @push('scripts')
 <script>
-var onuMarkers = {};
-var map = null;
 var oltLat = {{ $olt->lat ?? -8.207019 }};
 var oltLng = {{ $olt->lng ?? 112.019980 }};
 var oltName = '{{ addslashes($olt->name) }}';
@@ -195,7 +191,7 @@ function makeMarkerIcon(color, icon, size) {
 
 function initMap() {
     var center = { lat: oltLat, lng: oltLng };
-    map = new google.maps.Map(document.getElementById('map'), {
+    var map = new google.maps.Map(document.getElementById('map'), {
         center: center, zoom: 14, mapTypeId: 'hybrid',
         gestureHandling: 'greedy', fullscreenControl: true,
     });
@@ -323,14 +319,9 @@ function initMap() {
             content: '<b>📡 {{ addslashes($onu->name ?? $onu->onu_id) }}</b><br>' +
                      '<small>Status: <b style="color:{{ $onu->status === "Up" ? "#28a745" : "#dc3545" }}">{{ $onu->status }}</b></small><br>' +
                      '<small>MAC: {{ $onu->mac_address }}</small><br>' +
-                     '<small>Pelanggan: {{ addslashes($onu->pelanggan?->nama ?? "-") }}</small><br>' +
-                     '<a href="https://www.google.com/maps?q={{ $lat }},{{ $lng }}" target="_blank" ' +
-                     'style="display:block;margin-top:6px;text-align:center;background:#4285f4;color:white;' +
-                     'padding:4px 8px;border-radius:6px;text-decoration:none;font-size:11px;">'
-                     + '📍 Buka Google Maps</a>'
+                     '<small>Pelanggan: {{ addslashes($onu->pelanggan?->nama ?? "-") }}</small>'
         });
         onuMarker.addListener('click', function() { onuInfo.open(map, onuMarker); });
-        onuMarkers[{{ $onu->id }}] = { marker: onuMarker, info: onuInfo };
     })();
     @endif
     @endforeach
@@ -353,19 +344,6 @@ function syncOnu() {
         toast(d.success ? '✅ Sync berhasil: '+d.synced+' ONU' : '❌ '+d.error);
         setTimeout(() => location.reload(), 2000);
     });
-}
-
-function goToOnu(onuId) {
-    var o = onuMarkers[onuId];
-    if (!o) { toast('⚠️ ONU belum ada di peta (belum ada koordinat)'); return; }
-    var pos = o.marker.getPosition();
-    var mapEl = document.getElementById('map');
-    mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setTimeout(function() {
-        map.panTo(pos);
-        map.setZoom(18);
-        o.info.open(map, o.marker);
-    }, 400);
 }
 
 function toast(msg) {

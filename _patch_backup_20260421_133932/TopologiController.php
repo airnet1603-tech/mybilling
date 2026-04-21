@@ -190,17 +190,16 @@ class TopologiController extends Controller
             ];
         });
 
-$onus = Onu::with(['pelanggan', 'odp', 'olt'])->get()->map(fn($o) => [
+$onus = Onu::with(['pelanggan', 'odp'])->get()->map(fn($o) => [
     'id'        => 'onu-'.$o->id,
     'type'      => 'ONT',
     'name'      => $o->name ?? $o->onu_id,
     'mac'       => $o->mac_address,
     'status'    => $o->status,
     'odp_id'    => $o->odp_id ? 'odp-'.$o->odp_id : null,
-    'olt_id'    => $o->olt_id, // FIX Bug1
     'pelanggan' => $o->pelanggan?->nama ?? null,
-    'lat'       => $o->pelanggan?->latitude ?? $o->odp?->lat ?? $o->olt?->lat ?? null, // FIX Bug2
-    'lng'       => $o->pelanggan?->longitude ?? $o->odp?->lng ?? $o->olt?->lng ?? null, // FIX Bug2
+    'lat'       => $o->pelanggan?->latitude ?? $o->odp?->lat ?? \App\Models\Olt::find($o->olt_id)?->lat ?? null,
+    'lng'       => $o->pelanggan?->longitude ?? $o->odp?->lng ?? \App\Models\Olt::find($o->olt_id)?->lng ?? null,
 ]);
         return response()->json([
             'olts' => $olts->values(),

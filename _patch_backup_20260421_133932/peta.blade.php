@@ -133,7 +133,7 @@
 @endsection
 
 @push('scripts')
-<script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.gmaps.key') }}&libraries=places&callback=initMap" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC33huzSRZbZ02tihkJmqqrGhP9Kml32uM&libraries=places&callback=initMap" async defer></script>
 <script>
 var oltData = {!! json_encode($oltData) !!};
 var odcData = {!! json_encode($odcData) !!};
@@ -336,19 +336,6 @@ function loadNodes() {
             });
             if (isUp) markers.onuUp.push(marker);
             else markers.onuDown.push(marker);
-
-            // Garis ODP → ONU
-            var odpKey = o.odp_id ? o.odp_id : null;
-            if (odpKey && nodeMap[odpKey]) {
-                var onuLine = new google.maps.Polyline({
-                    path: [nodeMap[odpKey], { lat: parseFloat(o.lat), lng: parseFloat(o.lng) }],
-                    strokeColor: '#28a745',
-                    strokeWeight: 1.2,
-                    strokeOpacity: 0.7,
-                    map: petaMap,
-                });
-                polylines.push({ line: onuLine, oltId: o.olt_id ? String(o.olt_id) : null });
-            }
         });
 
         updatePinCount();

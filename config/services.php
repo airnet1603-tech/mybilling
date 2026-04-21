@@ -38,5 +38,10 @@ return [
     'fonnte' => [
         'token' => env('FONNTE_TOKEN'),
     ],
+
+    'gmaps' => [
+        'key' => env('GMAPS_KEY', ''),
+    ],
+
 ];
 

@@ -178,7 +178,8 @@ function showOdcBySfp(sfpId, oltId, sfpName, e) {
     e.stopPropagation();
     var token = document.querySelector('meta[name="csrf-token"]').content;
     document.getElementById('odc-olt-label').textContent = '— SFP: ' + sfpName;
-    // FIX Bug4: variabel 'odcs' di atas tidak dipakai, dihapus
+    var odcs = odcData.filter(o => o.sfp_id == sfpId || (o.olt_id == oltId && !o.sfp_id));
+    // Filter hanya yang sfp_id cocok
     var odcsBySfp = odcData.filter(o => o.sfp_id == sfpId);
     var list = document.getElementById('odc-list-main');
     list.innerHTML = odcsBySfp.length ? odcsBySfp.map(o =>

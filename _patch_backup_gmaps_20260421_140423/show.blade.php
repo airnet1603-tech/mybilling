@@ -323,11 +323,7 @@ function initMap() {
             content: '<b>📡 {{ addslashes($onu->name ?? $onu->onu_id) }}</b><br>' +
                      '<small>Status: <b style="color:{{ $onu->status === "Up" ? "#28a745" : "#dc3545" }}">{{ $onu->status }}</b></small><br>' +
                      '<small>MAC: {{ $onu->mac_address }}</small><br>' +
-                     '<small>Pelanggan: {{ addslashes($onu->pelanggan?->nama ?? "-") }}</small><br>' +
-                     '<a href="https://www.google.com/maps?q={{ $lat }},{{ $lng }}" target="_blank" ' +
-                     'style="display:block;margin-top:6px;text-align:center;background:#4285f4;color:white;' +
-                     'padding:4px 8px;border-radius:6px;text-decoration:none;font-size:11px;">'
-                     + '📍 Buka Google Maps</a>'
+                     '<small>Pelanggan: {{ addslashes($onu->pelanggan?->nama ?? "-") }}</small>'
         });
         onuMarker.addListener('click', function() { onuInfo.open(map, onuMarker); });
         onuMarkers[{{ $onu->id }}] = { marker: onuMarker, info: onuInfo };
