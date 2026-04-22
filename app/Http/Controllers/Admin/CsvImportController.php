@@ -70,7 +70,7 @@ class CsvImportController extends Controller
 
             $paket  = $pakets->first(fn($p) => strtolower(trim($p->nama_paket)) === strtolower(trim($paketNama)));
             $router = $routers->first(fn($r) => strtolower(trim($r->nama)) === strtolower(trim($routerNama)));
-            $exists = Pelanggan::withTrashed()->where('username', $username)->exists();
+            $exists = Pelanggan::where('username', $username)->exists();
 
             $preview[] = [
                 'username'   => $username,
@@ -116,7 +116,7 @@ class CsvImportController extends Controller
                 if (!$username) continue;
 
                 // Skip jika sudah ada
-                if (Pelanggan::withTrashed()->where('username', $username)->exists()) {
+                if (Pelanggan::where('username', $username)->exists()) {
                     $skipped++;
                     continue;
                 }
@@ -133,9 +133,17 @@ class CsvImportController extends Controller
                 $paket  = Paket::find($paketId);
 
                 DB::transaction(function() use ($username, $item, $paketId, $routerId, $router, $paket, &$imported) {
-                    $lastId      = Pelanggan::lockForUpdate()->max('id') ?? 0;
-                    $idPelanggan = 'AR-' . date('Y') . str_pad($lastId + 1, 4, '0', STR_PAD_LEFT);
-
+$tahun = date('Y');
+$last = Pelanggan::whereYear('created_at', $tahun)
+            ->withTrashed()
+            ->orderByDesc('id_pelanggan')
+            ->value('id_pelanggan');
+$urutan = $last ? (int) substr($last, -4) + 1 : 1;
+$idPelanggan = 'AR-' . $tahun . str_pad($urutan, 4, '0', STR_PAD_LEFT);
+while (Pelanggan::withTrashed()->where('id_pelanggan', $idPelanggan)->exists()) {
+    $urutan++;
+    $idPelanggan = 'AR-' . $tahun . str_pad($urutan, 4, '0', STR_PAD_LEFT);
+}
                     $tglExpired = !empty($item['tgl_expired'])
                         ? date('Y-m-d', strtotime($item['tgl_expired']))
                         : now()->addMonths(1)->toDateString();

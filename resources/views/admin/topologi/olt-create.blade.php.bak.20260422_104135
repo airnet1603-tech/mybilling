@@ -2,7 +2,7 @@
 @section('title', 'Tambah OLT')
 
 @push('head')
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC33huzSRZbZ02tihkJmqqrGhP9Kml32uM&libraries=places&callback=initMapPicker" defer></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 #map-picker { height: 350px; border-radius: 10px; cursor: crosshair; }
 .coord-box { background:#f8f9fa; border-radius:8px; padding:10px 14px; font-size:0.85rem; }
@@ -126,31 +126,21 @@
 @endsection
 
 @push('scripts')
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-var gmap, gmarker;
-function initMapPicker() {
-    var defaultPos = { lat: -8.207014, lng: 112.019986 };
-    gmap = new google.maps.Map(document.getElementById('map-picker'), {
-        center: defaultPos, zoom: 15, mapTypeId: 'hybrid',
-        gestureHandling: 'greedy', fullscreenControl: true,
-        streetViewControl: false, mapTypeControl: true,
-    });
-    gmarker = new google.maps.Marker({
-        position: defaultPos, map: gmap,
-        title: 'Lokasi OLT Baru', draggable: true,
-    });
-    gmap.addListener('click', function(e) { moveMarker(e.latLng); });
-    gmarker.addListener('dragend', function(e) { moveMarker(e.latLng); });
-}
-function moveMarker(latLng) {
-    gmarker.setPosition(latLng);
-    gmap.panTo(latLng);
-    document.getElementById('lat-input').value  = latLng.lat().toFixed(8);
-    document.getElementById('lng-input').value  = latLng.lng().toFixed(8);
-    document.getElementById('lat-display').textContent = latLng.lat().toFixed(6);
-    document.getElementById('lng-display').textContent = latLng.lng().toFixed(6);
-}
-window.initMapPicker = initMapPicker;
+const map = L.map('map-picker').setView([-7.5, 111.9], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+let marker = null;
+map.on('click', function(e) {
+    const { lat, lng } = e.latlng;
+    document.getElementById('lat-input').value = lat.toFixed(8);
+    document.getElementById('lng-input').value = lng.toFixed(8);
+    document.getElementById('lat-display').textContent = lat.toFixed(6);
+    document.getElementById('lng-display').textContent = lng.toFixed(6);
+    if (marker) map.removeLayer(marker);
+    marker = L.marker([lat, lng]).addTo(map).bindPopup('Lokasi OLT').openPopup();
+});
 
 const modelConfig = {
     'HiOSO':          { endpoint: '/onuConfigPonList.asp', sync: true,  color: 'success', note: 'Auto-sync didukung ✅ (HTTP Basic Auth)' },

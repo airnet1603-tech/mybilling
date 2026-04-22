@@ -194,7 +194,7 @@ class TopologiController extends Controller
             ];
         });
 
-$onus = Onu::with(['pelanggan.paket', 'odp', 'olt'])->get()->map(fn($o) => [
+$onus = Onu::with(['pelanggan', 'odp', 'olt'])->get()->map(fn($o) => [
     'id'        => 'onu-'.$o->id,
     'type'      => 'ONT',
     'name'      => $o->name ?? $o->onu_id,
@@ -202,13 +202,7 @@ $onus = Onu::with(['pelanggan.paket', 'odp', 'olt'])->get()->map(fn($o) => [
     'status'    => $o->status,
     'odp_id'    => $o->odp_id ? 'odp-'.$o->odp_id : null,
     'olt_id'    => $o->olt_id, // FIX Bug1
-    'pelanggan_id' => $o->pelanggan_id,
     'pelanggan' => $o->pelanggan?->nama ?? null,
-    'pelanggan_status'  => $o->pelanggan?->status ?? null,
-    'pelanggan_paket'   => $o->pelanggan?->paket?->nama_paket ?? null,
-    'pelanggan_expired' => $o->pelanggan?->tgl_expired?->format('d/m/Y') ?? null,
-    'pelanggan_no_hp'   => $o->pelanggan?->no_hp ?? null,
-    'pelanggan_maps'    => $o->pelanggan?->maps ?? null,
     'lat'       => $o->pelanggan?->latitude ?? $o->odp?->lat ?? null,
     'lng'       => $o->pelanggan?->longitude ?? $o->odp?->lng ?? null,
 ]);
@@ -483,13 +477,8 @@ $onus = Onu::with(['pelanggan.paket', 'odp', 'olt'])->get()->map(fn($o) => [
     public function assignOnu(Request $request, $onu_id)
     {
         $onu = \App\Models\Onu::findOrFail($onu_id);
-        // Hanya update field yang dikirim, jangan reset yang lain
-        if ($request->has('odp_id')) {
-            $onu->odp_id = $request->odp_id ?: null;
-        }
-        if ($request->has('pelanggan_id')) {
-            $onu->pelanggan_id = $request->pelanggan_id ?: null;
-        }
+        $onu->odp_id = $request->odp_id ?: null;
+        $onu->pelanggan_id = $request->pelanggan_id ?: null;
         $onu->save();
         return response()->json(["success" => true]);
     }

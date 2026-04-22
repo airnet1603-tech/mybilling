@@ -44,16 +44,12 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Model / Tipe OLT</label>
-                        <select name="model" id="olt-model" class="form-select" required onchange="onModelChange(this.value)">
+                        <select name="model" class="form-select" required>
                             <option value="">-- Pilih Model --</option>
                             @foreach(['HisFocus 4P1GM'=>'HisFocus 4P1GM','HisFocus 8P2GM'=>'HisFocus 8P2GM','HiOSO'=>'HiOSO','HSGQ'=>'HSGQ','ZTE C300'=>'ZTE C300','ZTE C320'=>'ZTE C320','Huawei MA5608T'=>'Huawei MA5608T','Huawei MA5800'=>'Huawei MA5800','FiberHome'=>'FiberHome','Nokia'=>'Nokia'] as $val => $label)
                                 <option value="{{ $val }}" {{ $olt->model == $val ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
-                        <div id="model-info" class="mt-2">
-                            <span id="model-badge" class="badge fs-6 px-3 py-1"></span>
-                            <small id="model-note" class="text-muted ms-2"></small>
-                        </div>
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col">
@@ -72,7 +68,7 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">API Endpoint</label>
-                            <input type="text" name="api_endpoint" class="form-control" id="api-endpoint" value="{{ $olt->api_endpoint ?? '/onuAllPonOnuList.asp' }}">
+                            <input type="text" name="api_endpoint" class="form-control" value="{{ $olt->api_endpoint ?? '/onuAllPonOnuList.asp' }}">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Sync Interval (menit)</label>
@@ -323,37 +319,5 @@ function hapusOlt() {
         document.getElementById('form-hapus').submit();
     }
 }
-</script>
-<script>
-const modelConfig = {
-    'HiOSO':          { endpoint: '/onuConfigPonList.asp', sync: true,  color: 'success', note: 'Auto-sync didukung ✅ (HTTP Basic Auth)' },
-    'HSGQ':           { endpoint: '',                      sync: true,  color: 'success', note: 'Auto-sync didukung ✅ (Token Auth)' },
-    'HisFocus 4P1GM': { endpoint: '/onuAllPonOnuList.asp', sync: true,  color: 'success', note: 'Auto-sync didukung ✅ (HTTP Basic Auth)' },
-    'HisFocus 8P2GM': { endpoint: '/onuAllPonOnuList.asp', sync: true,  color: 'success', note: 'Auto-sync didukung ✅ (HTTP Basic Auth)' },
-    'ZTE C300':       { endpoint: '',                      sync: false, color: 'warning', note: 'Sync belum didukung ⚠️' },
-    'ZTE C320':       { endpoint: '',                      sync: false, color: 'warning', note: 'Sync belum didukung ⚠️' },
-    'Huawei MA5608T': { endpoint: '',                      sync: false, color: 'warning', note: 'Sync belum didukung ⚠️' },
-    'Huawei MA5800':  { endpoint: '',                      sync: false, color: 'warning', note: 'Sync belum didukung ⚠️' },
-    'FiberHome':      { endpoint: '',                      sync: false, color: 'warning', note: 'Sync belum didukung ⚠️' },
-    'Nokia':          { endpoint: '',                      sync: false, color: 'warning', note: 'Sync belum didukung ⚠️' },
-};
-function onModelChange(val) {
-    const cfg = modelConfig[val];
-    const badge   = document.getElementById('model-badge');
-    const note    = document.getElementById('model-note');
-    const epInput = document.getElementById('api-endpoint');
-    const hsgqDiv = document.getElementById('hsgq-key-field');
-    if (!cfg) return;
-    badge.className = 'badge fs-6 px-3 py-1 bg-' + cfg.color;
-    badge.textContent = val;
-    note.textContent  = cfg.note;
-    if (epInput && cfg.endpoint) epInput.value = cfg.endpoint;
-    if (hsgqDiv) hsgqDiv.style.display = (val === 'HSGQ') ? '' : 'none';
-}
-// Trigger saat halaman load
-document.addEventListener('DOMContentLoaded', function() {
-    const sel = document.getElementById('olt-model');
-    if (sel && sel.value) onModelChange(sel.value);
-});
 </script>
 @endpush

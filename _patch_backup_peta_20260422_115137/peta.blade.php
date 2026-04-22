@@ -324,34 +324,12 @@ function loadNodes() {
                 oltId    : o.olt_id,
             });
             marker.addListener('click', function() {
-                var statusBadge = isUp
-                    ? '<span style="background:#d4edda;color:#155724;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;">ONLINE</span>'
-                    : '<span style="background:#f8d7da;color:#721c24;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;">OFFLINE</span>';
-                var pelangganBadge = '';
-                if (o.pelanggan_status === 'aktif') {
-                    pelangganBadge = '<span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">AKTIF</span>';
-                } else if (o.pelanggan_status) {
-                    pelangganBadge = '<span style="background:#f8d7da;color:#721c24;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">' + o.pelanggan_status.toUpperCase() + '</span>';
-                }
-                var mapsBtn = o.pelanggan_maps
-                    ? '<a href="' + o.pelanggan_maps + '" target="_blank" style="display:block;margin-top:4px;text-align:center;background:#34a853;color:white;padding:5px;border-radius:6px;text-decoration:none;font-size:12px;">&#128506; Buka di Google Maps</a>'
-                    : '<a href="https://www.google.com/maps?q=' + o.lat + ',' + o.lng + '" target="_blank" style="display:block;margin-top:4px;text-align:center;background:#34a853;color:white;padding:5px;border-radius:6px;text-decoration:none;font-size:12px;">&#128506; Buka di Google Maps</a>';
-                var detailBtn = o.pelanggan_id
-                    ? '<a href="/admin/pelanggan/' + o.pelanggan_id + '" style="display:block;margin-top:4px;text-align:center;background:#1a73e8;color:white;padding:5px;border-radius:6px;text-decoration:none;font-size:12px;">&#128100; Lihat Detail</a>'
-                    : '';
-                var osmBtn = '<a href="https://www.openstreetmap.org/?mlat=' + o.lat + '&mlon=' + o.lng + '" target="_blank" style="display:block;margin-top:4px;text-align:center;background:#e86c1a;color:white;padding:5px;border-radius:6px;text-decoration:none;font-size:12px;">&#128506; Buka di OpenStreetMap</a>';
                 infoWindow.setContent(
-                    '<div style="font-family:Segoe UI,sans-serif;min-width:220px;max-width:260px;">' +
-                    '<b style="font-size:14px;">&#128225; ' + o.name + '</b><br>' +
-                    '<small style="color:#666;">&#128100; ' + (o.pelanggan||"-") + '</small><br>' +
-                    '<div style="margin:5px 0;">' + statusBadge + ' ' + pelangganBadge + '</div>' +
-                    '<hr style="margin:6px 0;">' +
-                    '<div style="font-size:12px;line-height:1.8;">' +
-                    '&#128246; <b>' + (o.pelanggan_paket||"-") + '</b><br>' +
-                    '&#128197; Expired: ' + (o.pelanggan_expired||"-") + '<br>' +
-                    '&#128222; ' + (o.pelanggan_no_hp||"-") +
-                    '</div>' +
-                    detailBtn + mapsBtn + osmBtn +
+                    '<div style="font-family:Segoe UI,sans-serif;min-width:180px;">' +
+                    '<b>📡 ' + o.name + '</b><br>' +
+                    '<small>MAC: ' + o.mac + '</small><br>' +
+                    '<small>Status: <b style="color:' + (isUp?'#28a745':'#dc3545') + '">' + o.status + '</b></small><br>' +
+                    '<small>Pelanggan: ' + (o.pelanggan||'-') + '</small>' +
                     '</div>'
                 );
                 infoWindow.open(petaMap, marker);

@@ -82,6 +82,12 @@
             <option value="{{ $paket->nama_paket }}">{{ $paket->nama_paket }}</option>
             @endforeach
         </select>
+        <select id="filterRouter" class="form-select form-select-sm" style="width:150px;">
+            <option value="">Semua Router</option>
+            @foreach(\App\Models\Router::where('is_active', true)->get() as $router)
+            <option value="{{ $router->nama }}">{{ $router->nama }}</option>
+            @endforeach
+        </select>
         <button class="btn btn-sm btn-outline-secondary" onclick="resetFilter()">
             <i class="fas fa-times me-1"></i>Reset
         </button>
@@ -145,14 +151,31 @@ function initMap() {
                 : 'https://www.google.com/maps?q=' + p.lat + ',' + p.lng;
             var openStreetMapUrl = 'https://www.openstreetmap.org/?mlat=' + p.lat + '&mlon=' + p.lng + '&zoom=17';
 
+            var onuHtml = '';
+            if (p.onus && p.onus.length > 0) {
+                onuHtml += '<div style="margin-top:8px;border-top:1px solid #eee;padding-top:6px;">';
+                onuHtml += '<div style="font-size:11px;font-weight:600;color:#555;margin-bottom:4px;">&#128225; ONU Terhubung:</div>';
+                p.onus.forEach(function(o) {
+                    var sColor = o.status === 'Up' ? '#28a745' : '#dc3545';
+                    onuHtml += '<div style="font-size:11px;margin-bottom:2px;">'
+                        + '<span style="color:'+sColor+';font-weight:600;">&#9679; </span>'
+                        + (o.name || o.onu_id)
+                        + (o.odp ? ' <span style="color:#888;">&rarr; '+o.odp+'</span>' : '')
+                        + '</div>';
+                });
+                onuHtml += '</div>';
+            } else {
+                onuHtml = '<div style="margin-top:6px;font-size:11px;color:#aaa;"><i>Tidak ada ONU terhubung</i></div>';
+            }
             infoWindow.setContent(
                 '<div style="min-width:220px;font-family:Segoe UI,sans-serif;">' +
                 '<div style="font-weight:700;font-size:14px;margin-bottom:6px;">' + p.nama + '</div>' +
                 '<div style="font-size:12px;color:#666;margin-bottom:4px;"><i class="fas fa-user me-1"></i>' + p.username + '</div>' +
                 '<div style="font-size:12px;margin-bottom:4px;"><span style="background:' + color + ';color:white;padding:2px 8px;border-radius:10px;font-size:11px;">' + p.status.toUpperCase() + '</span></div>' +
                 '<div style="font-size:12px;color:#666;margin-bottom:2px;"><i class="fas fa-box me-1"></i>' + p.paket + '</div>' +
-                '<div style="font-size:12px;color:#666;margin-bottom:10px;"><i class="fas fa-calendar me-1"></i>Expired: ' + p.expired + '</div>' +
-                '<a href="' + p.url + '" style="display:block;text-align:center;background:#1a73e8;color:white;padding:6px;border-radius:6px;text-decoration:none;font-size:12px;margin-bottom:5px;"><i class="fas fa-eye me-1"></i>Lihat Detail</a>' +
+                '<div style="font-size:12px;color:#666;margin-bottom:4px;"><i class="fas fa-calendar me-1"></i>Expired: ' + p.expired + '</div>' +
+                onuHtml +
+                '<a href="' + p.url + '" style="display:block;text-align:center;background:#1a73e8;color:white;padding:6px;border-radius:6px;text-decoration:none;font-size:12px;margin-top:8px;margin-bottom:5px;"><i class="fas fa-eye me-1"></i>Lihat Detail</a>' +
                 '<a href="' + googleMapsUrl + '" target="_blank" style="display:block;text-align:center;background:#34a853;color:white;padding:6px;border-radius:6px;text-decoration:none;font-size:12px;margin-bottom:5px;"><i class="fas fa-map-marked-alt me-1"></i>Buka di Google Maps</a>' +
                 '<a href="' + openStreetMapUrl + '" target="_blank" style="display:block;text-align:center;background:#e67e22;color:white;padding:6px;border-radius:6px;text-decoration:none;font-size:12px;"><i class="fas fa-map me-1"></i>Buka di OpenStreetMap</a>' +
                 '</div>'
@@ -172,12 +195,14 @@ function initMap() {
     document.getElementById('searchPelanggan').addEventListener('input', applyFilter);
     document.getElementById('filterStatus').addEventListener('change', applyFilter);
     document.getElementById('filterPaket').addEventListener('change', applyFilter);
+    document.getElementById('filterRouter').addEventListener('change', applyFilter);
 }
 
 function applyFilter() {
     var search = document.getElementById('searchPelanggan').value.toLowerCase();
     var status = document.getElementById('filterStatus').value;
     var paket  = document.getElementById('filterPaket').value;
+    var router = document.getElementById('filterRouter').value;
     var count  = 0;
     allMarkers.forEach(function(m) {
         var p    = m.data;
@@ -185,6 +210,7 @@ function applyFilter() {
         if (search && !p.nama.toLowerCase().includes(search) && !p.username.toLowerCase().includes(search)) show = false;
         if (status && p.status !== status) show = false;
         if (paket  && p.paket  !== paket)  show = false;
+        if (router && p.router !== router) show = false;
         m.setVisible(show);
         if (show) count++;
     });
@@ -195,6 +221,7 @@ function resetFilter() {
     document.getElementById('searchPelanggan').value = '';
     document.getElementById('filterStatus').value    = '';
     document.getElementById('filterPaket').value     = '';
+    document.getElementById('filterRouter').value    = '';
     applyFilter();
 }
 

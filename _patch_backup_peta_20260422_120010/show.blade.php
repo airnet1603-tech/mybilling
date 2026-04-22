@@ -157,19 +157,13 @@ function filterOnu() {
 }
 
 function assignOdp(onuId, odpId) {
-    // Ambil pelanggan_id yang sudah ada di baris ini
-    var row = document.querySelector('tr[data-onu-id="' + onuId + '"]') ||
-              [...document.querySelectorAll('#onuTable tbody tr')].find(r => {
-                  var sel = r.querySelector('.odp-select');
-                  return sel && sel.getAttribute('onchange') && sel.getAttribute('onchange').includes('(' + onuId + ',');
-              });
-    var pelangganSel = row ? row.querySelector('.pelanggan-select') : null;
-    var pelangganId  = pelangganSel ? (pelangganSel.val ? $(pelangganSel).val() : pelangganSel.value) : null;
-
     fetch('/admin/topologi/onu/' + onuId + '/assign-odp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-        body: JSON.stringify({ odp_id: odpId || null, pelanggan_id: pelangganId || null })
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
+        },
+        body: JSON.stringify({ odp_id: odpId || null })
     }).then(r => r.json()).then(d => {
         toast(d.success ? '✅ ODP berhasil disimpan!' : '❌ Gagal menyimpan');
     }).catch(() => toast('❌ Error koneksi'));
@@ -363,14 +357,10 @@ function syncOnu() {
 
 function goToOnu(onuId) {
     var o = onuMarkers[onuId];
-    if (!o) {
-        toast('ONU belum ada koordinat - assign pelanggan dulu & isi koordinat di edit pelanggan');
-        var tbl = document.getElementById('onuTable');
-        if (tbl) tbl.closest('.card').scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-    }
+    if (!o) { toast('⚠️ ONU belum ada di peta (belum ada koordinat)'); return; }
     var pos = o.marker.getPosition();
-    document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    var mapEl = document.getElementById('map');
+    mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setTimeout(function() {
         map.panTo(pos);
         map.setZoom(18);
@@ -391,16 +381,10 @@ function toast(msg) {
     });
 
 function assignPelanggan(onuId, pelangganId) {
-    // Ambil odp_id yang sudah ada di baris ini
-    var odpSel = [...document.querySelectorAll('.odp-select')].find(s => {
-        return s.getAttribute('onchange') && s.getAttribute('onchange').includes('(' + onuId + ',');
-    });
-    var odpId = odpSel ? odpSel.value : null;
-
     fetch('/admin/topologi/onu/' + onuId + '/assign-odp', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken},
-        body: JSON.stringify({ odp_id: odpId || null, pelanggan_id: pelangganId || null })
+        body: JSON.stringify({ pelanggan_id: pelangganId || null })
     }).then(r => r.json()).then(d => {
         toast(d.success ? '✅ Pelanggan berhasil disimpan!' : '❌ Gagal menyimpan');
     }).catch(() => toast('❌ Error koneksi'));

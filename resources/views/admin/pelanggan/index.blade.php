@@ -84,6 +84,7 @@
     <div class="card-body py-2 px-3 d-flex align-items-center gap-2">
         <span class="small fw-semibold text-primary me-2"><span id="bulkCount">0</span> dipilih</span>
         <button class="btn btn-sm btn-danger" onclick="bulkHapus()"><i class="fas fa-trash me-1"></i> Hapus Terpilih</button>
+        <button class="btn btn-sm btn-success" onclick="exportTerpilih()"><i class="fas fa-file-csv me-1"></i> Export Terpilih</button>
         <button class="btn btn-sm btn-secondary ms-auto" onclick="clearAll()"><i class="fas fa-times me-1"></i> Batal</button>
     </div>
 </div>
@@ -244,6 +245,14 @@ function bulkHapus() {
         body: JSON.stringify({ ids }),
     }).then(r => r.json()).then(d => { alert(d.message); window.location.reload(); }).catch(() => alert('Gagal hapus. Coba lagi.'));
 }
+function exportTerpilih() {
+    const ids = [...document.querySelectorAll('.row-check:checked')].map(c => c.value);
+    if (!ids.length) { alert('Pilih minimal 1 pelanggan!'); return; }
+    const params = new URLSearchParams(window.location.search);
+    params.set('ids', ids.join(','));
+    window.location.href = '/admin/pelanggan/export?' + params.toString();
+}
+
 let searchTimer = null;
 document.getElementById('searchInput').addEventListener('input', function() {
     clearTimeout(searchTimer);

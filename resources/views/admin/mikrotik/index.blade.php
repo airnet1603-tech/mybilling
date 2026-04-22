@@ -325,12 +325,13 @@
                     <span id="importPppoeErrorMsg"></span>
                 </div>
                 <div id="importPppoeResult" style="display:none;">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                         <div class="d-flex gap-2 align-items-center flex-wrap">
                             <span class="small text-muted">Paket default:</span>
                             <select id="defaultPaketId" class="form-select form-select-sm" style="width:auto;">
                                 <option value="">-- Pilih Paket --</option>
                             </select>
+                            <input type="text" id="searchPppoeUsername" class="form-control form-control-sm" style="width:180px;" placeholder="Cari username..." oninput="filterPppoeTable()">
                         </div>
                         <div class="d-flex gap-2">
                             <button class="btn btn-sm btn-outline-secondary" onclick="toggleSelectAll()">
@@ -475,6 +476,27 @@ function copyWgConfig() {
 }
 
 let currentImportRouterId = null;
+
+function filterPppoeTable() {
+    var keyword = document.getElementById('searchPppoeUsername').value.toLowerCase();
+    var rows = document.querySelectorAll('#importPppoeTableBody tr');
+    rows.forEach(function(row) {
+        var username = row.querySelector('td:nth-child(2)');
+        if (!username) return;
+        row.style.display = username.textContent.toLowerCase().includes(keyword) ? '' : 'none';
+    });
+}
+
+function filterPppoeTable() {
+    var keyword = document.getElementById('searchPppoeUsername').value.toLowerCase();
+    var rows = document.querySelectorAll('#importPppoeTableBody tr');
+    rows.forEach(function(row) {
+        var username = row.querySelector('td:nth-child(2)');
+        if (!username) return;
+        row.style.display = username.textContent.toLowerCase().includes(keyword) ? '' : 'none';
+    });
+    updateImportInfo();
+}
 
 function importDariRB(id, nama) {
     currentImportRouterId = id;

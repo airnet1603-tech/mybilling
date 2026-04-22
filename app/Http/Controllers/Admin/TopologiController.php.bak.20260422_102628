@@ -37,9 +37,7 @@ class TopologiController extends Controller
             'username'   => 'required',
             'password'   => 'required',
         ]);
-        $data = $request->only(['name','ip_address','username','password','snmp_community','hsgq_key','api_endpoint','sync_interval','lat','lng','model','olt_color','olt_icon','odc_color','odc_icon','odp_color','odp_icon','line_olt_odc','line_odc_odp','line_odp_odp']);
-        $data['api_endpoint'] = $data['api_endpoint'] ?? '';
-        $olt->update($data);
+        $olt->update($request->only(['name','ip_address','username','password','snmp_community','hsgq_key','api_endpoint','sync_interval','lat','lng','model','olt_color','olt_icon','odc_color','odc_icon','odp_color','odp_icon','line_olt_odc','line_odc_odp','line_odp_odp']));
         return redirect('/admin/topologi')->with('success', 'OLT berhasil diupdate!');
     }
 
@@ -62,9 +60,7 @@ class TopologiController extends Controller
             'username'   => 'required',
             'password'   => 'required',
         ]);
-        $data2 = $request->only(['name','ip_address','username','password','snmp_community','hsgq_key','api_endpoint','sync_interval','lat','lng','model']);
-        $data2['api_endpoint'] = $data2['api_endpoint'] ?? '';
-        Olt::create($data2);
+        Olt::create($request->only(['name','ip_address','username','password','snmp_community','hsgq_key','api_endpoint','sync_interval','lat','lng','model']));
         return redirect('/admin/topologi')->with('success', 'OLT berhasil ditambahkan!');
     }
 
@@ -194,7 +190,7 @@ class TopologiController extends Controller
             ];
         });
 
-$onus = Onu::with(['pelanggan.paket', 'odp', 'olt'])->get()->map(fn($o) => [
+$onus = Onu::with(['pelanggan', 'odp', 'olt'])->get()->map(fn($o) => [
     'id'        => 'onu-'.$o->id,
     'type'      => 'ONT',
     'name'      => $o->name ?? $o->onu_id,
@@ -202,15 +198,9 @@ $onus = Onu::with(['pelanggan.paket', 'odp', 'olt'])->get()->map(fn($o) => [
     'status'    => $o->status,
     'odp_id'    => $o->odp_id ? 'odp-'.$o->odp_id : null,
     'olt_id'    => $o->olt_id, // FIX Bug1
-    'pelanggan_id' => $o->pelanggan_id,
     'pelanggan' => $o->pelanggan?->nama ?? null,
-    'pelanggan_status'  => $o->pelanggan?->status ?? null,
-    'pelanggan_paket'   => $o->pelanggan?->paket?->nama_paket ?? null,
-    'pelanggan_expired' => $o->pelanggan?->tgl_expired?->format('d/m/Y') ?? null,
-    'pelanggan_no_hp'   => $o->pelanggan?->no_hp ?? null,
-    'pelanggan_maps'    => $o->pelanggan?->maps ?? null,
-    'lat'       => $o->pelanggan?->latitude ?? $o->odp?->lat ?? null,
-    'lng'       => $o->pelanggan?->longitude ?? $o->odp?->lng ?? null,
+    'lat'       => $o->pelanggan?->latitude ?? $o->odp?->lat ?? $o->olt?->lat ?? null, // FIX Bug2
+    'lng'       => $o->pelanggan?->longitude ?? $o->odp?->lng ?? $o->olt?->lng ?? null, // FIX Bug2
 ]);
         return response()->json([
             'olts' => $olts->values(),
@@ -325,7 +315,7 @@ $onus = Onu::with(['pelanggan.paket', 'odp', 'olt'])->get()->map(fn($o) => [
                         $synced++;
                     }
                 }
-            } elseif (in_array($model, ['hioso', 'ha7302cst', 'epon', 'hioso epon', 'hioso epon olt'])) {
+            } elseif (in_array($model, ['hioso', 'ha7302cst', 'epon', 'hioso epon'])) {
                 // HiOSO EPON - HA7302CST
                 $client  = new \GuzzleHttp\Client(['base_uri' => $baseUri, 'timeout' => 15, 'verify' => false, 'auth' => [$olt->username, $olt->password]]);
                 $ponHtml = (string) $client->get('/onuConfigPonList.asp')->getBody();
@@ -342,21 +332,6 @@ $onus = Onu::with(['pelanggan.paket', 'odp', 'olt'])->get()->map(fn($o) => [
                         $synced++;
                     }
                 }
-            } elseif (in_array($model, ['hisfocus 4p1gm', 'hisfocus 8p2gm', 'hisfocus'])) {
-                // HisFocus series - Basic Auth + ASP endpoint
-                $client  = new \GuzzleHttp\Client(['base_uri' => $baseUri, 'timeout' => 15, 'verify' => false, 'auth' => [$olt->username, $olt->password]]);
-                $endpoint = $olt->api_endpoint ?? '/onuAllPonOnuList.asp';
-                $html    = (string) $client->get($endpoint)->getBody();
-                preg_match_all("/'([\d\/\:]+)','([^']*)','([0-9a-fA-F:]+)','(Up|Down)'/", $html, $m);
-                foreach ($m[1] as $i => $onuId) {
-                    Onu::updateOrCreate(
-                        ['onu_id' => $onuId, 'olt_id' => $olt_id],
-                        ['name' => $m[2][$i], 'mac_address' => $m[3][$i], 'status' => $m[4][$i]]
-                    );
-                    $synced++;
-                }
-            } elseif (in_array($model, ['zte c300', 'zte c320', 'huawei ma5608t', 'huawei ma5800', 'fiberhome', 'nokia'])) {
-                return response()->json(['success' => false, 'error' => 'Model '.$olt->model.' belum didukung auto-sync. Silakan hubungi developer.']);
             } else {
                 $client = new \GuzzleHttp\Client(['base_uri' => $baseUri, 'timeout' => 15, 'verify' => false, 'auth' => [$olt->username, $olt->password]]);
                 $html   = (string) $client->get($olt->api_endpoint ?? '/onuAllPonOnuList.asp')->getBody();
@@ -483,13 +458,8 @@ $onus = Onu::with(['pelanggan.paket', 'odp', 'olt'])->get()->map(fn($o) => [
     public function assignOnu(Request $request, $onu_id)
     {
         $onu = \App\Models\Onu::findOrFail($onu_id);
-        // Hanya update field yang dikirim, jangan reset yang lain
-        if ($request->has('odp_id')) {
-            $onu->odp_id = $request->odp_id ?: null;
-        }
-        if ($request->has('pelanggan_id')) {
-            $onu->pelanggan_id = $request->pelanggan_id ?: null;
-        }
+        $onu->odp_id = $request->odp_id ?: null;
+        $onu->pelanggan_id = $request->pelanggan_id ?: null;
         $onu->save();
         return response()->json(["success" => true]);
     }

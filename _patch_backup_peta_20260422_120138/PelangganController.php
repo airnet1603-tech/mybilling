@@ -55,7 +55,7 @@ class PelangganController extends Controller
     {
         $request->validate([
             "nama"     => "required|string|max:255",
-            "username" => "required|unique:pelanggan,username,NULL,id,deleted_at,NULL",
+            "username" => "required|unique:pelanggan,username",
             "password" => "required|min:6",
             "no_hp"    => "required",
             "paket_id" => "required|exists:paket,id",
@@ -127,32 +127,26 @@ class PelangganController extends Controller
     {
         $query = Pelanggan::with('paket', 'router');
 
-        // Export terpilih (by ids)
-        if ($request->filled('ids')) {
-            $ids = explode(',', $request->ids);
-            $query->whereIn('id', $ids);
-        } else {
-            if ($request->filled('search')) {
-                $search = $request->search;
-                $query->where(function($q) use ($search) {
-                    $q->where('nama', 'like', "%{$search}%")
-                      ->orWhere('username', 'like', "%{$search}%")
-                      ->orWhere('no_hp', 'like', "%{$search}%")
-                      ->orWhere('id_pelanggan', 'like', "%{$search}%");
-                });
-            }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nama', 'like', "%{$search}%")
+                  ->orWhere('username', 'like', "%{$search}%")
+                  ->orWhere('no_hp', 'like', "%{$search}%")
+                  ->orWhere('id_pelanggan', 'like', "%{$search}%");
+            });
+        }
 
-            if ($request->filled('status')) {
-                $query->where('status', $request->status);
-            }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
 
-            if ($request->filled('paket_id')) {
-                $query->where('paket_id', $request->paket_id);
-            }
+        if ($request->filled('paket_id')) {
+            $query->where('paket_id', $request->paket_id);
+        }
 
-            if ($request->filled('router_id')) {
-                $query->where('router_id', $request->router_id);
-            }
+        if ($request->filled('router_id')) {
+            $query->where('router_id', $request->router_id);
         }
 
         $pelanggans = $query->get();
@@ -235,11 +229,11 @@ class PelangganController extends Controller
             }
 
         } catch (\Exception $e) {
-            $pelanggan->forceDelete();
+            $pelanggan->delete();
             return redirect('/admin/pelanggan')->with('error', 'Pelanggan dihapus dari database, tapi gagal hapus dari Mikrotik: ' . $e->getMessage());
         }
 
-        $pelanggan->forceDelete();
+        $pelanggan->delete();
         return redirect('/admin/pelanggan')->with('success', 'Pelanggan dan secret Mikrotik berhasil dihapus!');
     }
 
@@ -284,6 +278,7 @@ class PelangganController extends Controller
 
     public function peta()
     {
+        // Ambil pelanggan yang punya koordinat (latitude & longitude)
         $pelanggans = \App\Models\Pelanggan::with(['paket', 'router'])
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
@@ -291,27 +286,11 @@ class PelangganController extends Controller
             ->where('longitude', '!=', '')
             ->get();
 
-        // Ambil ONU + ODP per pelanggan
-        $onuByPelanggan = \App\Models\Onu::with('odp')
-            ->whereNotNull('pelanggan_id')
-            ->get()
-            ->groupBy('pelanggan_id');
-
         $total     = \App\Models\Pelanggan::count();
         $totalPeta = $pelanggans->count();
         $tanpaPeta = $total - $totalPeta;
 
-        $mapData = $pelanggans->map(function($p) use ($onuByPelanggan) {
-            $onus    = $onuByPelanggan->get($p->id, collect());
-            $onuInfo = $onus->map(function($o) {
-                return [
-                    'onu_id' => $o->onu_id,
-                    'name'   => $o->name ?? $o->onu_id,
-                    'status' => $o->status,
-                    'odp'    => $o->odp ? $o->odp->name : null,
-                ];
-            })->values()->toArray();
-
+        $mapData = $pelanggans->map(function($p) {
             return [
                 'id'       => $p->id,
                 'nama'     => $p->nama,
@@ -324,7 +303,6 @@ class PelangganController extends Controller
                 'lng'      => (float) $p->longitude,
                 'maps'     => $p->maps ?? '',
                 'url'      => '/admin/pelanggan/' . $p->id,
-                'onus'     => $onuInfo,
             ];
         })->values()->toArray();
 
