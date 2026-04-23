@@ -33,7 +33,7 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">OLT Induk <span class="text-danger">*</span></label>
-                        <select name="olt_id" id="olt_id" class="form-select" required onchange="filterSfp(this.value)">
+                        <select name="olt_id" id="olt_id" class="form-select" required onchange="filterAll(this.value)">
                             <option value="">-- Pilih OLT --</option>
                             @foreach($olts as $olt)
                             <option value="{{ $olt->id }}" {{ old('olt_id') == $olt->id ? 'selected' : '' }}>
@@ -45,7 +45,7 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">SFP Port <small class="text-muted">(opsional)</small></label>
-                        <select name="sfp_id" id="sfp_id" class="form-select">
+                        <select name="sfp_id" id="sfp_id" class="form-select" onchange="filterOdpBySfp(this.value)">
                             <option value="">-- Pilih SFP --</option>
                             @foreach($sfps as $sfp)
                             <option value="{{ $sfp->id }}" data-olt="{{ $sfp->olt_id }}" {{ old('sfp_id') == $sfp->id ? 'selected' : '' }}>
@@ -57,7 +57,7 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">ODC Induk <small class="text-muted">(opsional)</small></label>
-                        <select name="odc_id" class="form-select">
+                        <select name="odc_id" id="odc_id" class="form-select">
                             <option value="">-- Langsung ke OLT --</option>
                             @foreach($odcs as $odc)
                             <option value="{{ $odc->id }}" {{ old('odc_id') == $odc->id ? 'selected' : '' }}>
@@ -176,6 +176,37 @@ function placeMarker(map, lat, lng) {
         document.getElementById('inputLng').value = e.latLng.lng().toFixed(8);
     });
 }
+
+function filterAll(oltId) {
+    filterSfp(oltId);
+    var odcSel = document.getElementById('odc_id');
+    var odpSel = document.getElementById('parent_odp_id');
+    odcSel.innerHTML = '<option value="">-- Langsung ke OLT --</option>';
+    odpSel.innerHTML = '<option value="">-- Tidak ada --</option>';
+    if (oltId) {
+        fetch('/admin/topologi/api/odc-by-olt/' + oltId).then(function(r){ return r.json(); }).then(function(data){ data.forEach(function(odc){ odcSel.innerHTML += '<option value="' + odc.id + '">' + odc.name + '</option>'; }); });
+        fetch('/admin/topologi/api/odp-by-olt/' + oltId).then(function(r){ return r.json(); }).then(function(data){ data.forEach(function(odp){ odpSel.innerHTML += '<option value="' + odp.id + '">' + odp.name + '</option>'; }); });
+    }
+}
+
+function filterOdpBySfp(sfpId) {
+    var odpSel = document.getElementById('parent_odp_id');
+    var odcSel = document.getElementById('odc_id');
+    var oltId  = document.getElementById('olt_id').value;
+    odpSel.innerHTML = '<option value="">-- Tidak ada --</option>';
+    odcSel.innerHTML = '<option value="">-- Langsung ke OLT --</option>';
+    if (sfpId) {
+        fetch('/admin/topologi/api/odp-by-sfp/' + sfpId).then(function(r){ return r.json(); }).then(function(data){ data.forEach(function(odp){ odpSel.innerHTML += '<option value="' + odp.id + '">' + odp.name + '</option>'; }); });
+        fetch('/admin/topologi/api/odc-by-sfp/' + sfpId).then(function(r){ return r.json(); }).then(function(data){ data.forEach(function(odc){ odcSel.innerHTML += '<option value="' + odc.id + '">' + odc.name + '</option>'; }); });
+    } else if (oltId) {
+        fetch('/admin/topologi/api/odp-by-olt/' + oltId).then(function(r){ return r.json(); }).then(function(data){ data.forEach(function(odp){ odpSel.innerHTML += '<option value="' + odp.id + '">' + odp.name + '</option>'; }); });
+        fetch('/admin/topologi/api/odc-by-olt/' + oltId).then(function(r){ return r.json(); }).then(function(data){ data.forEach(function(odc){ odcSel.innerHTML += '<option value="' + odc.id + '">' + odc.name + '</option>'; }); });
+    }
+}
+document.addEventListener('DOMContentLoaded', function() {
+    var oltId = document.getElementById('olt_id').value;
+    if (oltId) filterAll(oltId);
+});
 
 function filterSfp(oltId) {
     document.querySelectorAll('#sfp_id option[data-olt]').forEach(function(opt) {

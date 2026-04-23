@@ -34,7 +34,7 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">OLT Induk <span class="text-danger">*</span></label>
-                        <select name="olt_id" id="olt_id" class="form-select" required onchange="filterSfp(this.value)">
+                        <select name="olt_id" id="olt_id" class="form-select" required onchange="filterAll(this.value)">
                             <option value="">-- Pilih OLT --</option>
                             @foreach($olts as $olt)
                             <option value="{{ $olt->id }}" {{ old('olt_id', $odp->olt_id) == $olt->id ? 'selected' : '' }}>
@@ -58,7 +58,7 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">ODC Induk <small class="text-muted">(opsional)</small></label>
-                        <select name="odc_id" class="form-select">
+                        <select name="odc_id" id="odc_id" class="form-select">
                             <option value="">-- Langsung ke OLT --</option>
                             @foreach($odcs as $odc)
                             <option value="{{ $odc->id }}" {{ old('odc_id', $odp->odc_id) == $odc->id ? 'selected' : '' }}>
@@ -186,9 +186,29 @@ function filterSfp(oltId) {
     }
 }
 
+function filterAll(oltId) {
+    filterSfp(oltId);
+
+    var odcSel  = document.getElementById('odc_id');
+    var prevOdc = odcSel.value;
+
+    odcSel.innerHTML = '<option value="">-- Langsung ke OLT --</option>';
+
+
+    fetch('/admin/topologi/api/odc-by-olt/' + oltId)
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            data.forEach(function(odc){
+                var sel = (odc.id == prevOdc) ? ' selected' : '';
+                odcSel.innerHTML += '<option value="' + odc.id + '">' + odc.name + '</option>';
+            });
+        });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     var oltId = document.getElementById('olt_id').value;
     if (oltId) filterSfp(oltId);
+    // Pastikan ODC yang terpilih tetap tampil
 });
 </script>
 @endpush

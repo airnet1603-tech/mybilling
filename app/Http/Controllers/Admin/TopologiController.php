@@ -376,9 +376,9 @@ $onus = Onu::with(['pelanggan.paket', 'odp', 'olt'])->get()->map(fn($o) => [
     public function createOdp()
     {
         $olts = Olt::all();
-        $odcs = Odp::where('type', 'ODC')->get();
-        $odps = Odp::where('type', 'ODP')->get();
         $sfps = Sfp::with('olt')->get();
+        $odcs = collect();
+        $odps = collect();
         return view('admin.topologi.odp-create', compact('olts', 'odcs', 'odps', 'sfps'));
     }
     public function storeOdp(Request $request)
@@ -407,9 +407,10 @@ $onus = Onu::with(['pelanggan.paket', 'odp', 'olt'])->get()->map(fn($o) => [
     {
         $odp  = Odp::where('type', 'ODP')->findOrFail($id);
         $olts = Olt::all();
-        $odcs = Odp::where('type', 'ODC')->get();
         $sfps = Sfp::with('olt')->get();
-        return view('admin.topologi.odp-edit', compact('odp', 'olts', 'odcs', 'sfps'));
+        $odcs = Odp::where('type', 'ODC')->where('olt_id', $odp->olt_id)->get();
+        $odps = Odp::where('type', 'ODP')->where('olt_id', $odp->olt_id)->where('id', '!=', $id)->get();
+        return view('admin.topologi.odp-edit', compact('odp', 'olts', 'odcs', 'odps', 'sfps'));
     }
     public function updateOdp(Request $request, $id)
     {
@@ -492,6 +493,32 @@ $onus = Onu::with(['pelanggan.paket', 'odp', 'olt'])->get()->map(fn($o) => [
         }
         $onu->save();
         return response()->json(["success" => true]);
+    }
+
+
+    // ─── API ODC & ODP BY OLT ─────────────────────────────
+    public function apiOdcBySfp($sfp_id)
+    {
+        $odcs = Odp::where('type', 'ODC')->where('sfp_id', $sfp_id)->get(['id','name','sfp_id']);
+        return response()->json($odcs);
+    }
+
+    public function apiOdcByOlt($olt_id)
+    {
+        $odcs = Odp::where('type', 'ODC')->where('olt_id', $olt_id)->get(['id','name']);
+        return response()->json($odcs);
+    }
+
+    public function apiOdpBySfp($sfp_id)
+    {
+        $odps = Odp::where('type', 'ODP')->where('sfp_id', $sfp_id)->get(['id','name','sfp_id']);
+        return response()->json($odps);
+    }
+
+    public function apiOdpByOlt($olt_id)
+    {
+        $odps = Odp::where('type', 'ODP')->where('olt_id', $olt_id)->get(['id','name']);
+        return response()->json($odps);
     }
 
     public function apiSfpByOlt($olt_id)

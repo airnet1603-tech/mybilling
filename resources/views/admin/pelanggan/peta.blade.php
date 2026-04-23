@@ -148,7 +148,9 @@ function initMap() {
             var color = statusColor[p.status] || '#6c757d';
             var googleMapsUrl = (p.maps && p.maps.trim() !== '')
                 ? p.maps
-                : 'https://www.google.com/maps?q=' + p.lat + ',' + p.lng;
+                : (p.lat && p.lng && !isNaN(p.lat) && !isNaN(p.lng))
+                    ? 'https://www.google.com/maps?q=' + p.lat + ',' + p.lng
+                    : null;
             var openStreetMapUrl = 'https://www.openstreetmap.org/?mlat=' + p.lat + '&mlon=' + p.lng + '&zoom=17';
 
             var onuHtml = '';
@@ -176,7 +178,7 @@ function initMap() {
                 '<div style="font-size:12px;color:#666;margin-bottom:4px;"><i class="fas fa-calendar me-1"></i>Expired: ' + p.expired + '</div>' +
                 onuHtml +
                 '<a href="' + p.url + '" style="display:block;text-align:center;background:#1a73e8;color:white;padding:6px;border-radius:6px;text-decoration:none;font-size:12px;margin-top:8px;margin-bottom:5px;"><i class="fas fa-eye me-1"></i>Lihat Detail</a>' +
-                '<a href="' + googleMapsUrl + '" target="_blank" style="display:block;text-align:center;background:#34a853;color:white;padding:6px;border-radius:6px;text-decoration:none;font-size:12px;margin-bottom:5px;"><i class="fas fa-map-marked-alt me-1"></i>Buka di Google Maps</a>' +
+                (googleMapsUrl ? '<a href="' + googleMapsUrl + '" target="_blank" style="display:block;text-align:center;background:#34a853;color:white;padding:6px;border-radius:6px;text-decoration:none;font-size:12px;margin-bottom:5px;"><i class="fas fa-map-marked-alt me-1"></i>Buka di Google Maps</a>' : '') +
                 '<a href="' + openStreetMapUrl + '" target="_blank" style="display:block;text-align:center;background:#e67e22;color:white;padding:6px;border-radius:6px;text-decoration:none;font-size:12px;"><i class="fas fa-map me-1"></i>Buka di OpenStreetMap</a>' +
                 '</div>'
             );

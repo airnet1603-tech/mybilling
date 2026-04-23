@@ -151,6 +151,41 @@ Route::prefix('admin/topologi')->middleware(['auth', 'role:admin,operator'])->gr
     Route::put('/sfp/{id}', [App\Http\Controllers\Admin\TopologiController::class, 'updateSfp'])->name('topologi.sfp.update');
     Route::delete('/sfp/{id}', [App\Http\Controllers\Admin\TopologiController::class, 'destroySfp'])->name('topologi.sfp.destroy');
     Route::get('/api/sfp-by-olt/{olt_id}', [App\Http\Controllers\Admin\TopologiController::class, 'apiSfpByOlt'])->name('topologi.api.sfp');
+    Route::get('/api/odc-by-sfp/{sfp_id}', [App\Http\Controllers\Admin\TopologiController::class, 'apiOdcBySfp'])->name('topologi.api.odc.sfp');
+    Route::get('/api/odc-by-olt/{olt_id}', [App\Http\Controllers\Admin\TopologiController::class, 'apiOdcByOlt'])->name('topologi.api.odc');
+    Route::get('/api/odp-by-sfp/{sfp_id}', [App\Http\Controllers\Admin\TopologiController::class, 'apiOdpBySfp'])->name('topologi.api.odp.sfp');
+    Route::get('/api/odp-by-olt/{olt_id}', [App\Http\Controllers\Admin\TopologiController::class, 'apiOdpByOlt'])->name('topologi.api.odp');
     Route::post('/onu/{onu_id}/assign-odp', [App\Http\Controllers\Admin\TopologiController::class, 'assignOnu'])->name('topologi.onu.assign');
 });
 
+
+// Resolve Google Maps short URL
+Route::get('/admin/utils/resolve-maps-url', function(\Illuminate\Http\Request $request) {
+    $url = $request->query('url');
+    if (!$url) return response()->json(['error' => 'No URL'], 400);
+    try {
+        $client = new \GuzzleHttp\Client(['allow_redirects' => ['max' => 5, 'track_redirects' => true], 'timeout' => 10, 'verify' => false]);
+        $res = $client->get($url);
+        $redirectHistory = $res->getHeaderLine('X-Guzzle-Redirect-History');
+        if ($redirectHistory) {
+            // Split by comma+space or just take last URL properly
+            $urls = preg_split('/,(?=https?:\/\/)/', $redirectHistory);
+            $finalUrl = trim(end($urls));
+        } else {
+            $finalUrl = $url;
+        }
+        $patterns = [
+            '/@(-?\d+\.?\d+),(-?\d+\.?\d+)/',
+            '/[?&]q=(-?\d+\.?\d+),(-?\d+\.?\d+)/',
+            '/search\/(-?\d+\.?\d+),\+?(-?\d+\.?\d+)/',
+            '/\!3d(-?\d+\.?\d+)\!4d(-?\d+\.?\d+)/',
+        ];
+        foreach ($patterns as $pattern) {
+            preg_match($pattern, $finalUrl, $m);
+            if ($m) return response()->json(['lat' => $m[1], 'lng' => $m[2], 'url' => $finalUrl]);
+        }
+        return response()->json(['error' => 'Koordinat tidak ditemukan', 'url' => $finalUrl]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()]);
+    }
+});

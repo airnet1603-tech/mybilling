@@ -304,6 +304,35 @@
                 </div>
             </div>
 
+            {{-- PETA LOKASI PELANGGAN --}}
+            @if($pelanggan->latitude && $pelanggan->longitude)
+            <div class="card mt-2">
+                <div class="card-header bg-white border-0 pt-3 pb-2 d-flex justify-content-between align-items-center">
+                    <div class="card-section-title">
+                        <i class="fas fa-map-marker-alt me-2 text-danger"></i>Lokasi Pelanggan
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ $pelanggan->maps ?: 'https://www.google.com/maps?q='.$pelanggan->latitude.','.$pelanggan->longitude }}" target="_blank" class="btn btn-sm btn-success py-0 px-2">
+                            <i class="fas fa-map-marked-alt me-1"></i><small>Google Maps</small>
+                        </a>
+                        <a href="https://www.openstreetmap.org/?mlat={{ $pelanggan->latitude }}&mlon={{ $pelanggan->longitude }}&zoom=17" target="_blank" class="btn btn-sm btn-warning py-0 px-2">
+                            <i class="fas fa-map me-1"></i><small>OpenStreetMap</small>
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="detailMap" style="height:350px;width:100%;border-radius:0 0 8px 8px;"></div>
+                </div>
+            </div>
+            @else
+            <div class="card mt-3">
+                <div class="card-body text-center text-muted py-4 small">
+                    <i class="fas fa-map-marker-alt fa-2x mb-2 d-block opacity-25"></i>
+                    Lokasi belum diatur
+                </div>
+            </div>
+            @endif
+
         </div>
     </div>
 
@@ -344,4 +373,30 @@
     .status-btn.btn-nonaktif { border-color: #6c757d; color: #383d41; background: #f8f9fa; }
     .status-btn.active-status { box-shadow: 0 2px 8px rgba(0,0,0,0.15); font-weight: 700; }
 </style>
+@endpush
+
+@push('scripts')
+@if($pelanggan->latitude && $pelanggan->longitude)
+<script>
+function initDetailMap() {
+    var lat = {{ $pelanggan->latitude }};
+    var lng = {{ $pelanggan->longitude }};
+    var map = new google.maps.Map(document.getElementById('detailMap'), {
+        center: { lat: lat, lng: lng },
+        zoom: 16,
+        mapTypeId: 'hybrid',
+        gestureHandling: 'cooperative',
+        disableDefaultUI: false,
+    });
+    new google.maps.Marker({
+        position: { lat: lat, lng: lng },
+        map: map,
+        title: '{{ $pelanggan->nama }}',
+        animation: google.maps.Animation.DROP,
+        icon: { url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png', scaledSize: new google.maps.Size(40, 40) }
+    });
+}
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC33huzSRZbZ02tihkJmqqrGhP9Kml32uM&callback=initDetailMap" async defer></script>
+@endif
 @endpush

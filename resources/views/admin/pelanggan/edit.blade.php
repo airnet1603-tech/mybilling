@@ -281,7 +281,53 @@ function setPin(lat, lng) {
 
 function autoFillMapsUrl(lat, lng) {
     var mapsInput = document.querySelector('input[name="maps"]');
-    if (mapsInput && !mapsInput.value) mapsInput.value = 'https://www.google.com/maps?q=' + lat + ',' + lng;
+
+    // Auto extract koordinat dari URL Google Maps
+    if (mapsInput) {
+        mapsInput.addEventListener('change', function() {
+            var url = this.value.trim();
+            if (!url) return;
+            var extracted = extractCoordsFromUrl(url);
+            if (extracted) {
+                document.querySelector('input[name="latitude"]').value = extracted.lat;
+                document.querySelector('input[name="longitude"]').value = extracted.lng;
+                setPin(extracted.lat, extracted.lng);
+            } else if (url.indexOf('goo.gl') !== -1 || url.indexOf('maps.app') !== -1) {
+                // Short URL - resolve via backend
+                var inp = this;
+                inp.placeholder = 'Memproses URL...';
+                fetch('/admin/utils/resolve-maps-url?url=' + encodeURIComponent(url))
+                    .then(function(r){ return r.json(); })
+                    .then(function(data){
+                        inp.placeholder = '';
+                        if (data.lat && data.lng) {
+                            document.querySelector('input[name="latitude"]').value = data.lat;
+                            document.querySelector('input[name="longitude"]').value = data.lng;
+                            if (data.url) inp.value = data.url;
+                            setPin(parseFloat(data.lat), parseFloat(data.lng));
+                        } else {
+                            alert('Koordinat tidak ditemukan. Gunakan URL panjang dari Google Maps.');
+                        }
+                    })
+                    .catch(function(){ inp.placeholder = ''; alert('Gagal resolve URL.'); });
+            }
+        });
+    }
+
+    function extractCoordsFromUrl(url) {
+        var patterns = [
+            /[?&]q=(-?\d+\.?\d*),(-?\d+\.?\d*)/,
+            /@(-?\d+\.?\d*),(-?\d+\.?\d*)/,
+            /maps\/place\/[^/]+\/@(-?\d+\.?\d*),(-?\d+\.?\d*)/,
+            /ll=(-?\d+\.?\d*),(-?\d+\.?\d*)/,
+        ];
+        for (var i = 0; i < patterns.length; i++) {
+            var m = url.match(patterns[i]);
+            if (m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
+        }
+        return null;
+    }
+    if (mapsInput && !mapsInput.value && lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) mapsInput.value = 'https://www.google.com/maps?q=' + lat + ',' + lng;
 }
 
 function getGPS() {
