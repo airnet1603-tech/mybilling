@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Admin\Traits\ConnectsToMikrotik;
 use App\Models\Pelanggan;
 use App\Models\Tagihan;
 use App\Services\MikrotikService;
@@ -11,6 +12,8 @@ use Illuminate\Http\Request;
 
 class TagihanController extends Controller
 {
+    use ConnectsToMikrotik;
+
     public function index(Request $request)
     {
         $query = Tagihan::with('pelanggan', 'paket')->latest();
@@ -20,9 +23,7 @@ class TagihanController extends Controller
                   ->orWhere('id_pelanggan', 'like', '%'.$request->search.'%');
             })->orWhere('no_tagihan', 'like', '%'.$request->search.'%');
         }
-        if ($request->status) {
-            $query->where('status', $request->status);
-        }
+        if ($request->status) $query->where('status', $request->status);
         if ($request->bulan) {
             $query->whereMonth('periode_bulan', date('m', strtotime($request->bulan)))
                   ->whereYear('periode_bulan', date('Y', strtotime($request->bulan)));
@@ -49,7 +50,7 @@ class TagihanController extends Controller
         ]);
         $pelanggan = Pelanggan::with('paket')->findOrFail($request->pelanggan_id);
         $harga     = $pelanggan->paket->harga;
-        $tagihan = Tagihan::create([
+        $tagihan   = Tagihan::create([
             'no_tagihan'      => Tagihan::generateNomor(),
             'pelanggan_id'    => $pelanggan->id,
             'paket_id'        => $pelanggan->paket_id,
@@ -64,7 +65,6 @@ class TagihanController extends Controller
             'catatan'         => $request->catatan,
         ]);
 
-        // Kirim notifikasi WA
         if ($pelanggan->no_hp) {
             try {
                 $fonnte = new FonnteService();
@@ -104,21 +104,13 @@ class TagihanController extends Controller
         $expired   = ($pelanggan->tgl_expired && $pelanggan->tgl_expired > now())
             ? $pelanggan->tgl_expired->addDays($pelanggan->paket->masa_aktif)
             : now()->addDays($pelanggan->paket->masa_aktif);
-        $pelanggan->update([
-            'status'      => 'aktif',
-            'tgl_expired' => $expired,
-        ]);
+        $pelanggan->update(['status' => 'aktif', 'tgl_expired' => $expired]);
 
-        // AUTO AKTIFKAN DI MIKROTIK
+        // FIX 2: Pakai connectRouter dengan WireGuard + retry
         if ($pelanggan->router) {
             try {
                 $mikrotik = new MikrotikService();
-                $mikrotik->connect(
-                    $pelanggan->router->ip_address,
-                    $pelanggan->router->username,
-                    $pelanggan->router->password,
-                    $pelanggan->router->port
-                );
+                $this->connectRouter($pelanggan->router, $mikrotik);
                 $mikrotik->aktifkan($pelanggan->username);
                 $mikrotik->disconnect();
             } catch (\Exception $e) {
@@ -136,7 +128,6 @@ class TagihanController extends Controller
             'created_by'    => auth()->id(),
         ]);
 
-        // Kirim notifikasi WA konfirmasi bayar
         if ($pelanggan->no_hp) {
             try {
                 $fonnte = new FonnteService();
@@ -157,16 +148,18 @@ class TagihanController extends Controller
     public function generateMassal()
     {
         $hariJatuhTempo = 10;
-        $berhasil = 0;
-        $skip     = 0;
-        $pelanggans = Pelanggan::with('paket')->whereIn('status', ['aktif', 'isolir'])->get();
-        $fonnte = new FonnteService();
+        $berhasil       = 0;
+        $skip           = 0;
+        $pelanggans     = Pelanggan::with('paket')->whereIn('status', ['aktif', 'isolir'])->get();
+        $fonnte         = new FonnteService();
+
         foreach ($pelanggans as $pelanggan) {
             $sudahAda = Tagihan::where('pelanggan_id', $pelanggan->id)
                 ->whereMonth('periode_bulan', now()->month)
                 ->whereYear('periode_bulan', now()->year)
                 ->exists();
             if ($sudahAda) { $skip++; continue; }
+
             $tagihan = Tagihan::create([
                 'no_tagihan'      => Tagihan::generateNomor(),
                 'pelanggan_id'    => $pelanggan->id,
@@ -181,7 +174,6 @@ class TagihanController extends Controller
                 'status'          => 'unpaid',
             ]);
 
-            // Kirim notifikasi WA
             if ($pelanggan->no_hp) {
                 try {
                     $fonnte->sendTagihan(
@@ -195,7 +187,6 @@ class TagihanController extends Controller
                     \Log::warning('Gagal kirim WA: ' . $e->getMessage());
                 }
             }
-
             $berhasil++;
         }
         return back()->with('success', "Generate selesai! Berhasil: {$berhasil}, Skip (sudah ada): {$skip}");
@@ -210,61 +201,84 @@ class TagihanController extends Controller
 
         $berhasil = 0;
         $skip     = 0;
-        $fonnte = new FonnteService();
+        $fonnte   = new FonnteService();
 
-        foreach ($request->tagihan_ids as $id) {
-            $tagihan = Tagihan::with('pelanggan.paket', 'pelanggan.router')->find($id);
-            if (!$tagihan || $tagihan->status === 'paid') { $skip++; continue; }
+        // FIX 2: Load semua tagihan sekaligus, group per router
+        $tagihans = Tagihan::with('pelanggan.paket', 'pelanggan.router')
+            ->whereIn('id', $request->tagihan_ids)
+            ->get();
 
-            $tagihan->update([
-                'status'       => 'paid',
-                'tgl_bayar'    => now(),
-                'metode_bayar' => $request->metode_bayar,
-                'catatan'      => $request->catatan,
-            ]);
+        $grouped = $tagihans->groupBy(fn($t) => $t->pelanggan->router_id ?? 0);
 
-            $pelanggan = $tagihan->pelanggan;
-            $expired   = ($pelanggan->tgl_expired && $pelanggan->tgl_expired > now())
-                ? $pelanggan->tgl_expired->addDays($pelanggan->paket->masa_aktif)
-                : now()->addDays($pelanggan->paket->masa_aktif);
-            $pelanggan->update(['status' => 'aktif', 'tgl_expired' => $expired]);
+        foreach ($grouped as $routerId => $groupTagihans) {
+            $mikrotik  = null;
+            $connected = false;
+            $router    = $groupTagihans->first()->pelanggan->router ?? null;
 
-            if ($pelanggan->router) {
+            // FIX 2: Buka koneksi sekali per router
+            if ($router) {
                 try {
                     $mikrotik = new MikrotikService();
-                    $mikrotik->connect($pelanggan->router->ip_address, $pelanggan->router->username, $pelanggan->router->password, $pelanggan->router->port);
-                    $mikrotik->aktifkan($pelanggan->username);
-                    $mikrotik->disconnect();
+                    $this->connectRouter($router, $mikrotik);
+                    $connected = true;
                 } catch (\Exception $e) {
-                    \Log::warning("Gagal aktifkan MikroTik: " . $e->getMessage());
+                    \Log::warning("bayarMassal - gagal konek router [{$router->nama}]: " . $e->getMessage());
                 }
             }
 
-            \App\Models\Pembayaran::create([
-                'no_pembayaran' => 'PAY-' . now()->format('YmdHis') . '-' . $tagihan->id,
-                'tagihan_id'    => $tagihan->id,
-                'pelanggan_id'  => $pelanggan->id,
-                'jumlah_bayar'  => $tagihan->total,
-                'metode'        => $request->metode_bayar,
-                'catatan'       => $request->catatan,
-                'created_by'    => auth()->id(),
-            ]);
+            foreach ($groupTagihans as $tagihan) {
+                if (!$tagihan || $tagihan->status === 'paid') { $skip++; continue; }
 
-            // Kirim notifikasi WA konfirmasi bayar massal
-            if ($pelanggan->no_hp) {
-                try {
-                    $fonnte->sendKonfirmasiBayar(
-                        $pelanggan->no_hp,
-                        $pelanggan->nama,
-                        \Carbon\Carbon::parse($tagihan->periode_bulan)->format('F Y'),
-                        $tagihan->total
-                    );
-                } catch (\Exception $e) {
-                    \Log::warning('Gagal kirim WA: ' . $e->getMessage());
+                $tagihan->update([
+                    'status'       => 'paid',
+                    'tgl_bayar'    => now(),
+                    'metode_bayar' => $request->metode_bayar,
+                    'catatan'      => $request->catatan,
+                ]);
+
+                $pelanggan = $tagihan->pelanggan;
+                $expired   = ($pelanggan->tgl_expired && $pelanggan->tgl_expired > now())
+                    ? $pelanggan->tgl_expired->addDays($pelanggan->paket->masa_aktif)
+                    : now()->addDays($pelanggan->paket->masa_aktif);
+                $pelanggan->update(['status' => 'aktif', 'tgl_expired' => $expired]);
+
+                // FIX 2: Pakai koneksi yang sudah ada
+                if ($connected && $mikrotik) {
+                    try {
+                        $mikrotik->aktifkan($pelanggan->username);
+                    } catch (\Exception $e) {
+                        \Log::warning("Gagal aktifkan MikroTik [{$pelanggan->username}]: " . $e->getMessage());
+                    }
                 }
+
+                \App\Models\Pembayaran::create([
+                    'no_pembayaran' => 'PAY-' . now()->format('YmdHis') . '-' . $tagihan->id,
+                    'tagihan_id'    => $tagihan->id,
+                    'pelanggan_id'  => $pelanggan->id,
+                    'jumlah_bayar'  => $tagihan->total,
+                    'metode'        => $request->metode_bayar,
+                    'catatan'       => $request->catatan,
+                    'created_by'    => auth()->id(),
+                ]);
+
+                if ($pelanggan->no_hp) {
+                    try {
+                        $fonnte->sendKonfirmasiBayar(
+                            $pelanggan->no_hp,
+                            $pelanggan->nama,
+                            \Carbon\Carbon::parse($tagihan->periode_bulan)->format('F Y'),
+                            $tagihan->total
+                        );
+                    } catch (\Exception $e) {
+                        \Log::warning('Gagal kirim WA: ' . $e->getMessage());
+                    }
+                }
+                $berhasil++;
             }
 
-            $berhasil++;
+            if ($connected && $mikrotik) {
+                try { $mikrotik->disconnect(); } catch (\Exception $e) {}
+            }
         }
 
         return back()->with('success', "Pembayaran massal selesai! Berhasil: {$berhasil}, Skip: {$skip}");

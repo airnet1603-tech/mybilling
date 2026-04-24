@@ -73,17 +73,28 @@
                 Session Aktif – {{ $router->nama }}
                 <span class="badge bg-primary ms-1" id="session-count-{{ $router->id }}">0</span>
             </div>
-            <div class="input-group search-box">
-                <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted" style="font-size:0.8rem;"></i></span>
-                <input type="text"
-                       id="search-{{ $router->id }}"
-                       class="form-control form-control-sm border-start-0 ps-0"
-                       placeholder="Cari username, IP, MAC..."
-                       oninput="onSearch({{ $router->id }})"
-                       style="font-size:0.82rem;">
-                <button class="btn btn-outline-secondary btn-sm" onclick="clearSearch({{ $router->id }})" title="Reset">
-                    <i class="fas fa-times" style="font-size:0.75rem;"></i>
-                </button>
+            <div class="d-flex align-items-center gap-2">
+                <select id="perpage-{{ $router->id }}" class="form-select form-select-sm" style="width:75px;" onchange="onPerPageChange({{ $router->id }})">
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="150">150</option>
+                    <option value="200">200</option>
+                    <option value="500">500</option>
+                    <option value="1000">Semua</option>
+                </select>
+                <div class="input-group search-box">
+                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted" style="font-size:0.8rem;"></i></span>
+                    <input type="text"
+                           id="search-{{ $router->id }}"
+                           class="form-control form-control-sm border-start-0 ps-0"
+                           placeholder="Cari username, IP, MAC..."
+                           oninput="onSearch({{ $router->id }})"
+                           style="font-size:0.82rem;">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="clearSearch({{ $router->id }})" title="Reset">
+                        <i class="fas fa-times" style="font-size:0.75rem;"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -131,7 +142,7 @@
 const routerIds = [@foreach($filteredRouters as $router){{ $router->id }},@endforeach];
 const state = {};
 routerIds.forEach(id => {
-    state[id] = { page: 1, search: '', totalPages: 1, total: 0 };
+    state[id] = { page: 1, search: '', perPage: 25, totalPages: 1, total: 0 };
 });
 
 function formatBytes(b) {
@@ -173,8 +184,8 @@ function loadRouterStats(id) {
 }
 
 function loadSessions(id) {
-    const { page, search } = state[id];
-    const params = new URLSearchParams({ page, search });
+    const { page, search, perPage } = state[id];
+    const params = new URLSearchParams({ page, search, perPage });
     fetch('/admin/mikrotik/' + id + '/sessions?' + params)
         .then(r => r.json())
         .then(data => {
@@ -240,6 +251,12 @@ function goPage(id, page) {
     loadSessions(id);
 }
 
+function onPerPageChange(id) {
+    const sel = document.getElementById('perpage-' + id);
+    state[id].perPage = parseInt(sel.value);
+    state[id].page = 1;
+    loadSessions(id);
+}
 let searchTimer = {};
 function onSearch(id) {
     clearTimeout(searchTimer[id]);

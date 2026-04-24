@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Admin\Traits\ConnectsToMikrotik;
 use App\Models\Pelanggan;
 use App\Models\Paket;
 use App\Models\Router;
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 
 class CsvImportController extends Controller
 {
+    use ConnectsToMikrotik;
+
     protected $mikrotik;
 
     public function __construct()
@@ -26,21 +29,20 @@ class CsvImportController extends Controller
     {
         $request->validate(['file' => 'required|file|mimes:csv,txt|max:2048']);
 
-        $rows   = $this->parseCsv($request->file('file'));
+        $rows    = $this->parseCsv($request->file('file'));
         $pakets  = Paket::all();
         $routers = Router::all();
 
-        // Baca header dari baris pertama yang tidak kosong
-        $headers = [];
+        $headers   = [];
         $dataStart = 0;
         foreach ($rows as $i => $row) {
             $row = array_map('trim', $row);
             if (count($row) < 2) continue;
-            $headers = array_map('strtolower', $row);
+            $headers   = array_map('strtolower', $row);
             $dataStart = $i + 1;
             break;
         }
-        // Helper ambil nilai berdasarkan nama kolom
+
         $col = function($row, $name, $default = '') use ($headers) {
             $idx = array_search($name, $headers);
             return $idx !== false ? (trim($row[$idx] ?? '') ?: $default) : $default;
@@ -73,25 +75,25 @@ class CsvImportController extends Controller
             $exists = Pelanggan::where('username', $username)->exists();
 
             $preview[] = [
-                'username'   => $username,
-                'password'   => $password,
-                'nama'       => $nama,
-                'no_hp'      => $no_hp,
-                'email'      => $email,
-                'alamat'     => $alamat,
-                'wilayah'    => $wilayah,
-                'latitude'   => $latitude,
-                'longitude'  => $longitude,
-                'maps'       => $maps,
-                'jenis'      => $jenis,
-                'ip_address' => $ip_address,
-                'paket_nama' => $paketNama,
-                'paket_id'   => $paket?->id,
-                'router_nama'=> $routerNama,
-                'router_id'  => $router?->id,
-                'tgl_expired'=> $tglExpired,
-                'exists'     => $exists,
-                'error'      => !$username ? 'Username kosong' : (!$paket ? 'Paket tidak ditemukan' : (!$router ? 'Router tidak ditemukan' : null)),
+                'username'    => $username,
+                'password'    => $password,
+                'nama'        => $nama,
+                'no_hp'       => $no_hp,
+                'email'       => $email,
+                'alamat'      => $alamat,
+                'wilayah'     => $wilayah,
+                'latitude'    => $latitude,
+                'longitude'   => $longitude,
+                'maps'        => $maps,
+                'jenis'       => $jenis,
+                'ip_address'  => $ip_address,
+                'paket_nama'  => $paketNama,
+                'paket_id'    => $paket?->id,
+                'router_nama' => $routerNama,
+                'router_id'   => $router?->id,
+                'tgl_expired' => $tglExpired,
+                'exists'      => $exists,
+                'error'       => !$username ? 'Username kosong' : (!$paket ? 'Paket tidak ditemukan' : (!$router ? 'Router tidak ditemukan' : null)),
             ];
         }
 
@@ -110,12 +112,14 @@ class CsvImportController extends Controller
         $skipped  = 0;
         $errors   = [];
 
+        // FIX 2: Group per router, buka koneksi sekali per router
+        $routerCache = [];
+
         foreach ($items as $item) {
             try {
                 $username = trim($item['username'] ?? '');
                 if (!$username) continue;
 
-                // Skip jika sudah ada
                 if (Pelanggan::where('username', $username)->exists()) {
                     $skipped++;
                     continue;
@@ -132,18 +136,19 @@ class CsvImportController extends Controller
                 $router = Router::find($routerId);
                 $paket  = Paket::find($paketId);
 
-                DB::transaction(function() use ($username, $item, $paketId, $routerId, $router, $paket, &$imported) {
-$tahun = date('Y');
-$last = Pelanggan::whereYear('created_at', $tahun)
-            ->withTrashed()
-            ->orderByDesc('id_pelanggan')
-            ->value('id_pelanggan');
-$urutan = $last ? (int) substr($last, -4) + 1 : 1;
-$idPelanggan = 'AR-' . $tahun . str_pad($urutan, 4, '0', STR_PAD_LEFT);
-while (Pelanggan::withTrashed()->where('id_pelanggan', $idPelanggan)->exists()) {
-    $urutan++;
-    $idPelanggan = 'AR-' . $tahun . str_pad($urutan, 4, '0', STR_PAD_LEFT);
-}
+                DB::transaction(function() use ($username, $item, $paketId, $routerId, $router, $paket, &$imported, &$routerCache) {
+                    $tahun       = date('Y');
+                    $last        = Pelanggan::whereYear('created_at', $tahun)
+                                    ->withTrashed()
+                                    ->orderByDesc('id_pelanggan')
+                                    ->value('id_pelanggan');
+                    $urutan      = $last ? (int) substr($last, -4) + 1 : 1;
+                    $idPelanggan = 'AR-' . $tahun . str_pad($urutan, 4, '0', STR_PAD_LEFT);
+                    while (Pelanggan::withTrashed()->where('id_pelanggan', $idPelanggan)->exists()) {
+                        $urutan++;
+                        $idPelanggan = 'AR-' . $tahun . str_pad($urutan, 4, '0', STR_PAD_LEFT);
+                    }
+
                     $tglExpired = !empty($item['tgl_expired'])
                         ? date('Y-m-d', strtotime($item['tgl_expired']))
                         : now()->addMonths(1)->toDateString();
@@ -154,13 +159,13 @@ while (Pelanggan::withTrashed()->where('id_pelanggan', $idPelanggan)->exists()) 
                         'username'       => $username,
                         'password'       => bcrypt($item['password'] ?? $username),
                         'password_pppoe' => $item['password'] ?? $username,
-                        'no_hp'          => $item['no_hp'] ?? null,
-                        'alamat'         => $item['alamat'] ?? null,
-                        'wilayah'        => $item['wilayah'] ?? null,
-                        'email'          => $item['email'] ?? null,
-                        'latitude'       => $item['latitude'] ?? null,
-                        'longitude'      => $item['longitude'] ?? null,
-                        'maps'           => $item['maps'] ?? null,
+                        'no_hp'          => $item['no_hp']      ?? null,
+                        'alamat'         => $item['alamat']     ?? null,
+                        'wilayah'        => $item['wilayah']    ?? null,
+                        'email'          => $item['email']      ?? null,
+                        'latitude'       => $item['latitude']   ?? null,
+                        'longitude'      => $item['longitude']  ?? null,
+                        'maps'           => $item['maps']       ?? null,
                         'ip_address'     => $item['ip_address'] ?? null,
                         'paket_id'       => $paketId,
                         'router_id'      => $routerId,
@@ -168,13 +173,15 @@ while (Pelanggan::withTrashed()->where('id_pelanggan', $idPelanggan)->exists()) 
                         'tgl_daftar'     => now()->toDateString(),
                         'tgl_expired'    => $tglExpired,
                         'status'         => 'aktif',
-
                     ]);
 
-                    // Auto create PPPoE di Mikrotik
-                    $this->mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
-                    $this->mikrotik->addPppoeUser($username, $item['password'] ?? $username, $paket->nama_paket);
-                    $this->mikrotik->disconnect();
+                    // FIX 2: Reuse koneksi per router, tidak buka ulang tiap pelanggan
+                    if (!isset($routerCache[$routerId])) {
+                        $mikrotik = new MikrotikService();
+                        $this->connectRouter($router, $mikrotik);
+                        $routerCache[$routerId] = $mikrotik;
+                    }
+                    $routerCache[$routerId]->addPppoeUser($username, $item['password'] ?? $username, $paket->nama_paket);
 
                     $imported++;
                 });
@@ -182,6 +189,11 @@ while (Pelanggan::withTrashed()->where('id_pelanggan', $idPelanggan)->exists()) 
             } catch (\Exception $e) {
                 $errors[] = ($item['username'] ?? '?') . ': ' . $e->getMessage();
             }
+        }
+
+        // Tutup semua koneksi router
+        foreach ($routerCache as $mikrotik) {
+            try { $mikrotik->disconnect(); } catch (\Exception $e) {}
         }
 
         return response()->json([
@@ -198,12 +210,14 @@ while (Pelanggan::withTrashed()->where('id_pelanggan', $idPelanggan)->exists()) 
     public function importPaket(Request $request)
     {
         $request->validate(['file' => 'required|file|mimes:csv,txt|max:2048']);
-        $rows = $this->parseCsv($request->file('file'));
-        $imported = 0; $skipped = 0; $errors = [];
+        $rows     = $this->parseCsv($request->file('file'));
+        $imported = 0;
+        $skipped  = 0;
+        $errors   = [];
 
         foreach ($rows as $i => $row) {
             if ($i === 0) continue;
-            $row = array_map('trim', $row);
+            $row   = array_map('trim', $row);
             $nama  = $row[0] ?? '';
             $harga = preg_replace('/[^0-9]/', '', $row[1] ?? '0');
             $dl    = preg_replace('/[^0-9]/', '', $row[2] ?? '10');
@@ -215,11 +229,11 @@ while (Pelanggan::withTrashed()->where('id_pelanggan', $idPelanggan)->exists()) 
 
             try {
                 Paket::create([
-                    'nama_paket'           => $nama,
-                    'harga'                => $harga,
-                    'kecepatan_download'   => $dl,
-                    'kecepatan_upload'     => $ul,
-                    'deskripsi'            => $desk,
+                    'nama_paket'         => $nama,
+                    'harga'              => $harga,
+                    'kecepatan_download' => $dl,
+                    'kecepatan_upload'   => $ul,
+                    'deskripsi'          => $desk,
                 ]);
                 $imported++;
             } catch (\Exception $e) {
@@ -255,7 +269,7 @@ while (Pelanggan::withTrashed()->where('id_pelanggan', $idPelanggan)->exists()) 
         $templates = [
             'pelanggan' => [
                 'header' => ['username','password','nama','no_hp','email','wilayah','alamat','latitude','longitude','maps','jenis_layanan','ip_address','nama_paket','nama_router','tgl_expired'],
-                'contoh' => ['pelanggan1','pass123','Budi Santoso','081234567890','Jl. Merdeka No.1','Demuk','110k','Router Utama','2026-04-14'],
+                'contoh' => ['pelanggan1','pass123','Budi Santoso','081234567890','budi@email.com','Demuk','Jl. Merdeka No.1','','','','pppoe','','110k','Router Utama','2026-04-14'],
             ],
             'paket' => [
                 'header' => ['nama_paket','harga','kecepatan_download_mbps','kecepatan_upload_mbps','deskripsi'],

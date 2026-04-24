@@ -10,6 +10,7 @@
     .bulk-bar { display:none; background:linear-gradient(135deg,#1a1a2e,#0f3460); color:#fff; padding:10px 16px; border-radius:10px; margin-bottom:12px; align-items:center; gap:12px; flex-wrap:wrap; }
     .bulk-bar.show { display:flex; }
     tr.selected-row { background:#fff8e1 !important; }
+    .table td, .table th { padding-top: 0px !important; padding-bottom: 0px !important; vertical-align: middle !important; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -48,19 +49,19 @@
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-card" style="background:linear-gradient(135deg,#f093fb,#f5576c)">
-            <div class="fs-3 fw-bold">{{ $totalUnpaid }}</div>
+            <div class="fs-5 fw-bold">{{ $totalUnpaid }}</div>
             <div class="opacity-75">Belum Bayar</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-card" style="background:linear-gradient(135deg,#ff6b6b,#ee5a24)">
-            <div class="fs-3 fw-bold">{{ $totalOverdue }}</div>
+            <div class="fs-5 fw-bold">{{ $totalOverdue }}</div>
             <div class="opacity-75">Jatuh Tempo</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-card" style="background:linear-gradient(135deg,#11998e,#38ef7d)">
-            <div class="fs-3 fw-bold">{{ $totalPaid }}</div>
+            <div class="fs-5 fw-bold">{{ $totalPaid }}</div>
             <div class="opacity-75">Lunas Bulan Ini</div>
         </div>
     </div>
@@ -133,7 +134,7 @@
                 @csrf
                 <input type="hidden" name="metode_bayar" id="hiddenMetode" value="cash">
                 <input type="hidden" name="catatan" id="hiddenCatatan" value="">
-                <table class="table table-hover mb-0">
+                <table class="table table-hover table-sm mb-0">
                     <thead class="table-light">
                         <tr>
                             <th style="width:40px;">

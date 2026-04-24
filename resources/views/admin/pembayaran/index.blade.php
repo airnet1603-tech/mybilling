@@ -2,6 +2,7 @@
 
 @push('styles')
 <style>
+    .table td, .table th { padding-top: 0px !important; padding-bottom: 0px !important; vertical-align: middle !important; }
     .stat-card { border:none; border-radius:12px; padding:15px 20px; color:white; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
 </style>
 @endpush
@@ -25,7 +26,7 @@
     </div>
     <div class="col-md-3">
         <div class="stat-card" style="background:linear-gradient(135deg,#667eea,#764ba2)">
-            <div class="fs-3 fw-bold">{{ $totalTransaksi }}</div>
+            <div class="fs-5 fw-bold">{{ $totalTransaksi }}</div>
             <div class="opacity-75">Transaksi Bulan Ini</div>
         </div>
     </div>
@@ -79,7 +80,7 @@
 <div class="card">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
+            <table class="table table-hover table-sm mb-0">
                 <thead class="table-light">
                     <tr>
                         <th class="small">No. Pembayaran</th>

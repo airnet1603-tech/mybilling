@@ -2,6 +2,7 @@
 
 @push('styles')
 <style>
+    .table td, .table th { padding-top: 0px !important; padding-bottom: 0px !important; vertical-align: middle !important; }
     .stat-card { border:none; border-radius:12px; padding:15px 20px; color:white; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
     .card-section-title { font-size:0.88rem; font-weight:700; }
     .btn-clear-disabled { opacity:0.45; cursor:not-allowed; pointer-events:none; }
@@ -61,19 +62,19 @@
     <div class="col-md-3">
         <div class="stat-card" style="background:linear-gradient(135deg,#11998e,#38ef7d)">
             <div class="opacity-75 small">Tagihan Lunas</div>
-            <div class="fs-3 fw-bold">{{ $totalLunasTahun }}</div>
+            <div class="fs-5 fw-bold">{{ $totalLunasTahun }}</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-card" style="background:linear-gradient(135deg,#f093fb,#f5576c)">
             <div class="opacity-75 small">Tagihan Belum Bayar</div>
-            <div class="fs-3 fw-bold">{{ $totalUnpaidTahun }}</div>
+            <div class="fs-5 fw-bold">{{ $totalUnpaidTahun }}</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-card" style="background:linear-gradient(135deg,#667eea,#764ba2)">
             <div class="opacity-75 small">Total Tagihan</div>
-            <div class="fs-3 fw-bold">{{ $totalTagihanTahun }}</div>
+            <div class="fs-5 fw-bold">{{ $totalTagihanTahun }}</div>
         </div>
     </div>
 </div>
@@ -129,7 +130,7 @@
             @endif
         </div>
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
+            <table class="table table-hover table-sm mb-0">
                 <thead class="table-light">
                     <tr>
                         <th class="small">User</th>
@@ -247,7 +248,7 @@
         <div class="px-3 pt-3 pb-2">
             <div class="card-section-title"><i class="fas fa-list me-2 text-primary"></i>Tagihan Bulan {{ now()->isoFormat('MMMM Y') }} (10 terbaru)</div>
         </div>
-        <table class="table table-hover mb-0">
+        <table class="table table-hover table-sm mb-0">
             <thead class="table-light">
                 <tr>
                     <th class="small">No. Tagihan</th>

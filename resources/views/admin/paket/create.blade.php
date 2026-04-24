@@ -98,7 +98,7 @@
                         </div>
                         <div class="col-md-6">
                             <div class="info-label">Masa Aktif (hari) <span class="text-danger">*</span></div>
-                            <input type="number" name="masa_aktif" class="form-control form-control-sm @error('masa_aktif') is-invalid @enderror" value="{{ old('masa_aktif', 30) }}" required min="1">
+                            <div class="input-group input-group-sm"><input type="number" name="masa_aktif" id="masa_aktif" class="form-control form-control-sm" style="max-width:70px;" @error('masa_aktif') is-invalid @enderror" value="{{ old('masa_aktif', 30) }}" required min="1" onchange="hitungTanggal();"><select class="form-select form-select-sm" style="max-width:90px;" onchange="document.getElementById('masa_aktif').value=this.value;hitungTanggal();"><option value="">Pilih</option><option value="7">7 hari</option><option value="14">14 hari</option><option value="30">30 hari</option><option value="60">60 hari</option><option value="90">90 hari</option><option value="180">180 hari</option><option value="365">365 hari</option></select><input type="date" id="tgl_expired_preview" class="form-control form-control-sm" style="max-width:200px;" onchange="hitungHari();"></div>
                             @error('masa_aktif')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                     </div>
@@ -125,6 +125,12 @@
                                 @error('kecepatan_upload')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
+                        <div class="col-12"><div class="fw-semibold small text-warning mb-2"><i class="fas fa-bolt me-1"></i>Burst (Opsional)</div></div>
+                        <div class="col-md-6"><div class="info-label">Burst Limit Download (Mbps)</div><div class="input-group input-group-sm"><input type="number" name="burst_limit_download" class="form-control" value="{{ old('burst_limit_download', 0) }}" min="0"><span class="input-group-text">Mbps</span></div></div>
+                        <div class="col-md-6"><div class="info-label">Burst Limit Upload (Mbps)</div><div class="input-group input-group-sm"><input type="number" name="burst_limit_upload" class="form-control" value="{{ old('burst_limit_upload', 0) }}" min="0"><span class="input-group-text">Mbps</span></div></div>
+                        <div class="col-md-6"><div class="info-label">Burst Threshold Download (Mbps)</div><div class="input-group input-group-sm"><input type="number" name="burst_threshold_download" class="form-control" value="{{ old('burst_threshold_download', 0) }}" min="0"><span class="input-group-text">Mbps</span></div></div>
+                        <div class="col-md-6"><div class="info-label">Burst Threshold Upload (Mbps)</div><div class="input-group input-group-sm"><input type="number" name="burst_threshold_upload" class="form-control" value="{{ old('burst_threshold_upload', 0) }}" min="0"><span class="input-group-text">Mbps</span></div></div>
+                        <div class="col-md-6"><div class="info-label">Burst Time (detik)</div><div class="input-group input-group-sm"><input type="number" name="burst_time" class="form-control" value="{{ old('burst_time', 8) }}" min="0"><span class="input-group-text">detik</span></div></div>
                         <div class="col-12">
                             <div class="info-label">Radius Profile Name <span class="text-danger">*</span></div>
                             <input type="text" name="radius_profile" id="radius_profile" class="form-control form-control-sm @error('radius_profile') is-invalid @enderror" value="{{ old('radius_profile') }}" placeholder="Contoh: paket-20mbps" required>
@@ -177,7 +183,26 @@ document.getElementById('dl').addEventListener('input', updatePreview);
 document.getElementById('ul').addEventListener('input', updatePreview);
 document.getElementById('radius_profile').addEventListener('input', updatePreview);
 document.querySelector('[name="jenis"]').addEventListener('change', updatePreview);
-document.querySelector('[name="masa_aktif"]').addEventListener('input', updatePreview);
+document.querySelector('[name="masa_aktif"]').addEventListener('input', function(){ updatePreview(); hitungTanggal(); });
+function hitungTanggal() {
+    var hari = parseInt(document.getElementById('masa_aktif').value) || 0;
+    if (hari > 0) {
+        var tgl = new Date();
+        tgl.setDate(tgl.getDate() + hari);
+        document.getElementById('tgl_expired_preview').value = tgl.toISOString().split('T')[0];
+    }
+}
+function hitungHari() {
+    var tgl = new Date(document.getElementById('tgl_expired_preview').value);
+    var today = new Date();
+    today.setHours(0,0,0,0);
+    var diff = Math.round((tgl - today) / (1000*60*60*24));
+    if (diff > 0) {
+        document.getElementById('masa_aktif').value = diff;
+        updatePreview();
+    }
+}
+window.addEventListener('load', hitungTanggal);
 document.getElementById('is_active').addEventListener('change', updatePreview);
 </script>
 @endpush

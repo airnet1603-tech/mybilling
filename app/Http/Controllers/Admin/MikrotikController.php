@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Admin\Traits\ConnectsToMikrotik;
 use App\Models\Router;
 use App\Models\Pelanggan;
 use App\Models\Paket;
@@ -11,6 +12,8 @@ use Illuminate\Http\Request;
 
 class MikrotikController extends Controller
 {
+    use ConnectsToMikrotik;
+
     protected $mikrotik;
 
     public function __construct()
@@ -52,10 +55,10 @@ class MikrotikController extends Controller
     public function importSetting(Router $router)
     {
         try {
-            $this->mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
-            $pools      = $this->mikrotik->getIpPools();
-            $dns        = $this->mikrotik->getDnsServer();
-            $localAddr  = $this->mikrotik->getPppoeLocalAddress();
+            $this->connectRouter($router, $this->mikrotik);
+            $pools     = $this->mikrotik->getIpPools();
+            $dns       = $this->mikrotik->getDnsServer();
+            $localAddr = $this->mikrotik->getPppoeLocalAddress();
             $this->mikrotik->disconnect();
 
             return response()->json([
@@ -73,7 +76,7 @@ class MikrotikController extends Controller
     {
         $router->update([
             'ip_address'     => $request->ip_address ?: $router->ip_address,
-            'port'           => $request->port ?: $router->port,
+            'port'           => $request->port       ?: $router->port,
             'local_address'  => $request->local_address,
             'remote_address' => $request->remote_address,
             'dns_server'     => $request->dns_server,
@@ -101,7 +104,7 @@ class MikrotikController extends Controller
     public function monitoring()
     {
         $singleRouter = null;
-        $routers = Router::where('is_active', true)->get();
+        $routers      = Router::where('is_active', true)->get();
         return view('admin.mikrotik.monitoring', compact('routers', 'singleRouter'));
     }
 
@@ -114,7 +117,7 @@ class MikrotikController extends Controller
                 $resource = ['status' => true, 'data' => $cache['resource'] ?? []];
                 $sessions = ['data' => $cache['sessions'] ?? []];
             } else {
-                $this->mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
+                $this->connectRouter($router, $this->mikrotik);
                 $resource = $this->mikrotik->getRouterResource();
                 $sessions = $this->mikrotik->getActiveSessions();
                 $this->mikrotik->disconnect();
@@ -140,21 +143,19 @@ class MikrotikController extends Controller
     public function getSessions(Router $router)
     {
         try {
-            // Coba baca dari cache poller dulu (instan)
             $cacheFile = sys_get_temp_dir() . '/mikrotik_cache_' . $router->id . '.json';
             if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < 30) {
                 $cache = json_decode(file_get_contents($cacheFile), true);
                 $raw   = ['data' => $cache['sessions'] ?? []];
             } else {
-                // Fallback: langsung ke MikroTik kalau cache tidak ada
-                $this->mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
+                $this->connectRouter($router, $this->mikrotik);
                 $raw = $this->mikrotik->getActiveSessions();
                 $this->mikrotik->disconnect();
             }
 
-            $search   = strtolower(trim(request('search', '')));
-            $page     = max(1, (int) request('page', 1));
-            $perPage  = 25;
+            $search  = strtolower(trim(request('search', '')));
+            $page    = max(1, (int) request('page', 1));
+            $perPage = in_array((int)request("perPage"), [25,50,100,150,200,500,1000]) ? (int)request("perPage") : 25;
 
             $all = array_map(function ($s) {
                 $bytesIn  = (int) ($s['rx-byte']  ?? $s['bytes-in']  ?? $s['rx-bytes']  ?? 0);
@@ -173,7 +174,6 @@ class MikrotikController extends Controller
                 ];
             }, $raw['data'] ?? []);
 
-            // Filter search
             if ($search !== '') {
                 $all = array_values(array_filter($all, function ($s) use ($search) {
                     return str_contains(strtolower($s['name']), $search)
@@ -189,12 +189,12 @@ class MikrotikController extends Controller
             $sessions   = array_slice($all, $offset, $perPage);
 
             return response()->json([
-                'status'      => true,
-                'sessions'    => $sessions,
-                'total'       => $total,
-                'per_page'    => $perPage,
-                'current_page'=> $page,
-                'total_pages' => $totalPages,
+                'status'       => true,
+                'sessions'     => $sessions,
+                'total'        => $total,
+                'per_page'     => $perPage,
+                'current_page' => $page,
+                'total_pages'  => $totalPages,
             ]);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()]);
@@ -204,7 +204,7 @@ class MikrotikController extends Controller
     public function previewImportPppoe(Router $router)
     {
         try {
-            $this->mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
+            $this->connectRouter($router, $this->mikrotik);
             $result = $this->mikrotik->getPppoeSecrets();
             $this->mikrotik->disconnect();
 
@@ -215,7 +215,6 @@ class MikrotikController extends Controller
             $existing = Pelanggan::pluck('username')->toArray();
             $pakets   = Paket::all();
 
-            // Deduplikasi username dari Mikrotik
             $seen       = [];
             $uniqueData = [];
             foreach ($result['data'] as $s) {
@@ -240,8 +239,8 @@ class MikrotikController extends Controller
                     'address'    => $s['address'],
                     'disabled'   => $s['disabled'],
                     'exists'     => in_array($s['username'], $existing),
-                    'paket_id'   => $matchPaket ? $matchPaket->id   : null,
-                    'paket_nama' => $matchPaket ? $matchPaket->nama_paket : null,
+                    'paket_id'   => $matchPaket ? $matchPaket->id         : null,
+                    'paket_nama' => $matchPaket ? $matchPaket->nama_paket  : null,
                 ];
             }, $uniqueData);
 
@@ -302,7 +301,7 @@ class MikrotikController extends Controller
                         'router_name'    => $router->nama,
                         'tgl_daftar'     => now()->toDateString(),
                         'tgl_expired'    => $tglExpired,
-                        'ip_address'     => $item['address'] ?? null,
+                        'ip_address'     => $item['address']  ?? null,
                         'status'         => ($item['disabled'] ?? false) ? 'isolir' : 'aktif',
                         'jenis_layanan'  => 'pppoe',
                     ]);
@@ -319,7 +318,7 @@ class MikrotikController extends Controller
             'skipped'  => $skipped,
             'errors'   => $errors,
             'message'  => 'Berhasil import ' . $imported . ' pelanggan, ' . $skipped . ' dilewati.'
-                . (count($errors) ? ' Ada ' . count($errors) . ' error.' : ''),
+                        . (count($errors) ? ' Ada ' . count($errors) . ' error.' : ''),
         ]);
     }
 
@@ -327,7 +326,7 @@ class MikrotikController extends Controller
     {
         try {
             $router = $pelanggan->router;
-            $this->mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
+            $this->connectRouter($router, $this->mikrotik);
             $result = $this->mikrotik->isolir($pelanggan->username);
             $this->mikrotik->disconnect();
             if ($result['status']) $pelanggan->update(['status' => 'isolir']);
@@ -341,7 +340,7 @@ class MikrotikController extends Controller
     {
         try {
             $router = $pelanggan->router;
-            $this->mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
+            $this->connectRouter($router, $this->mikrotik);
             $result = $this->mikrotik->aktifkan($pelanggan->username);
             $this->mikrotik->disconnect();
             if ($result['status']) $pelanggan->update(['status' => 'aktif']);
@@ -357,7 +356,7 @@ class MikrotikController extends Controller
             $router = $pelanggan->router;
             if (!$router) return back()->with('error', 'Router belum di-assign ke pelanggan ini');
 
-            $this->mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
+            $this->connectRouter($router, $this->mikrotik);
 
             $password = $pelanggan->password_pppoe ?? $pelanggan->username;
             $profile  = $pelanggan->paket->nama_paket ?? 'default';
@@ -385,7 +384,7 @@ class MikrotikController extends Controller
         try {
             $router = $pelanggan->router;
             if (!$router) return back()->with('error', 'Router belum di-assign ke pelanggan ini.');
-            $this->mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
+            $this->connectRouter($router, $this->mikrotik);
             $result = $this->mikrotik->isolir($pelanggan->username);
             $this->mikrotik->disconnect();
             if ($result['status']) $pelanggan->update(['status' => 'suspend']);
@@ -403,7 +402,7 @@ class MikrotikController extends Controller
         try {
             $router = $pelanggan->router;
             if (!$router) return back()->with('error', 'Router belum di-assign ke pelanggan ini.');
-            $this->mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
+            $this->connectRouter($router, $this->mikrotik);
             $result = $this->mikrotik->isolir($pelanggan->username);
             $this->mikrotik->disconnect();
             if ($result['status']) $pelanggan->update(['status' => 'nonaktif']);
@@ -415,6 +414,7 @@ class MikrotikController extends Controller
             return back()->with('error', 'Gagal nonaktifkan: ' . $e->getMessage());
         }
     }
+
     public function setupWireguard(Router $router)
     {
         try {
@@ -424,11 +424,10 @@ class MikrotikController extends Controller
                 $config = $wg->getMikrotikConfig($router->wg_private_key, $router->wg_ip, $vpsPublic);
                 return response()->json(['status' => true, 'wg_ip' => $router->wg_ip, 'config' => $config, 'message' => "WireGuard sudah terkonfigurasi. IP tunnel: {$router->wg_ip}"]);
             }
-            $keypair   = $wg->generateKeypair();
-            $subnet    = request()->input("subnet", "10.10.10");
-            // Pastikan subnet valid
-            if (!in_array($subnet, ["10.10.10", "172.16.10"])) $subnet = "10.10.10";
-            $wgIp      = $wg->getNextAvailableIp($subnet);
+            $keypair = $wg->generateKeypair();
+            $subnet  = request()->input('subnet', '10.10.10');
+            if (!in_array($subnet, ['10.10.10', '172.16.10'])) $subnet = '10.10.10';
+            $wgIp    = $wg->getNextAvailableIp($subnet);
 
             $router->update([
                 'use_wireguard'  => true,
@@ -438,7 +437,6 @@ class MikrotikController extends Controller
             ]);
 
             $wg->addPeer($keypair['public'], $wgIp);
-
             $config = $wg->getMikrotikConfig($keypair['private'], $wgIp, $vpsPublic);
 
             return response()->json([

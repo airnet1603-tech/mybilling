@@ -115,6 +115,44 @@
                             <div class="info-label">Upload (Mbps)</div>
                             <input type="number" name="kecepatan_upload" class="form-control form-control-sm" value="{{ old('kecepatan_upload', $paket->kecepatan_upload) }}" required>
                         </div>
+                        <div class="col-12">
+                            <div class="card-section-title mb-2 mt-2"><i class="fas fa-bolt me-2 text-warning"></i>Burst (Opsional)</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-label">Burst Limit Download (Mbps)</div>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="burst_limit_download" class="form-control" value="{{ old('burst_limit_download', $paket->burst_limit_download) }}" min="0">
+                                <span class="input-group-text">Mbps</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-label">Burst Limit Upload (Mbps)</div>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="burst_limit_upload" class="form-control" value="{{ old('burst_limit_upload', $paket->burst_limit_upload) }}" min="0">
+                                <span class="input-group-text">Mbps</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-label">Burst Threshold Download (Mbps)</div>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="burst_threshold_download" class="form-control" value="{{ old('burst_threshold_download', $paket->burst_threshold_download) }}" min="0">
+                                <span class="input-group-text">Mbps</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-label">Burst Threshold Upload (Mbps)</div>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="burst_threshold_upload" class="form-control" value="{{ old('burst_threshold_upload', $paket->burst_threshold_upload) }}" min="0">
+                                <span class="input-group-text">Mbps</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-label">Burst Time (detik)</div>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="burst_time" class="form-control" value="{{ old('burst_time', $paket->burst_time) }}" min="0">
+                                <span class="input-group-text">detik</span>
+                            </div>
+                        </div>
                         <div class="col-md-12">
                             <div class="info-label">Radius Profile</div>
                             <input type="text" name="radius_profile" class="form-control form-control-sm" value="{{ old('radius_profile', $paket->radius_profile) }}">

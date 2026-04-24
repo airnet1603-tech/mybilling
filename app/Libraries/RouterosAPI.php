@@ -47,7 +47,12 @@ class RouterosAPI
     {
         $this->writeWord($command);
         foreach ($attr as $k => $v) {
-            $this->writeWord("=$k=$v");
+            // Key diawali ? = filter query, tulis tanpa = di depan
+            if (str_starts_with($k, '?')) {
+                $this->writeWord("$k=$v");
+            } else {
+                $this->writeWord("=$k=$v");
+            }
         }
         $this->writeWord('');
         return $this->readResponse();

@@ -8,9 +8,34 @@ use App\Models\Paket;
 use App\Models\Pelanggan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class PelangganController extends Controller
 {
+    // FIX 2: Helper connect dengan WireGuard support + retry otomatis
+    private function connectRouter($router, MikrotikService $mikrotik, $retry = 3)
+    {
+        $ip       = (!empty($router->use_wireguard) && !empty($router->wg_ip))
+                    ? $router->wg_ip
+                    : $router->ip_address;
+        $attempt  = 0;
+        $lastError = null;
+
+        while ($attempt < $retry) {
+            try {
+                $mikrotik->connect($ip, $router->username, $router->password, $router->port);
+                return true;
+            } catch (\Exception $e) {
+                $lastError = $e->getMessage();
+                $attempt++;
+                if ($attempt < $retry) sleep(1);
+            }
+        }
+
+        Log::error("Gagal konek router [{$router->nama}] setelah {$retry}x percobaan: {$lastError}");
+        throw new \Exception("Router [{$router->nama}] tidak dapat dihubungi setelah {$retry}x percobaan: {$lastError}");
+    }
+
     public function index(Request $request)
     {
         $query = Pelanggan::with("paket", "router")->latest();
@@ -25,19 +50,12 @@ class PelangganController extends Controller
             });
         }
 
-        if ($request->filled("status")) {
-            $query->where("status", $request->status);
-        }
+        if ($request->filled("status"))   $query->where("status", $request->status);
+        if ($request->filled("paket_id")) $query->where("paket_id", $request->paket_id);
+        if ($request->filled("router_id")) $query->where("router_id", $request->router_id);
 
-        if ($request->filled("paket_id")) {
-            $query->where("paket_id", $request->paket_id);
-        }
-
-        if ($request->filled("router_id")) {
-            $query->where("router_id", $request->router_id);
-        }
-
-        $pelanggans = $query->paginate(10)->withQueryString();
+        $perPage = in_array((int)request("perPage"), [10,25,50,100,150,200,250,500,1000]) ? (int)request("perPage") : 10;
+        $pelanggans = $query->paginate($perPage)->withQueryString();
         $pakets     = Paket::where("is_active", true)->get();
         $routers    = \App\Models\Router::where("is_active", true)->get();
 
@@ -62,15 +80,14 @@ class PelangganController extends Controller
         ]);
 
         $tahun = now()->format("Y");
-
-        $last = Pelanggan::whereYear("created_at", $tahun)
+        $last  = Pelanggan::whereYear("created_at", $tahun)
                     ->withTrashed()
                     ->orderByDesc("id_pelanggan")
                     ->value("id_pelanggan");
 
-        $urutan = $last ? (int) substr($last, -4) + 1 : 1;
-
+        $urutan      = $last ? (int) substr($last, -4) + 1 : 1;
         $idPelanggan = "AR-" . $tahun . str_pad($urutan, 4, "0", STR_PAD_LEFT);
+
         while (Pelanggan::withTrashed()->where("id_pelanggan", $idPelanggan)->exists()) {
             $urutan++;
             $idPelanggan = "AR-" . $tahun . str_pad($urutan, 4, "0", STR_PAD_LEFT);
@@ -100,21 +117,23 @@ class PelangganController extends Controller
             "router_id"      => $request->router_id,
         ]);
 
-        // Auto sync ke Mikrotik
+        // FIX 2: Pakai connectRouter dengan WireGuard + retry
         try {
             $router = $pelanggan->router;
             $paket  = $pelanggan->paket;
             if ($router && $paket) {
                 $mikrotik = new MikrotikService();
-                $mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
+                $this->connectRouter($router, $mikrotik);
                 $mikrotik->addPppoeUser($pelanggan->username, $request->password, $paket->nama_paket);
                 $mikrotik->disconnect();
             }
         } catch (\Exception $e) {
-            return redirect('/admin/pelanggan')->with('warning', 'Pelanggan berhasil ditambahkan, tapi gagal sync Mikrotik: ' . $e->getMessage());
+            return redirect('/admin/pelanggan')
+                ->with('warning', 'Pelanggan berhasil ditambahkan, tapi gagal sync Mikrotik: ' . $e->getMessage());
         }
 
-        return redirect('/admin/pelanggan')->with('success', 'Pelanggan berhasil ditambahkan dan disync ke Mikrotik!');
+        return redirect('/admin/pelanggan')
+            ->with('success', 'Pelanggan berhasil ditambahkan dan disync ke Mikrotik!');
     }
 
     public function show(Pelanggan $pelanggan)
@@ -127,7 +146,6 @@ class PelangganController extends Controller
     {
         $query = Pelanggan::with('paket', 'router');
 
-        // Export terpilih (by ids)
         if ($request->filled('ids')) {
             $ids = explode(',', $request->ids);
             $query->whereIn('id', $ids);
@@ -141,23 +159,13 @@ class PelangganController extends Controller
                       ->orWhere('id_pelanggan', 'like', "%{$search}%");
                 });
             }
-
-            if ($request->filled('status')) {
-                $query->where('status', $request->status);
-            }
-
-            if ($request->filled('paket_id')) {
-                $query->where('paket_id', $request->paket_id);
-            }
-
-            if ($request->filled('router_id')) {
-                $query->where('router_id', $request->router_id);
-            }
+            if ($request->filled('status'))    $query->where('status', $request->status);
+            if ($request->filled('paket_id'))  $query->where('paket_id', $request->paket_id);
+            if ($request->filled('router_id')) $query->where('router_id', $request->router_id);
         }
 
         $pelanggans = $query->get();
-
-        $headers = [
+        $headers    = [
             'Content-Type'        => 'text/csv',
             'Content-Disposition' => 'attachment; filename="pelanggan_' . now()->format('Ymd_His') . '.csv"',
         ];
@@ -174,17 +182,17 @@ class PelangganController extends Controller
                     $p->username,
                     $p->password_pppoe ?? '',
                     $p->nama,
-                    $p->no_hp ?? '',
-                    $p->email ?? '',
-                    $p->wilayah ?? '',
-                    $p->alamat ?? '',
+                    $p->no_hp    ?? '',
+                    $p->email    ?? '',
+                    $p->wilayah  ?? '',
+                    $p->alamat   ?? '',
                     $p->latitude ?? '',
                     $p->longitude ?? '',
-                    $p->maps ?? '',
+                    $p->maps     ?? '',
                     $p->jenis_layanan ?? 'pppoe',
-                    $p->ip_address ?? '',
+                    $p->ip_address    ?? '',
                     $p->paket->nama_paket ?? '',
-                    $p->router->nama ?? '',
+                    $p->router->nama      ?? '',
                     $p->tgl_expired?->format('Y-m-d') ?? '',
                 ]);
             }
@@ -219,28 +227,47 @@ class PelangganController extends Controller
 
         $pelanggan->update($data);
 
-        return redirect('/admin/pelanggan/' . $pelanggan->id)->with('success', 'Data pelanggan berhasil diupdate!');
+        try {
+            $router = $pelanggan->fresh()->router;
+            $paket  = $pelanggan->fresh()->paket;
+            if ($router && $paket) {
+                $mikrotik = new MikrotikService();
+                $this->connectRouter($router, $mikrotik);
+                $password = $request->filled('password')
+                    ? $request->password
+                    : $pelanggan->password_pppoe;
+                $mikrotik->addPppoeUser($pelanggan->username, $password, $paket->nama_paket);
+                $mikrotik->disconnect();
+            }
+        } catch (\Exception $e) {
+            return redirect('/admin/pelanggan/' . $pelanggan->id)
+                ->with('warning', 'Data diupdate, tapi gagal sync Mikrotik: ' . $e->getMessage());
+        }
+
+        return redirect('/admin/pelanggan/' . $pelanggan->id)
+            ->with('success', 'Data pelanggan berhasil diupdate dan disync ke Mikrotik!');
     }
 
     public function destroy(Pelanggan $pelanggan)
     {
         try {
             $router = $pelanggan->router;
-
             if ($router) {
                 $mikrotik = new MikrotikService();
-                $mikrotik->connect($router->ip_address, $router->username, $router->password, $router->port);
+                // FIX 2: Pakai connectRouter dengan WireGuard + retry
+                $this->connectRouter($router, $mikrotik);
                 $mikrotik->deletePppoeUser($pelanggan->username);
                 $mikrotik->disconnect();
             }
-
         } catch (\Exception $e) {
             $pelanggan->forceDelete();
-            return redirect('/admin/pelanggan')->with('error', 'Pelanggan dihapus dari database, tapi gagal hapus dari Mikrotik: ' . $e->getMessage());
+            return redirect('/admin/pelanggan')
+                ->with('error', 'Pelanggan dihapus dari database, tapi gagal hapus dari Mikrotik: ' . $e->getMessage());
         }
 
         $pelanggan->forceDelete();
-        return redirect('/admin/pelanggan')->with('success', 'Pelanggan dan secret Mikrotik berhasil dihapus!');
+        return redirect('/admin/pelanggan')
+            ->with('success', 'Pelanggan dan secret Mikrotik berhasil dihapus!');
     }
 
     public function ubahStatus(Request $request, Pelanggan $pelanggan)
@@ -249,35 +276,62 @@ class PelangganController extends Controller
         return redirect()->back()->with('success', 'Status pelanggan berhasil diubah!');
     }
 
-    public function bulkDelete(\Illuminate\Http\Request $request)
+    public function bulkDelete(Request $request)
     {
         $ids = $request->input('ids', []);
         if (empty($ids)) {
             return response()->json(['status' => false, 'message' => 'Tidak ada data dipilih.']);
         }
 
-        $pelanggans = \App\Models\Pelanggan::whereIn('id', $ids)->get();
-        $mikrotik   = new \App\Services\MikrotikService();
+        $pelanggans = Pelanggan::whereIn('id', $ids)->get();
         $deleted    = 0;
         $errors     = [];
 
-        foreach ($pelanggans as $p) {
-            try {
-                if ($p->router) {
-                    $mikrotik->connect($p->router->ip_address, $p->router->username, $p->router->password, $p->router->port);
-                    $mikrotik->deletePppoeUser($p->username);
-                    $mikrotik->disconnect();
+        // FIX 2: Group per router, buka koneksi sekali per router
+        $grouped = $pelanggans->groupBy('router_id');
+
+        foreach ($grouped as $routerId => $group) {
+            $router = $group->first()->router;
+            if (!$router) {
+                // Tidak ada router, hapus DB saja
+                foreach ($group as $p) {
+                    Pelanggan::withTrashed()->where('id', $p->id)->forceDelete();
+                    $deleted++;
                 }
-            } catch (\Exception $e) {
-                $errors[] = $p->username . ': ' . $e->getMessage();
+                continue;
             }
 
-            \App\Models\Pelanggan::withTrashed()->where('id', $p->id)->forceDelete();
-            $deleted++;
+            $mikrotik  = new MikrotikService();
+            $connected = false;
+
+            try {
+                // FIX 2: Satu koneksi untuk semua pelanggan di router yang sama
+                $this->connectRouter($router, $mikrotik);
+                $connected = true;
+            } catch (\Exception $e) {
+                $errors[] = "Router [{$router->nama}]: " . $e->getMessage();
+                Log::error("bulkDelete - gagal konek router [{$router->nama}]: " . $e->getMessage());
+            }
+
+            foreach ($group as $p) {
+                if ($connected) {
+                    try {
+                        $mikrotik->deletePppoeUser($p->username);
+                    } catch (\Exception $e) {
+                        $errors[] = $p->username . ': ' . $e->getMessage();
+                    }
+                }
+                Pelanggan::withTrashed()->where('id', $p->id)->forceDelete();
+                $deleted++;
+            }
+
+            if ($connected) {
+                try { $mikrotik->disconnect(); } catch (\Exception $e) {}
+            }
         }
 
         $msg = $deleted . ' pelanggan berhasil dihapus.';
-        if (count($errors)) $msg .= ' Gagal hapus dari Mikrotik: ' . implode(', ', $errors);
+        if (count($errors)) $msg .= ' Catatan: ' . implode(', ', $errors);
 
         return response()->json(['status' => true, 'message' => $msg]);
     }
@@ -291,7 +345,6 @@ class PelangganController extends Controller
             ->where('longitude', '!=', '')
             ->get();
 
-        // Ambil ONU + ODP per pelanggan
         $onuByPelanggan = \App\Models\Onu::with('odp')
             ->whereNotNull('pelanggan_id')
             ->get()

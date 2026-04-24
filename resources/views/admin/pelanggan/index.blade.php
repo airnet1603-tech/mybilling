@@ -26,8 +26,6 @@
         </small>
     </div>
     <div class="d-flex gap-2">
-        <button class="btn btn-success btn-sm" onclick="openCsvImport()"><i class="fas fa-file-csv me-1"></i> Import CSV</button>
-        <a href="/admin/pelanggan/peta" class="btn btn-info btn-sm text-white"><i class="fas fa-map-marked-alt me-1"></i> Peta</a>
         <a href="/admin/pelanggan/create" class="btn btn-danger btn-sm"><i class="fas fa-plus me-1"></i> Tambah Pelanggan</a>
     </div>
 </div>
@@ -41,41 +39,42 @@
 
 <div class="card mb-3">
     <div class="card-body py-2 px-3">
-        <form method="GET" id="filterForm" class="row g-2 align-items-center">
-            <div class="col-md-3">
-                <input type="text" name="search" id="searchInput" class="form-control form-control-sm" placeholder="Cari nama, username..." value="{{ request('search') }}" autocomplete="off">
-            </div>
-            <div class="col-md-2">
-                <select name="status" class="form-select form-select-sm" onchange="document.getElementById('filterForm').submit()">
-                    <option value="">Semua Status</option>
-                    <option value="aktif"    {{ request('status')=='aktif'    ? 'selected' : '' }}>Aktif</option>
-                    <option value="isolir"   {{ request('status')=='isolir'   ? 'selected' : '' }}>Isolir</option>
-                    <option value="suspend"  {{ request('status')=='suspend'  ? 'selected' : '' }}>Suspend</option>
-                    <option value="nonaktif" {{ request('status')=='nonaktif' ? 'selected' : '' }}>Nonaktif</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <select name="paket_id" class="form-select form-select-sm" onchange="document.getElementById('filterForm').submit()">
-                    <option value="">Semua Paket</option>
-                    @foreach($pakets ?? [] as $paket)
-                        <option value="{{ $paket->id }}" {{ request('paket_id')==$paket->id ? 'selected' : '' }}>{{ $paket->nama_paket }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-2">
-                <select name="router_id" class="form-select form-select-sm" onchange="document.getElementById('filterForm').submit()">
-                    <option value="">Semua Router</option>
-                    @foreach($routers ?? [] as $router)
-                        <option value="{{ $router->id }}" {{ request('router_id')==$router->id ? 'selected' : '' }}>{{ $router->nama }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-auto">
-                <a href="/admin/pelanggan" class="btn btn-secondary btn-sm"><i class="fas fa-times me-1"></i> Reset</a>
-            </div>
-            <div class="col-auto ms-auto">
-                <a href="/admin/pelanggan/export?{{ http_build_query(request()->query()) }}" class="btn btn-success btn-sm"><i class="fas fa-file-csv me-1"></i> Export CSV</a>
-            </div>
+        <form method="GET" id="filterForm" class="d-flex align-items-center gap-2 flex-wrap w-100">
+            <select name="perPage" class="form-select form-select-sm" style="width:75px;" onchange="document.getElementById('filterForm').submit()">
+                <option value="10" {{ request('perPage','10')=='10'?'selected':'' }}>10</option>
+                <option value="25" {{ request('perPage')=='25'?'selected':'' }}>25</option>
+                <option value="50" {{ request('perPage')=='50'?'selected':'' }}>50</option>
+                <option value="100" {{ request('perPage')=='100'?'selected':'' }}>100</option>
+                <option value="150" {{ request('perPage')=='150'?'selected':'' }}>150</option>
+                <option value="200" {{ request('perPage')=='200'?'selected':'' }}>200</option>
+                <option value="250" {{ request('perPage')=='250'?'selected':'' }}>250</option>
+                <option value="500" {{ request('perPage')=='500'?'selected':'' }}>500</option>
+                <option value="1000" {{ request('perPage')=='1000'?'selected':'' }}>Semua</option>
+            </select>
+            <input type="text" name="search" id="searchInput" class="form-control form-control-sm" style="width:160px;" placeholder="Cari nama..." value="{{ request('search') }}" autocomplete="off">
+            <select name="status" class="form-select form-select-sm" style="width:130px;" onchange="document.getElementById('filterForm').submit()">
+                <option value="">Semua Status</option>
+                <option value="aktif"    {{ request('status')=='aktif'    ? 'selected' : '' }}>Aktif</option>
+                <option value="isolir"   {{ request('status')=='isolir'   ? 'selected' : '' }}>Isolir</option>
+                <option value="suspend"  {{ request('status')=='suspend'  ? 'selected' : '' }}>Suspend</option>
+                <option value="nonaktif" {{ request('status')=='nonaktif' ? 'selected' : '' }}>Nonaktif</option>
+            </select>
+            <select name="paket_id" class="form-select form-select-sm" style="width:130px;" onchange="document.getElementById('filterForm').submit()">
+                <option value="">Semua Paket</option>
+                @foreach($pakets ?? [] as $paket)
+                    <option value="{{ $paket->id }}" {{ request('paket_id')==$paket->id ? 'selected' : '' }}>{{ $paket->nama_paket }}</option>
+                @endforeach
+            </select>
+            <select name="router_id" class="form-select form-select-sm" style="width:140px;" onchange="document.getElementById('filterForm').submit()">
+                <option value="">Semua Router</option>
+                @foreach($routers ?? [] as $router)
+                    <option value="{{ $router->id }}" {{ request('router_id')==$router->id ? 'selected' : '' }}>{{ $router->nama }}</option>
+                @endforeach
+            </select>
+            <a href="/admin/pelanggan" class="btn btn-secondary btn-sm"><i class="fas fa-times me-1"></i> Reset</a>
+            <a href="/admin/pelanggan/export?{{ http_build_query(request()->query()) }}" class="btn btn-success btn-sm px-3"><i class="fas fa-file-csv me-1"></i> Export</a>
+            <button type="button" class="btn btn-success btn-sm px-3" onclick="event.preventDefault();openCsvImport();"><i class="fas fa-file-csv me-1"></i> Import</button>
+            <a href="/admin/pelanggan/peta" class="btn btn-info btn-sm text-white"><i class="fas fa-map-marked-alt me-1"></i> Peta</a>
         </form>
     </div>
 </div>
@@ -91,7 +90,8 @@
 
 <div class="card">
     <div class="card-body p-0">
-        <div class="table-responsive">
+
+<div class="table-responsive">
             <table class="table table-hover table-sm mb-0">
                 <thead class="table-light">
                     <tr>
@@ -112,7 +112,7 @@
                         <td class="ps-3"><input type="checkbox" class="row-check" value="{{ $p->id }}" onchange="updateBulkBar()"></td>
                         <td class="ps-3"><small class="text-muted">{{ $p->id_pelanggan }}</small></td>
                         <td><div class="fw-semibold small">{{ $p->nama }}</div></td>
-                        <td><code class="small">{{ $p->username }}</code></td>
+                        <td><code class="small" style="font-family: inherit;">{{ $p->username }}</code></td>
                         <td>
                             @if($p->router)
                                 <span class="router-badge"><i class="fas fa-network-wired fa-xs me-1"></i>{{ $p->router->nama }}</span>
@@ -152,9 +152,19 @@
             </table>
         </div>
     </div>
-    @if($pelanggans->hasPages())
-    <div class="card-footer bg-white border-0 pt-2">{{ $pelanggans->appends(request()->query())->links() }}</div>
-    @endif
+    <div class="card-footer bg-white border-0 pt-2 d-flex justify-content-between align-items-center">
+        @if($pelanggans->hasPages())
+        <div>{{ $pelanggans->appends(request()->query())->links() }}</div>
+        @endif
+    </div>
+<script>
+function updateQueryParam(key, value) {
+    const url = new URL(window.location.href);
+    url.searchParams.set(key, value);
+    url.searchParams.delete('page');
+    return url.toString();
+}
+</script>
 </div>
 
 <!-- MODAL IMPORT CSV -->
