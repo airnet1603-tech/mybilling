@@ -87,6 +87,7 @@
                 <form method="POST" action="/admin/paket/{{ $paket->id }}">
                     @csrf
                     @method('PUT')
+                    <input type="hidden" name="router_id" value="{{ $paket->router_id }}">
                     <div class="row g-3">
                         <div class="col-md-8">
                             <div class="info-label">Nama Paket</div>

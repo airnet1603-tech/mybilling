@@ -256,7 +256,7 @@ class MikrotikService
         try {
             $rateLimit = $upload . "M/" . $download . "M";
 
-            if (!empty($burst['burst_limit_download']) && !empty($burst['burst_limit_upload'])) {
+            if (!empty($burst['burst_limit_download']) || !empty($burst['burst_limit_upload'])) {
                 $burstLimit     = $burst['burst_limit_upload']     . "M/" . $burst['burst_limit_download']     . "M";
                 $burstThreshold = $burst['burst_threshold_upload'] . "M/" . $burst['burst_threshold_download'] . "M";
                 $burstTime      = ($burst['burst_time'] ?? 8)      . "/"  . ($burst['burst_time'] ?? 8);

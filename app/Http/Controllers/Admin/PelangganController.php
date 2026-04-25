@@ -111,7 +111,7 @@ class PelangganController extends Controller
             "router_name"    => $request->router_name,
             "ip_address"     => $request->ip_address,
             "tgl_daftar"     => now(),
-            "tgl_expired"    => now()->addDays(30),
+            "tgl_expired"    => $request->tgl_expired ? \Carbon\Carbon::parse($request->tgl_expired) : now()->addDays(30),
             "status"         => "aktif",
             "jenis_layanan"  => $request->jenis_layanan ?? "pppoe",
             "router_id"      => $request->router_id,
@@ -204,7 +204,7 @@ class PelangganController extends Controller
 
     public function edit(Pelanggan $pelanggan)
     {
-        $pakets  = Paket::where("is_active", true)->get();
+        $pakets  = Paket::where("is_active", true)->where("router_id", $pelanggan->router_id)->get();
         $routers = \App\Models\Router::where("is_active", true)->get();
         return view("admin.pelanggan.edit", compact("pelanggan", "pakets", "routers"));
     }
@@ -240,11 +240,11 @@ class PelangganController extends Controller
                 $mikrotik->disconnect();
             }
         } catch (\Exception $e) {
-            return redirect('/admin/pelanggan/' . $pelanggan->id)
+            return redirect('/admin/pelanggan?router_id=' . $pelanggan->router_id)
                 ->with('warning', 'Data diupdate, tapi gagal sync Mikrotik: ' . $e->getMessage());
         }
 
-        return redirect('/admin/pelanggan/' . $pelanggan->id)
+        return redirect('/admin/pelanggan?router_id=' . $pelanggan->router_id)
             ->with('success', 'Data pelanggan berhasil diupdate dan disync ke Mikrotik!');
     }
 

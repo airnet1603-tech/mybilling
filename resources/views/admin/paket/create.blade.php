@@ -18,7 +18,7 @@
         <h5 class="fw-bold mb-0">Tambah Paket Internet</h5>
         <small class="text-muted">Buat paket layanan internet baru</small>
     </div>
-    <a href="/admin/paket" class="btn btn-secondary btn-sm">
+    <a href="/admin/paket{{ $router_id ? '?router_id='.$router_id : '' }}" class="btn btn-secondary btn-sm">
         <i class="fas fa-arrow-left me-1"></i> Kembali
     </a>
 </div>
@@ -50,6 +50,10 @@
             <div class="card-body py-3">
                 <div class="card-section-title mb-3"><i class="fas fa-eye me-2 text-primary"></i>Preview Paket</div>
                 <div class="mb-2">
+                    <div class="info-label">Router</div>
+                    <div class="small fw-semibold text-primary"><i class="fas fa-server me-1"></i><span id="prev-router">-</span></div>
+                </div>
+                <div class="mb-2">
                     <div class="info-label">Harga</div>
                     <div class="small fw-semibold text-success">Rp <span id="prev-harga">0</span> / bulan</div>
                 </div>
@@ -72,6 +76,30 @@
     <div class="col-md-8">
         <form method="POST" action="/admin/paket" id="formPaket">
             @csrf
+
+            {{-- ROUTER SELECTOR --}}
+            <div class="card mb-3 border-primary">
+                <div class="card-body py-3">
+                    <div class="card-section-title mb-3"><i class="fas fa-server me-2 text-primary"></i>Pilih Router <span class="text-danger">*</span></div>
+                    <div class="row g-2">
+                        @foreach($routers as $router)
+                        <div class="col-md-6">
+                            <input type="radio" class="btn-check" name="router_id" id="router_{{ $router->id }}"
+                                   value="{{ $router->id }}"
+                                   {{ (old('router_id', $router_id) == $router->id) ? 'checked' : '' }}
+                                   required onchange="updateRouterPreview()">
+                            <label class="btn btn-outline-primary w-100 text-start py-2" for="router_{{ $router->id }}">
+                                <i class="fas fa-router me-2"></i>
+                                <strong>{{ $router->nama }}</strong><br>
+                                <small class="text-muted ms-4">{{ $router->ip_address }}:{{ $router->port }}</small>
+                            </label>
+                        </div>
+                        @endforeach
+                    </div>
+                    @error('router_id')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                </div>
+            </div>
+
             <div class="card mb-3">
                 <div class="card-body py-3">
                     <div class="card-section-title mb-3"><i class="fas fa-info-circle me-2 text-primary"></i>Informasi Paket</div>
@@ -98,8 +126,20 @@
                         </div>
                         <div class="col-md-6">
                             <div class="info-label">Masa Aktif (hari) <span class="text-danger">*</span></div>
-                            <div class="input-group input-group-sm"><input type="number" name="masa_aktif" id="masa_aktif" class="form-control form-control-sm" style="max-width:70px;" @error('masa_aktif') is-invalid @enderror" value="{{ old('masa_aktif', 30) }}" required min="1" onchange="hitungTanggal();"><select class="form-select form-select-sm" style="max-width:90px;" onchange="document.getElementById('masa_aktif').value=this.value;hitungTanggal();"><option value="">Pilih</option><option value="7">7 hari</option><option value="14">14 hari</option><option value="30">30 hari</option><option value="60">60 hari</option><option value="90">90 hari</option><option value="180">180 hari</option><option value="365">365 hari</option></select><input type="date" id="tgl_expired_preview" class="form-control form-control-sm" style="max-width:200px;" onchange="hitungHari();"></div>
-                            @error('masa_aktif')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="masa_aktif" id="masa_aktif" class="form-control form-control-sm" style="max-width:70px;" value="{{ old('masa_aktif', 30) }}" required min="1" onchange="hitungTanggal();">
+                                <select class="form-select form-select-sm" style="max-width:90px;" onchange="document.getElementById('masa_aktif').value=this.value;hitungTanggal();">
+                                    <option value="">Pilih</option>
+                                    <option value="7">7 hari</option>
+                                    <option value="14">14 hari</option>
+                                    <option value="30">30 hari</option>
+                                    <option value="60">60 hari</option>
+                                    <option value="90">90 hari</option>
+                                    <option value="180">180 hari</option>
+                                    <option value="365">365 hari</option>
+                                </select>
+                                <input type="date" id="tgl_expired_preview" class="form-control form-control-sm" style="max-width:150px;" onchange="hitungHari();">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -114,7 +154,6 @@
                             <div class="input-group input-group-sm">
                                 <input type="number" name="kecepatan_download" id="dl" class="form-control @error('kecepatan_download') is-invalid @enderror" value="{{ old('kecepatan_download') }}" placeholder="20" required min="1">
                                 <span class="input-group-text">Mbps</span>
-                                @error('kecepatan_download')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -122,7 +161,6 @@
                             <div class="input-group input-group-sm">
                                 <input type="number" name="kecepatan_upload" id="ul" class="form-control @error('kecepatan_upload') is-invalid @enderror" value="{{ old('kecepatan_upload') }}" placeholder="10" required min="1">
                                 <span class="input-group-text">Mbps</span>
-                                @error('kecepatan_upload')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                         </div>
                         <div class="col-12"><div class="fw-semibold small text-warning mb-2"><i class="fas fa-bolt me-1"></i>Burst (Opsional)</div></div>
@@ -135,7 +173,6 @@
                             <div class="info-label">Radius Profile Name <span class="text-danger">*</span></div>
                             <input type="text" name="radius_profile" id="radius_profile" class="form-control form-control-sm @error('radius_profile') is-invalid @enderror" value="{{ old('radius_profile') }}" placeholder="Contoh: paket-20mbps" required>
                             <div class="form-text small text-muted">Harus sama dengan nama profile di FreeRADIUS / MikroTik</div>
-                            @error('radius_profile')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-12">
                             <div class="info-label">Deskripsi</div>
@@ -152,8 +189,8 @@
             </div>
 
             <div class="d-flex gap-2 mt-3">
-                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save me-1"></i> Simpan Paket</button>
-                <a href="/admin/paket" class="btn btn-secondary btn-sm"><i class="fas fa-times me-1"></i> Batal</a>
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save me-1"></i> Simpan & Sync ke Mikrotik</button>
+                <a href="/admin/paket{{ $router_id ? '?router_id='.$router_id : '' }}" class="btn btn-secondary btn-sm"><i class="fas fa-times me-1"></i> Batal</a>
             </div>
         </form>
     </div>
@@ -162,6 +199,18 @@
 
 @push('scripts')
 <script>
+// Data router untuk preview
+const routerData = {
+    @foreach($routers as $router)
+    {{ $router->id }}: '{{ $router->nama }}',
+    @endforeach
+};
+
+function updateRouterPreview() {
+    const selected = document.querySelector('[name="router_id"]:checked');
+    document.getElementById('prev-router').textContent = selected ? routerData[selected.value] : '-';
+}
+
 function updatePreview() {
     document.getElementById('prev-nama').textContent = document.getElementById('nama_paket').value || 'Nama Paket';
     const jenis = document.querySelector('[name="jenis"]').value;
@@ -176,7 +225,9 @@ function updatePreview() {
     const el = document.getElementById('prev-status');
     el.textContent = aktif ? 'Aktif' : 'Nonaktif';
     el.className = aktif ? 'badge bg-success' : 'badge bg-secondary';
+    updateRouterPreview();
 }
+
 document.getElementById('nama_paket').addEventListener('input', updatePreview);
 document.getElementById('harga').addEventListener('input', updatePreview);
 document.getElementById('dl').addEventListener('input', updatePreview);
@@ -184,6 +235,8 @@ document.getElementById('ul').addEventListener('input', updatePreview);
 document.getElementById('radius_profile').addEventListener('input', updatePreview);
 document.querySelector('[name="jenis"]').addEventListener('change', updatePreview);
 document.querySelector('[name="masa_aktif"]').addEventListener('input', function(){ updatePreview(); hitungTanggal(); });
+document.querySelectorAll('[name="router_id"]').forEach(el => el.addEventListener('change', updatePreview));
+
 function hitungTanggal() {
     var hari = parseInt(document.getElementById('masa_aktif').value) || 0;
     if (hari > 0) {
@@ -197,12 +250,9 @@ function hitungHari() {
     var today = new Date();
     today.setHours(0,0,0,0);
     var diff = Math.round((tgl - today) / (1000*60*60*24));
-    if (diff > 0) {
-        document.getElementById('masa_aktif').value = diff;
-        updatePreview();
-    }
+    if (diff > 0) { document.getElementById('masa_aktif').value = diff; updatePreview(); }
 }
-window.addEventListener('load', hitungTanggal);
+window.addEventListener('load', function(){ hitungTanggal(); updatePreview(); });
 document.getElementById('is_active').addEventListener('change', updatePreview);
 </script>
 @endpush

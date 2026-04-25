@@ -47,6 +47,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
 
     // Akses Admin & Operator
     Route::middleware('role:admin,operator')->group(function () {
+        Route::get('paket/by-router', [PaketController::class, 'byRouter']);
         Route::resource('paket', PaketController::class);
         Route::get('laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::middleware('role:admin')->group(function () {
@@ -189,3 +190,4 @@ Route::get('/admin/utils/resolve-maps-url', function(\Illuminate\Http\Request $r
         return response()->json(['error' => $e->getMessage()]);
     }
 });
+

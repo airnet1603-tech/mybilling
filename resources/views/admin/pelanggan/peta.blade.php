@@ -31,7 +31,7 @@
                     <i class="fas fa-users text-primary"></i>
                 </div>
                 <div>
-                    <div class="fw-bold fs-5">{{ $total }}</div>
+                    <div class="fw-bold fs-5" id="counterTotal">{{ $total }}</div>
                     <div class="small text-muted">Total Pelanggan</div>
                 </div>
             </div>
@@ -44,7 +44,7 @@
                     <i class="fas fa-map-marker-alt text-success"></i>
                 </div>
                 <div>
-                    <div class="fw-bold fs-5">{{ $totalPeta }}</div>
+                    <div class="fw-bold fs-5" id="counterPeta">{{ $totalPeta }}</div>
                     <div class="small text-muted">Ada di Peta</div>
                 </div>
             </div>
@@ -57,7 +57,7 @@
                     <i class="fas fa-map-marker text-danger"></i>
                 </div>
                 <div>
-                    <div class="fw-bold fs-5">{{ $tanpaPeta }}</div>
+                    <div class="fw-bold fs-5" id="counterTanpa">{{ $tanpaPeta }}</div>
                     <div class="small text-muted">Tanpa Koordinat</div>
                 </div>
             </div>
@@ -217,6 +217,19 @@ function applyFilter() {
         if (show) count++;
     });
     document.getElementById('pinCount').textContent = count + ' pin ditampilkan';
+
+    // Update counter cards
+    var router = document.getElementById('filterRouter').value;
+    if (router) {
+        var total = allMarkers.filter(m => m.data.router === router).length;
+        document.getElementById('counterTotal').textContent = total;
+        document.getElementById('counterPeta').textContent  = count;
+        document.getElementById('counterTanpa').textContent = total - count;
+    } else {
+        document.getElementById('counterTotal').textContent = {{ $total }};
+        document.getElementById('counterPeta').textContent  = count;
+        document.getElementById('counterTanpa').textContent = {{ $tanpaPeta }};
+    }
 }
 
 function resetFilter() {

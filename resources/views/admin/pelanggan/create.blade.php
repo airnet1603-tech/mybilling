@@ -182,7 +182,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Router</label>
-                            <select name="router_id" class="form-select form-select-sm">
+                            <select name="router_id" id="router_id" class="form-select form-select-sm" onchange="filterPaketByRouter(this.value)">
                                 <option value="">-- Pilih Router --</option>
                                 @foreach($routers as $router)
                                     <option value="{{ $router->id }}" {{ old('router_id') == $router->id ? 'selected' : '' }}>
@@ -190,6 +190,11 @@
                                     </option>
                                 @endforeach
                             </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Tanggal Expired</label>
+                            <input type="date" name="tgl_expired" id="tgl_expired" class="form-control form-control-sm" value="{{ old('tgl_expired', date('Y-m-d', strtotime('+30 days'))) }}">
+                            <div class="form-text small text-muted">Default: 30 hari dari sekarang</div>
                         </div>
                     </div>
                 </div>
@@ -204,6 +209,7 @@
             <div class="card mb-3">
                 <div class="card-body">
                     <div class="section-title"><i class="fas fa-box me-1"></i> Paket Internet</div>
+                    <div id="paket-list">
                     @forelse($pakets as $paket)
                     <label class="paket-option {{ old('paket_id') == $paket->id ? 'selected' : '' }}"
                            for="paket{{ $paket->id }}">
@@ -229,6 +235,7 @@
                         Belum ada paket! <a href="/admin/paket/create">Tambah paket dulu</a>
                     </div>
                     @endforelse
+                    </div>
                 </div>
             </div>
 
@@ -259,6 +266,45 @@
 
 @push('scripts')
 <script>
+
+function filterPaketByRouter(routerId) {
+    if (!routerId) return;
+    fetch('/admin/paket/by-router?router_id=' + routerId)
+        .then(r => r.json())
+        .then(pakets => {
+            const container = document.getElementById('paket-list');
+            container.innerHTML = '';
+            if (pakets.length === 0) {
+                container.innerHTML = '<div class="text-muted small">Belum ada paket di router ini. <a href="/admin/paket/create?router_id=' + routerId + '">Tambah paket</a></div>';
+                return;
+            }
+            pakets.forEach(paket => {
+                container.innerHTML += `
+                <label class="paket-option" for="paket${paket.id}" onclick="this.querySelectorAll('input')[0].checked=true;document.querySelectorAll('.paket-option').forEach(l=>l.classList.remove('selected'));this.classList.add('selected');">
+                    <input type="radio" name="paket_id" id="paket${paket.id}" value="${paket.id}" required>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold small">${paket.nama_paket}</div>
+                            <div class="text-muted" style="font-size:0.72rem;">
+                                <i class="fas fa-arrow-down text-primary fa-xs"></i> ${paket.kecepatan_download} Mbps &nbsp;
+                                <i class="fas fa-arrow-up text-success fa-xs"></i> ${paket.kecepatan_upload} Mbps
+                            </div>
+                        </div>
+                        <div class="text-success fw-bold small">Rp ${parseInt(paket.harga).toLocaleString('id-ID')}</div>
+                    </div>
+                </label>`;
+            });
+        });
+}
+
+// Auto filter saat halaman load jika router sudah terpilih
+window.addEventListener('load', function() {
+    const routerSelect = document.getElementById('router_id');
+    if (routerSelect && routerSelect.value) {
+        filterPaketByRouter(routerSelect.value);
+    }
+});
+
 document.querySelectorAll('.paket-option').forEach(label => {
     label.addEventListener('click', function () {
         document.querySelectorAll('.paket-option').forEach(l => l.classList.remove('selected'));
