@@ -8,15 +8,19 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <style>
 #map { height: 400px; border-radius: 10px; }
-.badge-up   { background:#d4edda; color:#155724; padding:2px 10px; border-radius:20px; font-size:0.75rem; }
-.badge-down { background:#f8d7da; color:#721c24; padding:2px 10px; border-radius:20px; font-size:0.75rem; }
-.odp-select { font-size:0.75rem; padding:2px 4px; border-radius:6px; border:1px solid #dee2e6; max-width:140px; }
+.badge-up   { background:#d4edda; color:#155724; padding:2px 8px; border-radius:20px; font-size:0.72rem; white-space:nowrap; }
+.badge-down { background:#f8d7da; color:#721c24; padding:2px 8px; border-radius:20px; font-size:0.72rem; white-space:nowrap; }
+.odp-select { font-size:0.72rem; padding:2px 4px; border-radius:6px; border:1px solid #dee2e6; width:100%; }
 .odp-select:focus { outline:none; border-color:#0d6efd; box-shadow:0 0 0 2px rgba(13,110,253,.15); }
-
-.select2-container .select2-selection--single { height: 28px !important; font-size: 0.75rem !important; }
-.select2-container .select2-selection__rendered { line-height: 26px !important; font-size: 0.75rem !important; }
-.select2-dropdown { font-size: 0.75rem !important; }
-.select2-search__field { font-size: 0.75rem !important; }
+.select2-container .select2-selection--single { height: 26px !important; font-size: 0.72rem !important; }
+.select2-container .select2-selection__rendered { line-height: 24px !important; font-size: 0.72rem !important; padding-left:6px !important; }
+.select2-container .select2-selection__arrow { height: 26px !important; }
+.select2-dropdown { font-size: 0.72rem !important; z-index: 99999 !important; }
+.select2-search__field { font-size: 0.72rem !important; }
+.select2-container--open { z-index: 99999 !important; }
+.select2-container { width: 100% !important; }
+#onuTable td { vertical-align: middle; padding: 4px 5px; }
+#onuTable th { padding: 5px; font-size: 0.75rem; }
 </style>
 @endpush
 
@@ -86,17 +90,16 @@
                     </select>
                 </div>
             </div>
-            <div class="card-body p-0">
-                <div style="max-height:500px;overflow-y:auto;">
-                <table class="table table-sm table-hover mb-0" id="onuTable">
+            <div class="card-body p-0" style="overflow:visible;">
+                <div style="max-height:500px;overflow-y:auto;overflow-x:hidden;">
+                <table class="table table-sm table-hover mb-0" id="onuTable" style="width:100%;">
                     <thead class="table-light sticky-top">
                         <tr>
-                            <th>ID</th>
+                            <th style="width:50px;">ID</th>
                             <th>Nama</th>
-                            <th>Status</th>
-                            <th>ODP</th>
-                            <th>Pelanggan</th>
-                            <th></th>
+                            <th style="width:50px;">Status</th>
+                            <th style="width:110px;">ODP</th>
+                            <th style="width:150px;">Pelanggan</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -104,8 +107,8 @@
                     <tr data-status="{{ $onu->status }}" data-name="{{ strtolower($onu->name.$onu->mac_address) }}">
                         <td><small class="text-muted">{{ $onu->onu_id }}</small></td>
                         <td>
-                            <div>{{ $onu->name ?? '-' }}</div>
-                            <small class="text-muted" style="font-size:0.7rem;">{{ $onu->mac_address }}</small>
+                            <div style="font-size:0.72rem;line-height:1.2;word-break:break-word;">{{ $onu->name ?? '-' }} <button onclick="goToOnu({{ $onu->id }})" style="background:none;border:none;padding:0;cursor:pointer;font-size:0.7rem;" title="Lihat di peta">📍</button></div>
+                            <small class="text-muted" style="font-size:0.65rem;">{{ $onu->mac_address }}</small>
                         </td>
                         <td><span class="badge-{{ strtolower($onu->status) }}">{{ $onu->status }}</span></td>
                         <td>
@@ -118,7 +121,6 @@
                                 @endforeach
                             </select>
                         </td>
-                        <td><button onclick="goToOnu({{ $onu->id }})" class="btn btn-sm" style="padding:1px 7px;font-size:0.75rem;background:#e8f4fd;border:1px solid #90cdf4;color:#2b6cb0;border-radius:6px;" title="Lihat di peta">📍</button></td>
                         <td><select class="pelanggan-select" data-onu-id="{{ $onu->id }}"><option value="">-- Pelanggan --</option>@foreach(\App\Models\Pelanggan::orderBy('nama')->get() as $p)<option value="{{ $p->id }}" {{ $onu->pelanggan_id == $p->id ? 'selected' : '' }}>{{ $p->nama }}</option>@endforeach</select></td>
                     </tr>
                     @empty
@@ -385,7 +387,7 @@ function toast(msg) {
 }
 
     // Init Select2 untuk dropdown pelanggan
-    $('.pelanggan-select').select2({ placeholder: '-- Pelanggan --', allowClear: true, width: '180px' });
+    $('.pelanggan-select').select2({ placeholder: '-- Pelanggan --', allowClear: true, width: '150px', dropdownParent: $('body') });
     $(document).on('change', '.pelanggan-select', function() {
         assignPelanggan($(this).data('onu-id'), $(this).val());
     });

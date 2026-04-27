@@ -20,25 +20,25 @@
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-card" style="background:linear-gradient(135deg,#4facfe,#00f2fe)">
-            <div class="fs-5 fw-bold">Rp {{ number_format($totalBulanIni,0,',','.') }}</div>
+            <div class="fs-5 fw-bold" id="statBulanIni">Rp {{ number_format($totalBulanIni,0,',','.') }}</div>
             <div class="opacity-75">Total Bulan Ini</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-card" style="background:linear-gradient(135deg,#667eea,#764ba2)">
-            <div class="fs-5 fw-bold">{{ $totalTransaksi }}</div>
+            <div class="fs-5 fw-bold" id="statTransaksi">{{ $totalTransaksi }}</div>
             <div class="opacity-75">Transaksi Bulan Ini</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-card" style="background:linear-gradient(135deg,#11998e,#38ef7d)">
-            <div class="fs-5 fw-bold">Rp {{ number_format($totalCash,0,',','.') }}</div>
+            <div class="fs-5 fw-bold" id="statCash">Rp {{ number_format($totalCash,0,',','.') }}</div>
             <div class="opacity-75">Total Cash</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-card" style="background:linear-gradient(135deg,#f093fb,#f5576c)">
-            <div class="fs-5 fw-bold">Rp {{ number_format($totalTransfer,0,',','.') }}</div>
+            <div class="fs-5 fw-bold" id="statTransfer">Rp {{ number_format($totalTransfer,0,',','.') }}</div>
             <div class="opacity-75">Total Transfer</div>
         </div>
     </div>
@@ -47,13 +47,14 @@
 {{-- FILTER --}}
 <div class="card mb-3">
     <div class="card-body py-2">
-        <form method="GET" class="row g-2 align-items-center">
-            <div class="col-md-4">
-                <input type="text" name="search" class="form-control form-control-sm"
-                       placeholder="Cari nama pelanggan..." value="{{ request('search') }}">
+        <form id="filterForm" method="GET" action="/admin/pembayaran" class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <input type="text" id="searchInput" name="search" class="form-control form-control-sm"
+                       placeholder="Cari nama / no pembayaran..." value="{{ request('search') }}"
+                       oninput="clearTimeout(window._st);window._st=setTimeout(doAjaxFilter,400)">
             </div>
             <div class="col-md-2">
-                <select name="metode" class="form-select form-select-sm">
+                <select name="metode" class="form-select form-select-sm" onchange="doAjaxFilter()">
                     <option value="">Semua Metode</option>
                     <option value="cash"     {{ request('metode')=='cash'     ? 'selected':'' }}>Cash</option>
                     <option value="transfer" {{ request('metode')=='transfer' ? 'selected':'' }}>Transfer</option>
@@ -62,13 +63,36 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <input type="month" name="bulan" class="form-control form-control-sm" value="{{ request('bulan') }}">
+                <select name="router_id" class="form-select form-select-sm" onchange="onRouterChange()">
+                    <option value="">Semua Router</option>
+                    @foreach($routers as $router)
+                    <option value="{{ $router->id }}" {{ request('router_id') == $router->id ? 'selected' : '' }}>
+                        {{ $router->nama }}
+                    </option>
+                    @endforeach
+                </select>
             </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-primary btn-sm">
-                    <i class="fas fa-search me-1"></i> Cari
-                </button>
+            <div class="col-md-2">
+                <select name="paket_id" class="form-select form-select-sm" onchange="doAjaxFilter()">
+                    <option value="">Semua Paket</option>
+                    @foreach($pakets as $paket)
+                    <option value="{{ $paket->id }}" {{ request('paket_id') == $paket->id ? 'selected' : '' }}>
+                        {{ $paket->nama_paket }}
+                    </option>
+                    @endforeach
+                </select>
             </div>
+            <div class="col-md-2">
+                <select name="user_id" class="form-select form-select-sm" onchange="doAjaxFilter()">
+                    <option value="">Semua User</option>
+                    @foreach($users as $user)
+                    <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
+                        {{ $user->name }} ({{ ucfirst($user->role) }})
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+
             <div class="col-auto">
                 <a href="/admin/pembayaran" class="btn btn-secondary btn-sm">Reset</a>
             </div>
@@ -92,42 +116,8 @@
                         <th class="small">Catatan</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @forelse($pembayarans as $p)
-                    <tr>
-                        <td><code class="small">{{ $p->no_pembayaran }}</code></td>
-                        <td>
-                            <div class="fw-semibold small">{{ $p->pelanggan->nama ?? '-' }}</div>
-                            <small class="text-muted">{{ $p->pelanggan->id_pelanggan ?? '' }}</small>
-                        </td>
-                        <td>
-                            <a href="/admin/tagihan/{{ $p->tagihan_id }}" class="text-decoration-none">
-                                <code class="small">{{ $p->tagihan->no_tagihan ?? '-' }}</code>
-                            </a>
-                        </td>
-                        <td class="fw-bold text-success small">Rp {{ number_format($p->jumlah_bayar,0,',','.') }}</td>
-                        <td>
-                            @if($p->metode == 'cash')
-                                <span class="badge bg-success">Cash</span>
-                            @elseif($p->metode == 'transfer')
-                                <span class="badge bg-primary">Transfer</span>
-                            @elseif($p->metode == 'midtrans')
-                                <span class="badge bg-info">Midtrans</span>
-                            @else
-                                <span class="badge bg-secondary">{{ ucfirst($p->metode) }}</span>
-                            @endif
-                        </td>
-                        <td><small>{{ $p->created_at->format('d/m/Y H:i') }}</small></td>
-                        <td><small class="text-muted">{{ $p->catatan ?? '-' }}</small></td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">
-                            <i class="fas fa-money-bill-wave fa-3x mb-3 d-block opacity-25"></i>
-                            Belum ada riwayat pembayaran
-                        </td>
-                    </tr>
-                    @endforelse
+                <tbody id="pembayaranBody">
+                    @include('admin.pembayaran._table')
                 </tbody>
             </table>
         </div>
@@ -138,5 +128,68 @@
     </div>
     @endif
 </div>
+
+<script>
+var paketsByRouter = {!! $paketsByRouter !!};
+
+function onRouterChange() {
+    var routerId = document.querySelector('[name=router_id]').value;
+    var paketSelect = document.querySelector('[name=paket_id]');
+    paketSelect.innerHTML = '<option value="">Semua Paket</option>';
+    if (routerId && paketsByRouter[routerId]) {
+        paketsByRouter[routerId].forEach(function(paket) {
+            var opt = document.createElement('option');
+            opt.value = paket.id;
+            opt.textContent = paket.nama_paket;
+            paketSelect.appendChild(opt);
+        });
+    } else {
+        var allPakets = [];
+        Object.values(paketsByRouter).forEach(function(pakets) {
+            pakets.forEach(function(p) {
+                if (!allPakets.find(x => x.id === p.id)) allPakets.push(p);
+            });
+        });
+        allPakets.sort((a,b) => a.nama_paket.localeCompare(b.nama_paket));
+        allPakets.forEach(function(paket) {
+            var opt = document.createElement('option');
+            opt.value = paket.id;
+            opt.textContent = paket.nama_paket;
+            paketSelect.appendChild(opt);
+        });
+    }
+    doAjaxFilter();
+}
+
+function doAjaxFilter() {
+    var f = document.getElementById('filterForm');
+    var params = new URLSearchParams();
+    var search   = f.querySelector('[name=search]').value;
+    var metode   = f.querySelector('[name=metode]').value;
+    var router   = f.querySelector('[name=router_id]').value;
+    var paket    = f.querySelector('[name=paket_id]').value;
+
+    var user_id  = f.querySelector('[name=user_id]').value;
+    if (search) params.set('search', search);
+    if (metode) params.set('metode', metode);
+    if (router) params.set('router_id', router);
+    if (paket)  params.set('paket_id', paket);
+
+    if (user_id) params.set('user_id', user_id);
+
+    fetch('/admin/pembayaran?' + params.toString(), {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('pembayaranBody').innerHTML = data.html;
+        document.getElementById('statBulanIni').textContent  = 'Rp ' + data.totalBulanIni;
+        document.getElementById('statTransaksi').textContent = data.totalTransaksi;
+        document.getElementById('statCash').textContent      = 'Rp ' + data.totalCash;
+        document.getElementById('statTransfer').textContent  = 'Rp ' + data.totalTransfer;
+        history.pushState(null, '', '/admin/pembayaran?' + params.toString());
+    });
+}
+</script>
 
 @endsection

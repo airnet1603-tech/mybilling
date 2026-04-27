@@ -39,12 +39,12 @@
                 @endfor
             </select>
         </form>
-        @if(auth()->user()->isAdmin())
+        @if(auth()->user()->isSuperAdmin())
             <button class="btn btn-danger btn-sm" onclick="confirmClearTahun()">
                 <i class="fas fa-trash-alt me-1"></i> Hapus Data {{ $tahun }}
             </button>
         @else
-            <button class="btn btn-secondary btn-sm btn-clear-disabled" title="Hanya admin yang dapat menghapus data">
+            <button class="btn btn-secondary btn-sm btn-clear-disabled" title="Hanya super admin yang dapat menghapus data">
                 <i class="fas fa-trash-alt me-1"></i> Hapus Data {{ $tahun }}
             </button>
         @endif
@@ -84,7 +84,7 @@
     <div class="card-body">
         <div class="card-section-title mb-3">
             <i class="fas fa-calendar-times me-2 text-danger"></i>Hapus Data per Bulan
-            @if(!auth()->user()->isAdmin())
+            @if(!auth()->user()->isSuperAdmin())
                 <span class="badge bg-secondary ms-2">Khusus Admin</span>
             @endif
         </div>
@@ -94,7 +94,7 @@
             @endphp
             @for($b = 1; $b <= 12; $b++)
             @php $adaData = $bulanTersedia->firstWhere('bulan', $b); @endphp
-            @if(auth()->user()->isAdmin())
+            @if(auth()->user()->isSuperAdmin())
                 @if($adaData)
                     <button class="btn btn-outline-danger btn-sm" onclick="confirmClearBulan({{ $b }}, '{{ $namaBulan[$b] }}')">
                         <i class="fas fa-times me-1"></i>{{ $namaBulan[$b] }}
@@ -106,7 +106,7 @@
                     </button>
                 @endif
             @else
-                <button class="btn btn-outline-secondary btn-sm btn-clear-disabled" title="Hanya admin">
+                <button class="btn btn-outline-secondary btn-sm btn-clear-disabled" title="Hanya super admin">
                     {{ $namaBulan[$b] }}
                     @if($adaData)<span class="badge bg-secondary ms-1">{{ $adaData->jml }}</span>@endif
                 </button>
@@ -125,8 +125,8 @@
     <div class="card-body">
         <div class="card-section-title mb-3">
             <i class="fas fa-users me-2 text-primary"></i>Statistik & Hapus Data per User
-            @if(!auth()->user()->isAdmin())
-                <span class="badge bg-secondary ms-2">Hapus: Khusus Admin</span>
+            @if(!auth()->user()->isSuperAdmin())
+                <span class="badge bg-secondary ms-2">Hapus: Khusus Super Admin</span>
             @endif
         </div>
         <div class="table-responsive">
@@ -157,7 +157,7 @@
                         <td><span class="fw-bold">{{ $u->total_transaksi ?? 0 }}</span> transaksi</td>
                         <td class="fw-bold text-success small">Rp {{ number_format($u->total_nominal ?? 0,0,',','.') }}</td>
                         <td>
-                            @if(auth()->user()->isAdmin())
+                            @if(auth()->user()->isSuperAdmin())
                                 @if(($u->total_transaksi ?? 0) > 0)
                                     <button class="btn btn-danger btn-sm" onclick="confirmClearUser({{ $u->id }}, '{{ $u->name }}')">
                                         <i class="fas fa-trash me-1"></i>Hapus
@@ -166,9 +166,9 @@
                                     <button class="btn btn-outline-secondary btn-sm" disabled>Tidak ada data</button>
                                 @endif
                             @else
-                                <button class="btn btn-secondary btn-sm btn-clear-disabled" title="Hanya admin">
-                                    <i class="fas fa-lock me-1"></i>Terkunci
-                                </button>
+                                <a href="/admin/pembayaran?user_id={{ $u->id }}"  class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>View
+                                </a>
                             @endif
                         </td>
                     </tr>
@@ -279,7 +279,7 @@
                     <td><small>{{ $t->tgl_bayar?->format('d/m/Y') ?? '-' }}</small></td>
                     <td>
                         @if($t->status == 'paid')
-                            @if(auth()->user()->isAdmin())
+                            @if(auth()->user()->isSuperAdmin())
                             <div class="d-flex gap-1">
                                 @if($t->pembayaran->count() > 0)
                                 <button class="btn btn-danger btn-sm py-0 px-2"
@@ -296,10 +296,10 @@
                             </div>
                             @else
                             <div class="d-flex gap-1">
-                                <button class="btn btn-secondary btn-sm py-0 px-2" disabled title="Hanya admin">
+                                <button class="btn btn-secondary btn-sm py-0 px-2" disabled title="Hanya super admin">
                                     <i class="fas fa-lock fa-xs"></i>
                                 </button>
-                                <button class="btn btn-secondary btn-sm py-0 px-2" disabled title="Hanya admin">
+                                <button class="btn btn-secondary btn-sm py-0 px-2" disabled title="Hanya super admin">
                                     <i class="fas fa-lock fa-xs"></i>
                                 </button>
                             </div>

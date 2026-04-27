@@ -343,10 +343,19 @@ $onus = Onu::with(['pelanggan.paket', 'odp', 'olt'])->get()->map(fn($o) => [
                     }
                 }
             } elseif (in_array($model, ['hisfocus 4p1gm', 'hisfocus 8p2gm', 'hisfocus'])) {
-                // HisFocus series - Basic Auth + ASP endpoint
-                $client  = new \GuzzleHttp\Client(['base_uri' => $baseUri, 'timeout' => 15, 'verify' => false, 'auth' => [$olt->username, $olt->password]]);
+                // HisFocus series - Basic Auth + ASP endpoint + retry
                 $endpoint = $olt->api_endpoint ?? '/onuAllPonOnuList.asp';
-                $html    = (string) $client->get($endpoint)->getBody();
+                $html = null;
+                for ($try = 1; $try <= 3; $try++) {
+                    try {
+                        $client = new \GuzzleHttp\Client(['base_uri' => 'http://'.$olt->ip_address, 'timeout' => 15, 'verify' => false, 'auth' => [$olt->username, $olt->password]]);
+                        $html = (string) $client->get($endpoint)->getBody();
+                        break;
+                    } catch (\Exception $retryEx) {
+                        if ($try === 3) throw $retryEx;
+                        sleep(2);
+                    }
+                }
                 preg_match_all("/'([\d\/\:]+)','([^']*)','([0-9a-fA-F:]+)','(Up|Down)'/", $html, $m);
                 foreach ($m[1] as $i => $onuId) {
                     Onu::updateOrCreate(

@@ -25,11 +25,12 @@
         .sidebar-nav { padding: 8px 0; flex: 1; }
         .sidebar-nav .nav-link { color: rgba(255,255,255,0.65); padding: 8px 14px; border-radius: 7px; margin: 1px 8px; font-size: 0.83rem; display: flex; align-items: center; gap: 9px; transition: background 0.2s, color 0.2s; white-space: nowrap; }
         .sidebar-nav .nav-link i { width: 16px; font-size: 0.82rem; flex-shrink: 0; }
-        .sidebar-nav .nav-link:hover, .sidebar-nav .nav-link.active { background: rgba(233,69,96,0.25); color: #fff; }
-        .sidebar-nav .nav-link.active { background: rgba(233,69,96,0.35); }
+        .sidebar-nav .nav-link:hover, .sidebar-nav .nav-link.active { background: rgba(255,255,255,0.08); color: #fff; border-left: 2px solid rgba(255,255,255,0.5); border-bottom: none; padding-left: 10px; position: relative; }
+        .sidebar-nav .nav-link:hover::after, .sidebar-nav .nav-link.active::after { content: ""; position: absolute; bottom: 0; left: 3px; right: 3px; height: 1px; background: linear-gradient(to right, rgba(255,255,255,0.3), rgba(255,255,255,0.05)); }
+        .sidebar-nav .nav-link.active { background: rgba(255,255,255,0.12); border-left: 2px solid rgba(255,255,255,0.8); }
         .sidebar-divider { border-top: 1px solid rgba(255,255,255,0.08); margin: 6px 14px; }
         .sidebar-nav .logout-btn { color: rgba(255,255,255,0.65); padding: 8px 14px; border-radius: 7px; margin: 1px 8px; font-size: 0.83rem; display: flex; align-items: center; gap: 9px; background: none; border: none; width: calc(100% - 16px); text-align: left; cursor: pointer; transition: background 0.2s, color 0.2s; }
-        .sidebar-nav .logout-btn:hover { background: rgba(233,69,96,0.25); color: #fff; }
+        .sidebar-nav .logout-btn:hover { background: rgba(192,192,192,0.08); color: #fff; }
         .mobile-topbar { display: none; position: fixed; top: 0; left: 0; right: 0; height: 54px; background: linear-gradient(90deg, var(--sidebar-bg-start), var(--sidebar-bg-end)); z-index: 1060; align-items: center; padding: 0 14px; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
         .mobile-topbar .hamburger-btn { background: none; border: none; color: #fff; font-size: 1.3rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
         .mobile-topbar .hamburger-btn:hover { background: rgba(255,255,255,0.15); }

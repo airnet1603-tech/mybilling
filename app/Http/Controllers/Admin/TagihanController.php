@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Admin\Traits\ConnectsToMikrotik;
 use App\Models\Pelanggan;
+use App\Models\Router;
+use App\Models\Paket;
 use App\Models\Tagihan;
 use App\Services\MikrotikService;
 use App\Services\FonnteService;
@@ -18,22 +20,68 @@ class TagihanController extends Controller
     {
         $query = Tagihan::with('pelanggan', 'paket')->latest();
         if ($request->search) {
-            $query->whereHas('pelanggan', function($q) use ($request) {
-                $q->where('nama', 'like', '%'.$request->search.'%')
-                  ->orWhere('id_pelanggan', 'like', '%'.$request->search.'%');
-            })->orWhere('no_tagihan', 'like', '%'.$request->search.'%');
+            $query->where(function($q) use ($request) {
+                $q->whereHas('pelanggan', function($q2) use ($request) {
+                    $q2->where('nama', 'like', '%'.$request->search.'%')
+                       ->orWhere('id_pelanggan', 'like', '%'.$request->search.'%')
+                       ->orWhere('username', 'like', '%'.$request->search.'%');
+                })->orWhere('no_tagihan', 'like', '%'.$request->search.'%');
+            });
         }
         if ($request->status) $query->where('status', $request->status);
         if ($request->bulan) {
             $query->whereMonth('periode_bulan', date('m', strtotime($request->bulan)))
                   ->whereYear('periode_bulan', date('Y', strtotime($request->bulan)));
         }
+        if ($request->router_id) {
+            $query->whereHas('pelanggan', function($q) use ($request) {
+                $q->where('router_id', $request->router_id);
+            });
+        }
+        if ($request->paket_id) {
+            $query->where('paket_id', $request->paket_id);
+        }
         $tagihans        = $query->paginate(15);
-        $totalUnpaid     = Tagihan::where('status', 'unpaid')->count();
-        $totalOverdue    = Tagihan::where('status', 'overdue')->count();
-        $totalPaid       = Tagihan::where('status', 'paid')->whereMonth('tgl_bayar', now()->month)->count();
-        $totalPendapatan = Tagihan::where('status', 'paid')->whereMonth('tgl_bayar', now()->month)->sum('total');
-        return view('admin.tagihan.index', compact('tagihans', 'totalUnpaid', 'totalOverdue', 'totalPaid', 'totalPendapatan'));
+
+
+        // Base query untuk counter ikut filter
+        $counterQuery = Tagihan::query();
+        if ($request->search) {
+            $counterQuery->where(function($q) use ($request) {
+                $q->whereHas('pelanggan', function($q2) use ($request) {
+                    $q2->where('nama', 'like', '%'.$request->search.'%')
+                       ->orWhere('id_pelanggan', 'like', '%'.$request->search.'%')
+                       ->orWhere('username', 'like', '%'.$request->search.'%');
+                })->orWhere('no_tagihan', 'like', '%'.$request->search.'%');
+            });
+        }
+        if ($request->router_id) {
+            $counterQuery->whereHas('pelanggan', function($q) use ($request) {
+                $q->where('router_id', $request->router_id);
+            });
+        }
+        if ($request->paket_id) {
+            $counterQuery->where('paket_id', $request->paket_id);
+        }
+        $totalUnpaid     = (clone $counterQuery)->where('status', 'unpaid')->count();
+        $totalOverdue    = (clone $counterQuery)->where('status', 'overdue')->count();
+        $totalPaid       = (clone $counterQuery)->where('status', 'paid')->whereMonth('tgl_bayar', now()->month)->count();
+        $totalPendapatan = (clone $counterQuery)->where('status', 'paid')->whereMonth('tgl_bayar', now()->month)->sum('total');
+
+        if (request()->ajax()) {
+            return response()->json([
+                'html'            => view('admin.tagihan._table', compact('tagihans'))->render(),
+                'totalUnpaid'     => $totalUnpaid,
+                'totalOverdue'    => $totalOverdue,
+                'totalPaid'       => $totalPaid,
+                'totalPendapatan' => number_format($totalPendapatan, 0, ',', '.'),
+            ]);
+        }
+        $routers = Router::orderBy('nama')->get();
+        $pakets  = Paket::where('is_active', true)->orderBy('nama_paket')->get();
+        $paketsByRouter = Paket::where('is_active', true)->orderBy('nama_paket')
+            ->get()->groupBy('router_id')->toJson();
+        return view('admin.tagihan.index', compact('tagihans', 'totalUnpaid', 'totalOverdue', 'totalPaid', 'totalPendapatan', 'routers', 'pakets', 'paketsByRouter'));
     }
 
     public function create()
@@ -282,6 +330,65 @@ class TagihanController extends Controller
         }
 
         return back()->with('success', "Pembayaran massal selesai! Berhasil: {$berhasil}, Skip: {$skip}");
+    }
+
+    public function exportCsv(\Illuminate\Http\Request $request)
+    {
+        $query = Tagihan::with('pelanggan', 'paket')->latest();
+
+        if ($request->status) $query->where('status', $request->status);
+        if ($request->router_id) {
+            $query->whereHas('pelanggan', function($q) use ($request) {
+                $q->where('router_id', $request->router_id);
+            });
+        }
+
+        $tagihans = $query->get();
+
+        $filename = 'tagihan-' . now()->format('Ymd-His') . '.csv';
+        $headers  = [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function() use ($tagihans) {
+            $file = fopen('php://output', 'w');
+            // BOM untuk Excel agar baca UTF-8 dengan benar
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            fputcsv($file, ['No Tagihan', 'Nama Pelanggan', 'ID Pelanggan', 'Paket', 'Total', 'Jatuh Tempo', 'Status', 'Tgl Bayar', 'Metode Bayar']);
+            foreach ($tagihans as $t) {
+                fputcsv($file, [
+                    $t->no_tagihan,
+                    $t->pelanggan->nama ?? '-',
+                    $t->pelanggan->id_pelanggan ?? '-',
+                    $t->paket->nama_paket ?? '-',
+                    $t->total,
+                    $t->tgl_jatuh_tempo?->format('d/m/Y'),
+                    $t->status,
+                    $t->tgl_bayar ? \Carbon\Carbon::parse($t->tgl_bayar)->format('d/m/Y') : '-',
+                    $t->metode_bayar ?? '-',
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function resetCounter(\Illuminate\Http\Request $request)
+    {
+        if (!auth()->user()->isSuperAdmin()) {
+            return response()->json(['success' => false, 'message' => 'Akses ditolak!'], 403);
+        }
+        if (!\Illuminate\Support\Facades\Hash::check($request->password, auth()->user()->password)) {
+            return response()->json(['success' => false, 'message' => 'Password salah!']);
+        }
+        // Disable foreign key check sementara
+        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        \App\Models\Pembayaran::truncate();
+        Tagihan::truncate();
+        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        return response()->json(['success' => true, 'message' => 'Semua data tagihan & pembayaran berhasil dihapus!']);
     }
 
     public function destroy(Tagihan $tagihan)

@@ -26,6 +26,14 @@
                 <i class="fas fa-magic me-1"></i> Generate Massal
             </button>
         </form>
+        <button class="btn btn-success btn-sm" onclick="document.getElementById('modalExportCsv').style.display='flex'">
+            <i class="fas fa-file-csv me-1"></i> Export CSV
+        </button>
+        @if(auth()->user()->isSuperAdmin())
+        <button class="btn btn-danger btn-sm" onclick="document.getElementById('modalResetCounter').style.display='flex'">
+            <i class="fas fa-trash-alt me-1"></i> Reset Counter
+        </button>
+        @endif
         <a href="/admin/tagihan/create" class="btn btn-primary btn-sm">
             <i class="fas fa-plus me-1"></i> Buat Tagihan
         </a>
@@ -49,25 +57,25 @@
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="stat-card" style="background:linear-gradient(135deg,#f093fb,#f5576c)">
-            <div class="fs-5 fw-bold">{{ $totalUnpaid }}</div>
+            <div class="fs-5 fw-bold" id="statUnpaid">{{ $totalUnpaid }}</div>
             <div class="opacity-75">Belum Bayar</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-card" style="background:linear-gradient(135deg,#ff6b6b,#ee5a24)">
-            <div class="fs-5 fw-bold">{{ $totalOverdue }}</div>
+            <div class="fs-5 fw-bold" id="statOverdue">{{ $totalOverdue }}</div>
             <div class="opacity-75">Jatuh Tempo</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-card" style="background:linear-gradient(135deg,#11998e,#38ef7d)">
-            <div class="fs-5 fw-bold">{{ $totalPaid }}</div>
+            <div class="fs-5 fw-bold" id="statPaid">{{ $totalPaid }}</div>
             <div class="opacity-75">Lunas Bulan Ini</div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="stat-card" style="background:linear-gradient(135deg,#4facfe,#00f2fe)">
-            <div class="fs-5 fw-bold">Rp {{ number_format($totalPendapatan,0,',','.') }}</div>
+            <div class="fs-5 fw-bold" id="statPendapatan">Rp {{ number_format($totalPendapatan,0,',','.') }}</div>
             <div class="opacity-75">Pendapatan Bulan Ini</div>
         </div>
     </div>
@@ -76,13 +84,14 @@
 {{-- FILTER --}}
 <div class="card mb-3">
     <div class="card-body py-2">
-        <form method="GET" class="row g-2 align-items-center">
+        <form id="filterForm" method="GET" action="/admin/tagihan" class="row g-2 align-items-center">
             <div class="col-md-4">
-                <input type="text" name="search" class="form-control form-control-sm"
-                       placeholder="Cari nama / no tagihan..." value="{{ request('search') }}">
+                <input type="text" id="searchInput" name="search" class="form-control form-control-sm"
+                       placeholder="Cari nama / username / no tagihan..." value="{{ request('search') }}"
+                       oninput="clearTimeout(window._st);window._st=setTimeout(doAjaxFilter,400)">
             </div>
             <div class="col-md-2">
-                <select name="status" class="form-select form-select-sm">
+                <select name="status" class="form-select form-select-sm" onchange="doAjaxFilter()">
                     <option value="">Semua Status</option>
                     <option value="unpaid"    {{ request('status')=='unpaid'    ? 'selected':'' }}>Unpaid</option>
                     <option value="overdue"   {{ request('status')=='overdue'   ? 'selected':'' }}>Overdue</option>
@@ -91,12 +100,24 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <input type="month" name="bulan" class="form-control form-control-sm" value="{{ request('bulan') }}">
+                <select name="paket_id" class="form-select form-select-sm" onchange="doAjaxFilter()">
+                    <option value="">Semua Paket</option>
+                    @foreach($pakets as $paket)
+                    <option value="{{ $paket->id }}" {{ request('paket_id') == $paket->id ? 'selected' : '' }}>
+                        {{ $paket->nama_paket }}
+                    </option>
+                    @endforeach
+                </select>
             </div>
             <div class="col-md-2">
-                <button type="submit" class="btn btn-primary btn-sm w-100">
-                    <i class="fas fa-search me-1"></i> Cari
-                </button>
+                <select name="router_id" class="form-select form-select-sm" onchange="onRouterChange()">
+                    <option value="">Semua Router</option>
+                    @foreach($routers as $router)
+                    <option value="{{ $router->id }}" {{ request('router_id') == $router->id ? 'selected' : '' }}>
+                        {{ $router->nama }}
+                    </option>
+                    @endforeach
+                </select>
             </div>
             <div class="col-md-2">
                 <a href="/admin/tagihan" class="btn btn-secondary btn-sm w-100">Reset</a>
@@ -150,7 +171,7 @@
                             <th class="small">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tagihanBody">
                         @forelse($tagihans as $t)
                         <tr id="row-{{ $t->id }}">
                             <td>
@@ -247,6 +268,60 @@
     </div>
 </div>
 
+{{-- MODAL EXPORT CSV --}}
+<div id="modalExportCsv" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:24px;width:420px;max-width:90%;">
+        <h5 class="fw-bold mb-1"><i class="fas fa-file-csv text-success me-2"></i>Export CSV Tagihan</h5>
+        <p class="text-muted small mb-3">Filter data yang ingin diexport ke file CSV.</p>
+        <form id="formExportCsv" method="GET" action="/admin/tagihan/export-csv" target="_blank">
+            <div class="mb-3">
+                <label class="form-label small fw-semibold">Filter Status</label>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">Semua Status</option>
+                    <option value="unpaid">Unpaid</option>
+                    <option value="overdue">Overdue</option>
+                    <option value="paid">Paid</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label small fw-semibold">Filter Router</label>
+                <select name="router_id" class="form-select form-select-sm">
+                    <option value="">Semua Router</option>
+                    @foreach($routers as $router)
+                    <option value="{{ $router->id }}">{{ $router->nama }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="d-flex gap-2 justify-content-end">
+                <button type="button" class="btn btn-secondary btn-sm"
+                    onclick="document.getElementById('modalExportCsv').style.display='none'">Batal</button>
+                <button type="submit" class="btn btn-success btn-sm"
+                    onclick="document.getElementById('modalExportCsv').style.display='none'">
+                    <i class="fas fa-download me-1"></i> Download CSV
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- MODAL RESET COUNTER --}}
+<div id="modalResetCounter" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:24px;width:400px;max-width:90%;">
+        <h5 class="fw-bold mb-1"><i class="fas fa-exclamation-triangle text-danger me-2"></i>Reset Counter Tagihan</h5>
+        <p class="text-muted small mb-3">Semua data <strong>Tagihan</strong> dan <strong>Pembayaran</strong> akan dihapus permanen. Tindakan ini tidak bisa dibatalkan!</p>
+        <div class="mb-3">
+            <label class="form-label small fw-semibold">Password Admin</label>
+            <input type="password" id="resetPassword" class="form-control form-control-sm" placeholder="Masukkan password admin" autocomplete="new-password">
+            <div id="resetError" class="text-danger small mt-1" style="display:none;"></div>
+        </div>
+        <div class="d-flex gap-2 justify-content-end">
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('modalResetCounter').style.display='none';document.getElementById('resetPassword').value='';document.getElementById('resetError').style.display='none';">Batal</button>
+            <button class="btn btn-danger btn-sm" onclick="doResetCounter()"><i class="fas fa-trash-alt me-1"></i>Reset Sekarang</button>
+        </div>
+    </div>
+</div>
+
 <script>
 function konfirmasi(id) {
     document.getElementById('formBayar').action = '/admin/tagihan/' + id + '/bayar';
@@ -301,6 +376,107 @@ function clearSelection() {
     });
     document.getElementById('checkAll').checked = false;
     document.getElementById('bulkBar').classList.remove('show');
+}
+</script>
+
+
+<script>
+var paketsByRouter = {!! $paketsByRouter !!};
+
+function onRouterChange() {
+    var routerId = document.querySelector('[name=router_id]').value;
+    var paketSelect = document.querySelector('[name=paket_id]');
+    var currentPaket = paketSelect.value;
+    
+    // Reset options
+    paketSelect.innerHTML = '<option value="">Semua Paket</option>';
+    
+    if (routerId && paketsByRouter[routerId]) {
+        paketsByRouter[routerId].forEach(function(paket) {
+            var opt = document.createElement('option');
+            opt.value = paket.id;
+            opt.textContent = paket.nama_paket;
+            if (paket.id == currentPaket) opt.selected = true;
+            paketSelect.appendChild(opt);
+        });
+    } else {
+        // Tampilkan semua paket jika tidak ada router dipilih
+        var allPakets = [];
+        Object.values(paketsByRouter).forEach(function(pakets) {
+            pakets.forEach(function(p) {
+                if (!allPakets.find(x => x.id === p.id)) allPakets.push(p);
+            });
+        });
+        allPakets.sort((a,b) => a.nama_paket.localeCompare(b.nama_paket));
+        allPakets.forEach(function(paket) {
+            var opt = document.createElement('option');
+            opt.value = paket.id;
+            opt.textContent = paket.nama_paket;
+            paketSelect.appendChild(opt);
+        });
+    }
+    doAjaxFilter();
+}
+
+function doResetCounter() {
+    var password = document.getElementById('resetPassword').value;
+    if (!password) { 
+        document.getElementById('resetError').textContent = 'Password tidak boleh kosong!';
+        document.getElementById('resetError').style.display = 'block';
+        return; 
+    }
+    fetch('/admin/tagihan/reset-counter', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]') ? document.querySelector('meta[name=csrf-token]').content : '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ password: password })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('modalResetCounter').style.display = 'none';
+            document.getElementById('resetPassword').value = '';
+            alert('✅ ' + data.message);
+            window.location.href = '/admin/tagihan';
+        } else {
+            document.getElementById('resetError').textContent = data.message;
+            document.getElementById('resetError').style.display = 'block';
+        }
+    })
+    .catch(() => {
+        document.getElementById('resetError').textContent = 'Terjadi kesalahan, coba lagi!';
+        document.getElementById('resetError').style.display = 'block';
+    });
+}
+
+function doAjaxFilter() {
+    var f = document.getElementById('filterForm');
+    var params = new URLSearchParams();
+    var search = f.querySelector('[name=search]').value;
+    var status = f.querySelector('[name=status]').value;
+    var paket  = f.querySelector('[name=paket_id]').value;
+    var router = f.querySelector('[name=router_id]').value;
+    if (search) params.set('search', search);
+    if (status) params.set('status', status);
+    if (paket)  params.set('paket_id', paket);
+    if (router) params.set('router_id', router);
+
+    fetch('/admin/tagihan?' + params.toString(), {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('tagihanBody').innerHTML = data.html;
+        // Update stat cards
+        document.getElementById('statUnpaid').textContent     = data.totalUnpaid;
+        document.getElementById('statOverdue').textContent    = data.totalOverdue;
+        document.getElementById('statPaid').textContent       = data.totalPaid;
+        document.getElementById('statPendapatan').textContent = 'Rp ' + data.totalPendapatan;
+        // Update URL tanpa reload
+        history.pushState(null, '', '/admin/tagihan?' + params.toString());
+    });
 }
 </script>
 @endsection

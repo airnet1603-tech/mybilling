@@ -47,6 +47,13 @@
                         <label class="form-label fw-semibold">Role <span class="text-danger">*</span></label>
                         <div class="row g-3">
                             <div class="col-md-4">
+                                @if(auth()->user()->isSuperAdmin())
+                                <label class="role-card {{ old('role', $user->role ?? '') === 'superadmin' ? 'selected' : '' }}" onclick="selectRole(this,'superadmin')">
+                                    <input type="radio" name="role" value="superadmin" {{ old('role', $user->role ?? '') === 'superadmin' ? 'checked' : '' }} style="display:none">
+                                    <div class="fw-bold">👑 Superadmin</div>
+                                    <small class="text-muted">Akses penuh termasuk Reset Counter</small>
+                                </label>
+                                @endif
                                 <label class="role-card {{ old('role', $user->role ?? '') === 'admin' ? 'selected' : '' }}" onclick="selectRole(this,'admin')">
                                     <input type="radio" name="role" value="admin" {{ old('role', $user->role ?? '') === 'admin' ? 'checked' : '' }} style="display:none">
                                     <div class="d-flex align-items-center gap-3">

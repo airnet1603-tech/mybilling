@@ -52,7 +52,9 @@
                         </td>
                         <td>{{ $user->email }}</td>
                         <td>
-                            @if($user->role === 'admin')
+                            @if($user->role === 'superadmin')
+                                <span class="badge-admin" style="background:#6f42c1;color:#fff;padding:3px 8px;border-radius:4px;"><i class="fas fa-shield-alt me-1"></i>Super Admin</span>
+                            @elseif($user->role === 'admin')
                                 <span class="badge-admin"><i class="fas fa-crown me-1"></i>Admin</span>
                             @else
                                 <span class="badge-operator"><i class="fas fa-user me-1"></i>Operator</span>

@@ -59,6 +59,12 @@ class PelangganController extends Controller
         $pakets     = Paket::where("is_active", true)->get();
         $routers    = \App\Models\Router::where("is_active", true)->get();
 
+        if (request()->ajax()) {
+            return response()->json([
+                'html' => view('admin.pelanggan._table', compact('pelanggans'))->render(),
+            ]);
+        }
+
         return view("admin.pelanggan.index", compact("pelanggans", "pakets", "routers"));
     }
 
@@ -385,4 +391,36 @@ class PelangganController extends Controller
 
         return view('admin.pelanggan.peta', compact('total', 'totalPeta', 'tanpaPeta', 'mapDataJson'));
     }
+
+    public function petaOnlineStatus()
+    {
+        try {
+            $routers  = \App\Models\Router::where('is_active', true)->get();
+            $online   = [];
+
+            foreach ($routers as $router) {
+                try {
+                    $mikrotik = new \App\Services\MikrotikService();
+                    $ip = (!empty($router->use_wireguard) && !empty($router->wg_ip)) ? $router->wg_ip : $router->ip_address;
+                    $mikrotik->connect($ip, $router->username, $router->password, $router->port ?? 8728);
+                    $sessions = $mikrotik->getActiveSessions();
+                    $mikrotik->disconnect();
+
+                    if ($sessions['status'] && !empty($sessions['data'])) {
+                        foreach ($sessions['data'] as $s) {
+                            $name = $s['name'] ?? '';
+                            if ($name) $online[$name] = true;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning("[PetaOnline] Router {$router->nama} error: " . $e->getMessage());
+                }
+            }
+
+            return response()->json(['success' => true, 'online' => $online]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'online' => [], 'error' => $e->getMessage()]);
+        }
+    }
+
 }

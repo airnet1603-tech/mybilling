@@ -145,7 +145,7 @@ class MikrotikService
             $interfaces = $this->api->comm('/interface/print');
             $now        = microtime(true);
 
-            $snapFile = sys_get_temp_dir() . '/mikrotik_snap_' . md5($this->currentIp) . '.json';
+            $snapFile = storage_path('app/mikrotik_snap_' . md5($this->currentIp) . '.json');
             $snap     = file_exists($snapFile) ? json_decode(file_get_contents($snapFile), true) : [];
             $newSnap  = ['time' => $now, 'data' => []];
             $stats    = [];

@@ -34,7 +34,7 @@
 <div class="row g-3">
 
     {{-- FORM TAMBAH ROUTER --}}
-    @if(auth()->user()->isAdmin())
+    @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
     <div class="col-md-4">
         <div class="card">
             <div class="card-body">
@@ -88,7 +88,7 @@
     @endif
 
     {{-- DAFTAR ROUTER --}}
-    <div class="{{ auth()->user()->isAdmin() ? 'col-md-8' : 'col-md-12' }}">
+    <div class="{{ auth()->user()->isAdmin() || auth()->user()->isSuperAdmin() ? 'col-md-8' : 'col-md-12' }}">
         <div class="card">
             <div class="card-body p-0">
                 <table class="table table-hover table-sm mb-0">
@@ -130,7 +130,7 @@
                                 <a href="/admin/mikrotik/monitoring?router={{ $router->id }}"
                                    class="btn btn-primary btn-sm py-0 px-1"
                                    title="Monitoring Live {{ $router->nama }}"
-                                   target="_blank">
+                                   >
                                     <i class="fas fa-desktop fa-xs me-1"></i>
                                     <span style="font-size:0.72rem;">Live</span>
                                 </a>
@@ -143,7 +143,7 @@
                                 @endif
                             </td>
                             <td>
-                                @if(auth()->user()->isAdmin())
+                                @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
                                 <div class="d-flex gap-1">
                                     <button onclick="importPppoe({{ $router->id }}, '{{ $router->nama }}')"
                                         class="btn btn-sm btn-secondary py-0 px-2" title="Import PPPoE ke Billing">

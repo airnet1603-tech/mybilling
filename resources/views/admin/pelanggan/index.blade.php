@@ -40,7 +40,7 @@
 <div class="card mb-3">
     <div class="card-body py-2 px-3">
         <form method="GET" id="filterForm" class="d-flex align-items-center gap-2 flex-wrap w-100">
-            <select name="perPage" class="form-select form-select-sm" style="width:75px;" onchange="document.getElementById('filterForm').submit()">
+            <select name="perPage" class="form-select form-select-sm" style="width:75px;" onchange="doAjaxFilter()">
                 <option value="10" {{ request('perPage','10')=='10'?'selected':'' }}>10</option>
                 <option value="25" {{ request('perPage')=='25'?'selected':'' }}>25</option>
                 <option value="50" {{ request('perPage')=='50'?'selected':'' }}>50</option>
@@ -52,20 +52,20 @@
                 <option value="1000" {{ request('perPage')=='1000'?'selected':'' }}>Semua</option>
             </select>
             <input type="text" name="search" id="searchInput" class="form-control form-control-sm" style="width:160px;" placeholder="Cari nama..." value="{{ request('search') }}" autocomplete="off">
-            <select name="status" class="form-select form-select-sm" style="width:130px;" onchange="document.getElementById('filterForm').submit()">
+            <select name="status" class="form-select form-select-sm" style="width:130px;" onchange="doAjaxFilter()">
                 <option value="">Semua Status</option>
                 <option value="aktif"    {{ request('status')=='aktif'    ? 'selected' : '' }}>Aktif</option>
                 <option value="isolir"   {{ request('status')=='isolir'   ? 'selected' : '' }}>Isolir</option>
                 <option value="suspend"  {{ request('status')=='suspend'  ? 'selected' : '' }}>Suspend</option>
                 <option value="nonaktif" {{ request('status')=='nonaktif' ? 'selected' : '' }}>Nonaktif</option>
             </select>
-            <select name="paket_id" class="form-select form-select-sm" style="width:130px;" onchange="document.getElementById('filterForm').submit()">
+            <select name="paket_id" class="form-select form-select-sm" style="width:130px;" onchange="doAjaxFilter()">
                 <option value="">Semua Paket</option>
                 @foreach($pakets ?? [] as $paket)
                     <option value="{{ $paket->id }}" {{ request('paket_id')==$paket->id ? 'selected' : '' }}>{{ $paket->nama_paket }}</option>
                 @endforeach
             </select>
-            <select name="router_id" class="form-select form-select-sm" style="width:140px;" onchange="document.getElementById('filterForm').submit()">
+            <select name="router_id" class="form-select form-select-sm" style="width:140px;" onchange="doAjaxFilter()">
                 <option value="">Semua Router</option>
                 @foreach($routers ?? [] as $router)
                     <option value="{{ $router->id }}" {{ request('router_id')==$router->id ? 'selected' : '' }}>{{ $router->nama }}</option>
@@ -106,7 +106,7 @@
                         <th class="small">Aksi</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="pelangganBody">
                     @forelse($pelanggans as $p)
                     <tr>
                         <td class="ps-3"><input type="checkbox" class="row-check" value="{{ $p->id }}" onchange="updateBulkBar()"></td>
@@ -225,6 +225,21 @@ function updateQueryParam(key, value) {
         </div>
     </div>
 </div>
+<script>
+function doAjaxFilter() {
+    var f = document.getElementById('filterForm');
+    var params = new URLSearchParams(new FormData(f));
+    params.delete('page');
+    fetch('/admin/pelanggan?' + params.toString(), {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('pelangganBody').innerHTML = data.html;
+        history.pushState(null, '', '/admin/pelanggan?' + params.toString());
+    });
+}
+</script>
 @endsection
 
 @push('scripts')
@@ -266,7 +281,7 @@ function exportTerpilih() {
 let searchTimer = null;
 document.getElementById('searchInput').addEventListener('input', function() {
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(function() { document.getElementById('filterForm').submit(); }, 500);
+    searchTimer = setTimeout(function() { doAjaxFilter(); }, 500);
 });
 
 let csvPreviewData = [], csvPakets = [], csvRouters = [];

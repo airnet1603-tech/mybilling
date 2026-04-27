@@ -11,6 +11,7 @@ use App\Http\Controllers\Pelanggan\PortalController;
 use App\Http\Controllers\Pelanggan\DuitkuPaymentController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Pelanggan\MidtransPaymentController;
 
 Route::get('/', function () { return redirect('/login'); });
 Auth::routes(['register' => false]);
@@ -36,41 +37,45 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
     Route::get('pelanggan/export', [PelangganController::class, 'export'])->name('pelanggan.export');
     Route::get('pelanggan/peta', [PelangganController::class, 'peta'])->name('pelanggan.peta');
+    Route::get('pelanggan/peta/online-status', [PelangganController::class, 'petaOnlineStatus'])->name('pelanggan.peta.online-status');
     Route::resource('pelanggan', PelangganController::class);
     Route::post('pelanggan/bulk-delete', [PelangganController::class, 'bulkDelete'])->name('pelanggan.bulk-delete');
     Route::post('pelanggan/{pelanggan}/status', [PelangganController::class, 'ubahStatus'])->name('pelanggan.status');
-    Route::resource('tagihan', TagihanController::class);
     Route::post('tagihan/generate', [TagihanController::class, 'generateMassal'])->name('tagihan.generate');
     Route::post('tagihan/bayar-massal', [TagihanController::class, 'bayarMassal'])->name('tagihan.bayar-massal');
+    Route::post('tagihan/reset-counter', [TagihanController::class, 'resetCounter'])->name('tagihan.reset-counter');
+    Route::get('tagihan/export-csv', [TagihanController::class, 'exportCsv'])->name('tagihan.export-csv');
+    Route::resource('tagihan', TagihanController::class);
     Route::post('tagihan/{tagihan}/bayar', [TagihanController::class, 'konfirmasiBayar'])->name('tagihan.bayar');
     Route::get('pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');
 
     // Akses Admin & Operator
-    Route::middleware('role:admin,operator')->group(function () {
+    Route::middleware('role:admin,operator,superadmin')->group(function () {
         Route::get('paket/by-router', [PaketController::class, 'byRouter']);
         Route::resource('paket', PaketController::class);
         Route::get('laporan', [LaporanController::class, 'index'])->name('laporan.index');
-        Route::middleware('role:admin')->group(function () {
-            Route::delete('laporan/rollback-unpaid', [LaporanController::class, 'rollbackUnpaid'])->name('laporan.rollback-unpaid');
-            Route::delete('laporan/clear-pelanggan', [LaporanController::class, 'clearPelanggan'])->name('laporan.clear-pelanggan');
-            Route::delete('laporan/clear-bulan',  [LaporanController::class, 'clearBulan'])->name('laporan.clear-bulan');
-            Route::delete('laporan/clear-tahun',  [LaporanController::class, 'clearTahun'])->name('laporan.clear-tahun');
-            Route::delete('laporan/clear-user',   [LaporanController::class, 'clearUser'])->name('laporan.clear-user');
+        Route::middleware('role:admin,superadmin')->group(function () {
+            Route::delete('laporan/rollback-unpaid',  [LaporanController::class, 'rollbackUnpaid'])->name('laporan.rollback-unpaid');
+            Route::delete('laporan/clear-pelanggan',  [LaporanController::class, 'clearPelanggan'])->name('laporan.clear-pelanggan');
+            Route::delete('laporan/clear-tahun',      [LaporanController::class, 'clearTahun'])->name('laporan.clear-tahun');
+            Route::delete('laporan/clear-bulan',      [LaporanController::class, 'clearBulan'])->name('laporan.clear-bulan');
+            Route::delete('laporan/clear-user',       [LaporanController::class, 'clearUser'])->name('laporan.clear-user');
         });
     });
-
     // Akses Admin Only
-    Route::middleware('role:admin')->group(function () {
+    Route::middleware('role:admin,superadmin')->group(function () {
         Route::get('setting',  [SettingController::class, 'index'])->name('setting.index');
         Route::put('setting',  [SettingController::class, 'update'])->name('setting.update');
             Route::get('setting/payment-gateway', [App\Http\Controllers\Admin\PaymentGatewayController::class, 'index'])->name('setting.payment-gateway.index');
             Route::put('setting/payment-gateway/{gateway}', [App\Http\Controllers\Admin\PaymentGatewayController::class, 'update'])->name('setting.payment-gateway.update');
         Route::resource('users', UserController::class)->names('users');
     });
+
+
 });
 
 // Mikrotik (Admin & Operator)
-Route::prefix('admin/mikrotik')->middleware(['auth', 'role:admin,operator'])->group(function () {
+Route::prefix('admin/mikrotik')->middleware(['auth', 'role:admin,operator,superadmin'])->group(function () {
     Route::get('/',                    [App\Http\Controllers\Admin\MikrotikController::class, 'index'])->name('mikrotik.index');
     Route::post('/',                   [App\Http\Controllers\Admin\MikrotikController::class, 'store'])->name('mikrotik.store');
     Route::delete('/{router}',         [App\Http\Controllers\Admin\MikrotikController::class, 'destroy'])->name('mikrotik.destroy');
@@ -101,7 +106,6 @@ Route::prefix('pelanggan')->middleware('pelanggan.auth')->group(function () {
 Route::post('/webhook/duitku', [DuitkuPaymentController::class, 'webhook'])->name('webhook.duitku');
 
 // Midtrans Payment (Portal Pelanggan)
-use App\Http\Controllers\Pelanggan\MidtransPaymentController;
 
 Route::prefix('pelanggan')->middleware('pelanggan.auth')->group(function () {
     Route::post('/payment/{noTagihan}/midtrans', [MidtransPaymentController::class, 'create'])->name('pelanggan.payment.midtrans');
@@ -111,7 +115,7 @@ Route::prefix('pelanggan')->middleware('pelanggan.auth')->group(function () {
 // Midtrans Webhook (tanpa auth)
 Route::post('/webhook/midtrans', [MidtransPaymentController::class, 'webhook'])->name('webhook.midtrans');
 // CSV Import
-Route::prefix('admin/csv')->middleware(['auth', 'role:admin,operator'])->group(function () {
+Route::prefix('admin/csv')->middleware(['auth', 'role:admin,operator,superadmin'])->group(function () {
     Route::get('/template/{type}',        [App\Http\Controllers\Admin\CsvImportController::class, 'template'])->name('csv.template');
     Route::post('/pelanggan/preview',     [App\Http\Controllers\Admin\CsvImportController::class, 'previewPelanggan'])->name('csv.pelanggan.preview');
     Route::post('/pelanggan/import',      [App\Http\Controllers\Admin\CsvImportController::class, 'importPelanggan'])->name('csv.pelanggan.import');
@@ -121,7 +125,7 @@ Route::post('/admin/mikrotik/{router}/wireguard/setup', [App\Http\Controllers\Ad
 Route::get('/admin/mikrotik/{router}/wireguard/config', [App\Http\Controllers\Admin\MikrotikController::class, 'getWireguardConfig'])->name('mikrotik.wireguard.config');
 
 // Topologi OLT
-Route::prefix('admin/topologi')->middleware(['auth', 'role:admin,operator'])->group(function () {
+Route::prefix('admin/topologi')->middleware(['auth', 'role:admin,operator,superadmin'])->group(function () {
     Route::get('/', [App\Http\Controllers\Admin\TopologiController::class, 'index'])->name('topologi.index');
     
 

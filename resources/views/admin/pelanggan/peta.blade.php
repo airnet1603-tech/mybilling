@@ -5,7 +5,7 @@
 <style>
     #petaMap { height:calc(100vh - 280px); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
     .stat-card { border:none; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.07); }
-    .map-label { background:rgba(0,0,0,0.65); padding:2px 6px; border-radius:4px; margin-top:4px; white-space:nowrap; text-shadow:none; }
+    .map-label { background:rgba(0,0,0,0.65); padding:2px 6px; border-radius:4px; margin-top:22px; white-space:nowrap; text-shadow:none; }
     @media (max-width:768px) { #petaMap { height:calc(100vh - 320px); } }
 </style>
 @endpush
@@ -17,9 +17,15 @@
         <h5 class="fw-bold mb-0"><i class="fas fa-map-marked-alt me-2 text-danger"></i>Peta Pelanggan</h5>
         <small class="text-muted">Lokasi pelanggan terdaftar</small>
     </div>
-    <a href="/admin/pelanggan" class="btn btn-sm btn-secondary">
-        <i class="fas fa-arrow-left me-1"></i> Kembali
-    </a>
+    <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-success" onclick="syncOnlineStatus()" id="btnSync">
+            <i class="fas fa-sync me-1"></i> Sync Online
+        </button>
+        <span id="lastSync" class="small text-muted align-self-center"></span>
+        <a href="/admin/pelanggan" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Kembali
+        </a>
+    </div>
 </div>
 
 {{-- STAT CARDS --}}
@@ -59,6 +65,19 @@
                 <div>
                     <div class="fw-bold fs-5" id="counterTanpa">{{ $tanpaPeta }}</div>
                     <div class="small text-muted">Tanpa Koordinat</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 d-none" id="cardOnlineWrap">
+        <div class="stat-card card">
+            <div class="card-body py-2 px-3 d-flex align-items-center gap-3">
+                <div style="width:40px;height:40px;background:#d4edda;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-wifi text-success"></i>
+                </div>
+                <div>
+                    <div class="fw-bold fs-5" id="counterOnline">0</div>
+                    <div class="small text-muted">Online Mikrotik</div>
                 </div>
             </div>
         </div>
@@ -120,11 +139,18 @@ function initMap() {
 
     infoWindow = new google.maps.InfoWindow();
 
+    function makePinIconInit(color) {
+        var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="36" viewBox="0 0 24 36">' +
+            '<path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24C24 5.4 18.6 0 12 0z" fill="' + color + '"/>' +
+            '<circle cx="12" cy="12" r="5" fill="white"/>' +
+            '</svg>';
+        return { url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg), scaledSize: new google.maps.Size(14, 21), anchor: new google.maps.Point(7, 21) };
+    }
     var pinColors = {
-        'aktif'    : 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
-        'isolir'   : 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
-        'suspend'  : 'http://maps.google.com/mapfiles/ms/icons/yellow-dot.png',
-        'nonaktif' : 'http://maps.google.com/mapfiles/ms/icons/grey-dot.png',
+        'aktif'    : makePinIconInit('#00C853'),
+        'isolir'   : makePinIconInit('#FF1744'),
+        'suspend'  : makePinIconInit('#FFD600'),
+        'nonaktif' : makePinIconInit('#9E9E9E'),
     };
 
     pelangganData.forEach(function(p) {
@@ -137,7 +163,7 @@ function initMap() {
             label    : {
                 text      : p.nama,
                 color     : '#ffffff',
-                fontSize  : '11px',
+                fontSize  : '10px',
                 fontWeight: 'bold',
                 className : 'map-label',
             },
@@ -239,6 +265,64 @@ function resetFilter() {
     document.getElementById('filterRouter').value    = '';
     applyFilter();
 }
+
+var onlineUsers = {};
+
+function syncOnlineStatus() {
+    var btn = document.getElementById('btnSync');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sync...';
+    btn.disabled = true;
+
+    fetch('{{ route("pelanggan.peta.online-status") }}')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                onlineUsers = data.online;
+                updatePinColors();
+                var count = Object.keys(onlineUsers).length;
+                document.getElementById('counterOnline').textContent = count;
+                document.getElementById('cardOnlineWrap').classList.remove('d-none');
+                var now = new Date();
+                document.getElementById('lastSync').textContent = 'Sync: ' + now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
+            }
+        })
+        .catch(e => console.error('Sync error:', e))
+        .finally(() => {
+            btn.innerHTML = '<i class="fas fa-sync me-1"></i> Sync Online';
+            btn.disabled = false;
+        });
+}
+
+function updatePinColors() {
+    function makePinIcon(color) {
+        var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="36" viewBox="0 0 24 36">' +
+            '<path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24C24 5.4 18.6 0 12 0z" fill="' + color + '"/>' +
+            '<circle cx="12" cy="12" r="5" fill="white"/>' +
+            '</svg>';
+        return { url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg), scaledSize: new google.maps.Size(14, 21), anchor: new google.maps.Point(7, 21) };
+    }
+    var pinColors = {
+        'online'   : makePinIcon('#00C853'),
+        'offline'  : makePinIcon('#FF1744'),
+        'isolir'   : makePinIcon('#FF1744'),
+        'suspend'  : makePinIcon('#FFD600'),
+        'nonaktif' : makePinIcon('#9E9E9E'),
+    };
+
+    allMarkers.forEach(function(m) {
+        var p = m.data;
+        var icon;
+        if (p.status === 'isolir')   icon = pinColors['isolir'];
+        else if (p.status === 'suspend')  icon = pinColors['suspend'];
+        else if (p.status === 'nonaktif') icon = pinColors['nonaktif'];
+        else if (onlineUsers[p.username]) icon = pinColors['online'];
+        else icon = pinColors['offline'];
+        m.setIcon(icon);
+    });
+}
+
+// Auto refresh setiap 60 detik
+setInterval(syncOnlineStatus, 60000);
 
 window.addEventListener('load', function() {
     var check = setInterval(function() {

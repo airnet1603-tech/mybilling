@@ -1,5 +1,16 @@
 @extends('layouts.admin')
 
+@push('styles')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<style>
+.select2-container .select2-selection--single { height: 31px !important; }
+.select2-container .select2-selection__rendered { line-height: 29px !important; padding-left: 8px !important; font-size: 0.875rem !important; }
+.select2-container .select2-selection__arrow { height: 29px !important; }
+.select2-container { width: 100% !important; }
+.select2-dropdown { font-size: 0.875rem !important; }
+</style>
+@endpush
+
 @section('content')
 <style>
     .profile-header {
@@ -100,7 +111,7 @@
                     <div class="row g-3">
                         <div class="col-12">
                             <div class="info-label">Pilih Pelanggan <span class="text-danger">*</span></div>
-                            <select name="pelanggan_id" class="form-select form-select-sm" required onchange="updateInfo(this)">
+                            <select name="pelanggan_id" id="selectPelanggan" class="form-select form-select-sm" required onchange="updateInfo(this)">
                                 <option value="">-- Pilih Pelanggan --</option>
                                 @foreach($pelanggans as $p)
                                 <option value="{{ $p->id }}"
@@ -143,7 +154,19 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
+$(document).ready(function() {
+    $('#selectPelanggan').select2({
+        placeholder: '-- Pilih Pelanggan --',
+        allowClear: true,
+        width: '100%'
+    }).on('change', function() {
+        updateInfo(this);
+    });
+});
+
 function updateInfo(sel) {
     const opt = sel.options[sel.selectedIndex];
     if (sel.value) {

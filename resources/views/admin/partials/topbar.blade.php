@@ -4,7 +4,7 @@
         <small class="text-muted">{{ now()->isoFormat('dddd, D MMMM Y') }}</small>
     </div>
     <div class="d-flex align-items-center gap-2">
-        @if(auth()->user()->isAdmin())
+        @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
         <a href="/admin/users" style="display:flex;align-items:center;gap:6px;color:#444;font-size:0.82rem;text-decoration:none;font-weight:500;">
             <i class="fas fa-user-cog" style="font-size:1rem;"></i> Kelola User
         </a>
@@ -19,7 +19,7 @@
         </div>
         <div>
             <div class="fw-semibold small">{{ auth()->user()->name }}</div>
-            <small class="text-muted">{{ auth()->user()->isAdmin() ? 'Administrator' : 'Staff' }}</small>
+            <small class="text-muted">{{ auth()->user()->isSuperAdmin() ? 'Super Admin' : (auth()->user()->isAdmin() ? 'Administrator' : 'Staff') }}</small>
         </div>
     </div>
 </div>

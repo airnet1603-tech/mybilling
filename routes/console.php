@@ -9,3 +9,8 @@ Schedule::command('billing:auto-isolir')
     ->dailyAt('08:00')
     ->withoutOverlapping()
     ->appendOutputTo(storage_path('logs/auto-isolir.log'));
+
+Schedule::command('onu:sync')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->appendOutputTo(storage_path('logs/onu-sync.log'));
