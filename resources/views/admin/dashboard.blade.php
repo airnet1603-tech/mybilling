@@ -50,7 +50,7 @@
         <div class="stat-card pendapatan">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <div class="fw-bold" style="font-size:1.1rem;line-height:1.2;">Rp {{ number_format($pendapatanBulanIni, 0, ',', '.') }}</div>
+                    <div class="stat-number">Rp {{ number_format($pendapatanBulanIni, 0, ',', '.') }}</div>
                     <div class="stat-label">Pendapatan Bulan Ini</div>
                 </div>
                 <i class="fas fa-wallet icon"></i>

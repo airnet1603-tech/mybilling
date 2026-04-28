@@ -86,7 +86,7 @@
                 <div class="row text-center mb-2">
                     <div class="col-4 border-end">
                         <div class="fw-bold text-primary small">{{ $paket->masa_aktif }}</div>
-                        <small class="text-muted" style="font-size:0.7rem;">Hari</small>
+                        <small class="text-muted" style="font-size:0.7rem;">{{ ucfirst($paket->tipe_masa_aktif ?? 'Hari') }}</small>
                     </div>
                     <div class="col-4 border-end">
                         <div class="fw-bold text-success small">{{ $paket->pelanggan()->count() }}</div>

@@ -25,7 +25,7 @@
 </div>
 @endif
 
-<form method="POST" action="/admin/setting">
+<form method="POST" action="/admin/setting" enctype="multipart/form-data">
     @csrf
     @method('PUT')
 
@@ -84,6 +84,19 @@
                             <textarea name="info_pembayaran" class="form-control form-control-sm" rows="3"
                                       placeholder="Contoh: BCA 1234567890 a/n Nama ISP">{{ $settings['info_pembayaran'] ?? '' }}</textarea>
                             <div class="form-text small text-muted">Ditampilkan di pesan WA tagihan pelanggan</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="info-label">Upload QRIS <small class="text-muted">(jpg/png, opsional)</small></div>
+                            @if(!empty($settings['wa_qris_url']))
+                            <div class="mb-2 d-flex align-items-center gap-2">
+                                <img src="{{ asset('images/payment/qris.jpg') }}" style="height:80px;border-radius:6px;border:1px solid #ddd;">
+                                <a href="{{ asset('images/payment/qris.jpg') }}" target="_blank" class="small">Lihat QRIS</a>
+                                <a href="/admin/setting/qris/delete" class="small text-danger ms-2"
+                                   onclick="return confirm('Hapus QRIS?');">🗑 Hapus</a>
+                            </div>
+                            @endif
+                            <input type="file" name="qris_file" class="form-control form-control-sm" accept="image/*">
+                            <div class="form-text small text-muted">Dikirim bersama pesan WA tagihan & reminder</div>
                         </div>
                     </div>
                 </div>
@@ -161,6 +174,69 @@
                                 <i class="fas fa-exclamation-triangle me-2"></i>
                                 <strong>WA Otomatis dikirim saat:</strong> Tagihan dibuat, H-3 & H-1 sebelum jatuh tempo, saat isolir, dan konfirmasi pembayaran.
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{-- JADWAL WA --}}
+            <div class="card mt-3">
+                <div class="card-body">
+                    <div class="section-title"><i class="fas fa-clock me-1"></i> Jadwal Pengiriman WA</div>
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="wa_jadwal_tagihan" value="1" id="jt" {{ ($settings['wa_jadwal_tagihan'] ?? '1') == '1' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="jt">Kirim saat tagihan dibuat</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="wa_jadwal_reminder" value="1" id="jr" {{ ($settings['wa_jadwal_reminder'] ?? '1') == '1' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="jr">Kirim reminder jatuh tempo</label>
+                            </div>
+                            <div class="mt-1">
+                                <small class="text-muted">Hari pengiriman (pisah koma, contoh: 7,3,1)</small>
+                                <input type="text" name="wa_jadwal_hari_reminder" class="form-control form-control-sm mt-1"
+                                    value="{{ $settings['wa_jadwal_hari_reminder'] ?? '3,1' }}"
+                                    placeholder="3,1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="wa_jadwal_isolir" value="1" id="ji" {{ ($settings['wa_jadwal_isolir'] ?? '1') == '1' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="ji">Kirim saat isolir</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="wa_jadwal_konfirmasi" value="1" id="jk" {{ ($settings['wa_jadwal_konfirmasi'] ?? '1') == '1' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="jk">Kirim saat konfirmasi bayar</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{-- TEMPLATE WA --}}
+            <div class="card mt-3">
+                <div class="card-body">
+                    <div class="section-title"><i class="fas fa-comment-alt me-1"></i> Template Pesan WA</div>
+                    <div class="alert alert-info small">Variabel: <code>{nama}</code> <code>{periode}</code> <code>{total}</code> <code>{jatuh_tempo}</code> <code>{sisa_hari}</code></div>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="info-label">Template Tagihan Baru</div>
+                            <textarea name="wa_template_tagihan" class="form-control form-control-sm" rows="3">{{ $settings['wa_template_tagihan'] ?? '' }}</textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="info-label">Template Reminder Jatuh Tempo <small class="text-muted">(gunakan <code>{sisa_hari}</code> untuk jumlah hari)</small></div>
+                            <textarea name="wa_template_reminder" class="form-control form-control-sm" rows="3">{{ $settings['wa_template_reminder'] ?? '' }}</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-label">Template Isolir</div>
+                            <textarea name="wa_template_isolir" class="form-control form-control-sm" rows="3">{{ $settings['wa_template_isolir'] ?? '' }}</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-label">Template Konfirmasi Bayar</div>
+                            <textarea name="wa_template_konfirmasi" class="form-control form-control-sm" rows="3">{{ $settings['wa_template_konfirmasi'] ?? '' }}</textarea>
                         </div>
                     </div>
                 </div>

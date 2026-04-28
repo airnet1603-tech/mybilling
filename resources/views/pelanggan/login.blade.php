@@ -10,9 +10,9 @@
         body{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);min-height:100vh;display:flex;align-items:center}
         .login-card{border:none;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.4)}
         .login-header{background:linear-gradient(135deg,#0f3460,#1a1a2e);border-radius:16px 16px 0 0;padding:30px;text-align:center}
-        .btn-login{background:linear-gradient(135deg,#e94560,#0f3460);border:none;border-radius:8px;padding:12px;font-weight:600;letter-spacing:1px}
+        .btn-login{background:linear-gradient(135deg,#1a1a2e,#0f3460);border:none;border-radius:8px;padding:12px;font-weight:600;letter-spacing:1px}
         .btn-login:hover{opacity:0.9}
-        .form-control:focus{border-color:#e94560;box-shadow:0 0 0 0.2rem rgba(233,69,96,0.25)}
+        .form-control:focus{border-color:#0f3460;box-shadow:0 0 0 0.2rem rgba(15,52,96,0.25)}
     </style>
 </head>
 <body>
@@ -32,11 +32,11 @@
                     <form method="POST" action="/pelanggan/login">
                         @csrf
                         <div class="mb-3">
-                            <label class="form-label fw-semibold"><i class="fas fa-user me-1 text-danger"></i> Username PPPoE</label>
+                            <label class="form-label fw-semibold"><i class="fas fa-user me-1 text-primary"></i> Username PPPoE</label>
                             <input type="text" name="username" class="form-control form-control-lg" placeholder="username" value="{{ old('username') }}" required autofocus>
                         </div>
                         <div class="mb-4">
-                            <label class="form-label fw-semibold"><i class="fas fa-lock me-1 text-danger"></i> Password</label>
+                            <label class="form-label fw-semibold"><i class="fas fa-lock me-1 text-primary"></i> Password</label>
                             <input type="password" name="password" class="form-control form-control-lg" placeholder="••••••••" required>
                             <div class="form-text">Default: password PPPoE Anda</div>
                         </div>

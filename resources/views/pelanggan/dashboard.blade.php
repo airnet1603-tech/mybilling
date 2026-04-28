@@ -38,7 +38,7 @@
 <nav class="topbar">
     <div class="topbar-inner">
         <a href="/pelanggan/dashboard" class="brand">
-            <div class="brand-icon"><i class="fas fa-wifi"></i></div>
+            <img src="/images/logo.png" height="34" alt="ISP Billing" style="border-radius:8px">
             <div><div style="font-size:0.85rem;font-weight:700">ISP BILLING</div><div style="font-size:0.65rem;color:rgba(255,255,255,0.5)">Portal Pelanggan</div></div>
         </a>
         <div class="d-flex align-items-center gap-2">
@@ -47,7 +47,7 @@
                 <a href="/pelanggan/tagihan"><i class="fas fa-file-invoice me-1"></i>Tagihan</a>
                 <a href="/pelanggan/profil"><i class="fas fa-user me-1"></i>Profil</a>
             </div>
-            <a href="/pelanggan/logout" class="btn btn-sm ms-1" style="background:rgba(233,69,96,0.2);color:#fff;border:1px solid rgba(233,69,96,0.3)"><i class="fas fa-sign-out-alt"></i></a>
+            <a href="/pelanggan/logout" class="btn btn-sm ms-1" style="background:rgba(15,52,96,0.2);color:#fff;border:1px solid rgba(15,52,96,0.3)"><i class="fas fa-sign-out-alt"></i></a>
         </div>
     </div>
 </nav>

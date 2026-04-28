@@ -82,6 +82,7 @@ class PaketController extends Controller
             'radius_profile'     => 'required|string|max:100',
             'jenis'              => 'required|in:pppoe,hotspot',
             'masa_aktif'         => 'required|integer|min:1',
+            'tipe_masa_aktif'    => 'required|in:hari,minggu,bulan,tahun',
         ]);
 
         $paket = Paket::create([
@@ -93,6 +94,7 @@ class PaketController extends Controller
             'radius_profile'           => $request->radius_profile,
             'jenis'                    => $request->jenis,
             'masa_aktif'               => $request->masa_aktif,
+            'tipe_masa_aktif'          => $request->tipe_masa_aktif,
             'deskripsi'                => $request->deskripsi,
             'is_active'                => $request->has('is_active'),
             'burst_limit_download'     => $request->burst_limit_download     ?? 0,
@@ -153,6 +155,7 @@ class PaketController extends Controller
             'radius_profile'           => $request->radius_profile,
             'jenis'                    => $request->jenis,
             'masa_aktif'               => $request->masa_aktif,
+            'tipe_masa_aktif'          => $request->tipe_masa_aktif,
             'deskripsi'                => $request->deskripsi,
             'is_active'                => $request->has('is_active'),
             'burst_limit_download'     => $request->burst_limit_download     ?? 0,

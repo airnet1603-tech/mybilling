@@ -9,7 +9,7 @@ use App\Models\Router;
 use App\Models\Paket;
 use App\Models\Tagihan;
 use App\Services\MikrotikService;
-use App\Services\FonnteService;
+use App\Services\WhatsappService;
 use Illuminate\Http\Request;
 
 class TagihanController extends Controller
@@ -115,8 +115,8 @@ class TagihanController extends Controller
 
         if ($pelanggan->no_hp) {
             try {
-                $fonnte = new FonnteService();
-                $fonnte->sendTagihan(
+                $whatsapp = new WhatsappService();
+                $whatsapp->sendTagihan(
                     $pelanggan->no_hp,
                     $pelanggan->nama,
                     now()->format('F Y'),
@@ -150,8 +150,8 @@ class TagihanController extends Controller
         ]);
         $pelanggan = $tagihan->pelanggan;
         $expired   = ($pelanggan->tgl_expired && $pelanggan->tgl_expired > now())
-            ? $pelanggan->tgl_expired->addDays($pelanggan->paket->masa_aktif)
-            : now()->addDays($pelanggan->paket->masa_aktif);
+            ? $pelanggan->paket->hitungExpired($pelanggan->tgl_expired)
+            : $pelanggan->paket->hitungExpired();
         $pelanggan->update(['status' => 'aktif', 'tgl_expired' => $expired]);
 
         // FIX 2: Pakai connectRouter dengan WireGuard + retry
@@ -178,8 +178,8 @@ class TagihanController extends Controller
 
         if ($pelanggan->no_hp) {
             try {
-                $fonnte = new FonnteService();
-                $fonnte->sendKonfirmasiBayar(
+                $whatsapp = new WhatsappService();
+                $whatsapp->sendKonfirmasiBayar(
                     $pelanggan->no_hp,
                     $pelanggan->nama,
                     \Carbon\Carbon::parse($tagihan->periode_bulan)->format('F Y'),
@@ -199,7 +199,7 @@ class TagihanController extends Controller
         $berhasil       = 0;
         $skip           = 0;
         $pelanggans     = Pelanggan::with('paket')->whereIn('status', ['aktif', 'isolir'])->get();
-        $fonnte         = new FonnteService();
+        $whatsapp         = new WhatsappService();
 
         foreach ($pelanggans as $pelanggan) {
             $sudahAda = Tagihan::where('pelanggan_id', $pelanggan->id)
@@ -224,7 +224,7 @@ class TagihanController extends Controller
 
             if ($pelanggan->no_hp) {
                 try {
-                    $fonnte->sendTagihan(
+                    $whatsapp->sendTagihan(
                         $pelanggan->no_hp,
                         $pelanggan->nama,
                         now()->format('F Y'),
@@ -249,7 +249,7 @@ class TagihanController extends Controller
 
         $berhasil = 0;
         $skip     = 0;
-        $fonnte   = new FonnteService();
+        $whatsapp   = new WhatsappService();
 
         // FIX 2: Load semua tagihan sekaligus, group per router
         $tagihans = Tagihan::with('pelanggan.paket', 'pelanggan.router')
@@ -286,8 +286,8 @@ class TagihanController extends Controller
 
                 $pelanggan = $tagihan->pelanggan;
                 $expired   = ($pelanggan->tgl_expired && $pelanggan->tgl_expired > now())
-                    ? $pelanggan->tgl_expired->addDays($pelanggan->paket->masa_aktif)
-                    : now()->addDays($pelanggan->paket->masa_aktif);
+                    ? $pelanggan->paket->hitungExpired($pelanggan->tgl_expired)
+                    : $pelanggan->paket->hitungExpired();
                 $pelanggan->update(['status' => 'aktif', 'tgl_expired' => $expired]);
 
                 // FIX 2: Pakai koneksi yang sudah ada
@@ -311,7 +311,7 @@ class TagihanController extends Controller
 
                 if ($pelanggan->no_hp) {
                     try {
-                        $fonnte->sendKonfirmasiBayar(
+                        $whatsapp->sendKonfirmasiBayar(
                             $pelanggan->no_hp,
                             $pelanggan->nama,
                             \Carbon\Carbon::parse($tagihan->periode_bulan)->format('F Y'),

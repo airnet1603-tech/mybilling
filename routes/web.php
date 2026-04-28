@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Pelanggan\MidtransPaymentController;
 
 Route::get('/', function () { return redirect('/login'); });
+Route::get('/qris', [App\Http\Controllers\QrisController::class, 'index'])->name('qris.public');
+Route::get('/admin/setting/qris/delete', [App\Http\Controllers\Admin\SettingController::class, 'deleteQris'])->middleware(['auth'])->name('setting.qris.delete');
 Auth::routes(['register' => false]);
 Route::get('/home', function () { return redirect('/admin/dashboard'); })->middleware('auth');
 

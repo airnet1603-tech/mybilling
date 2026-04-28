@@ -31,6 +31,7 @@
         <h5 class="fw-bold mb-0">Laporan & Grafik</h5>
         <small class="text-muted">Analisis pendapatan tahun {{ $tahun }}</small>
     </div>
+    @if(auth()->user()->isSuperAdmin())
     <div class="d-flex gap-2 align-items-center flex-wrap">
         <form method="GET" class="d-flex gap-2">
             <select name="tahun" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -39,16 +40,11 @@
                 @endfor
             </select>
         </form>
-        @if(auth()->user()->isSuperAdmin())
             <button class="btn btn-danger btn-sm" onclick="confirmClearTahun()">
                 <i class="fas fa-trash-alt me-1"></i> Hapus Data {{ $tahun }}
             </button>
-        @else
-            <button class="btn btn-secondary btn-sm btn-clear-disabled" title="Hanya super admin yang dapat menghapus data">
-                <i class="fas fa-trash-alt me-1"></i> Hapus Data {{ $tahun }}
-            </button>
-        @endif
     </div>
+    @endif
 </div>
 
 {{-- STAT CARDS --}}
@@ -80,6 +76,7 @@
 </div>
 
 {{-- CLEAR PER BULAN --}}
+@if(auth()->user()->isSuperAdmin())
 <div class="card mb-4">
     <div class="card-body">
         <div class="card-section-title mb-3">
@@ -120,13 +117,14 @@
     </div>
 </div>
 
+@endif
 {{-- STATISTIK & CLEAR PER USER --}}
 <div class="card mb-4">
     <div class="card-body">
         <div class="card-section-title mb-3">
-            <i class="fas fa-users me-2 text-primary"></i>Statistik & Hapus Data per User
+            <i class="fas fa-users me-2 text-primary"></i>Statistik
             @if(!auth()->user()->isSuperAdmin())
-                <span class="badge bg-secondary ms-2">Hapus: Khusus Super Admin</span>
+                
             @endif
         </div>
         <div class="table-responsive">

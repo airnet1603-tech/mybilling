@@ -34,7 +34,7 @@
         }
         .btn-login:hover { background: linear-gradient(135deg, #0f3460, #16213e); box-shadow: 0 4px 15px rgba(15,52,96,0.5); transform: translateY(-1px); transition: all 0.2s ease; }
         .btn-login { transition: all 0.2s ease; }
-        .form-control:focus { border-color: #e94560; box-shadow: 0 0 0 0.2rem rgba(233,69,96,0.25); }
+        .form-control:focus { border-color: #0f3460; box-shadow: 0 0 0 0.2rem rgba(15,52,96,0.25); }
     </style>
 </head>
 <body>
@@ -58,14 +58,14 @@
                         @csrf
                         <div class="mb-3">
                             <label class="form-label fw-semibold">
-                                <i class="fas fa-envelope me-1 text-danger"></i> Email
+                                <i class="fas fa-envelope me-1 text-primary"></i> Email
                             </label>
                             <input type="email" name="email" class="form-control form-control-lg"
                                    placeholder="admin@isp.com" value="{{ old('email') }}" required autofocus>
                         </div>
                         <div class="mb-4">
                             <label class="form-label fw-semibold">
-                                <i class="fas fa-lock me-1 text-danger"></i> Password
+                                <i class="fas fa-lock me-1 text-primary"></i> Password
                             </label>
                             <input type="password" name="password" class="form-control form-control-lg"
                                    placeholder="••••••••" required>

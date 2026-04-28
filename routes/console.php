@@ -11,6 +11,11 @@ Schedule::command('billing:auto-isolir')
     ->appendOutputTo(storage_path('logs/auto-isolir.log'));
 
 Schedule::command('onu:sync')
-    ->everyFiveMinutes()
+    ->everyFifteenMinutes()
     ->withoutOverlapping()
     ->appendOutputTo(storage_path('logs/onu-sync.log'));
+
+Schedule::command('wa:reminder-jatuh-tempo')
+    ->dailyAt('08:30')
+    ->withoutOverlapping()
+    ->appendOutputTo(storage_path('logs/wa-reminder.log'));

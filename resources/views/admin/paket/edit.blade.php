@@ -70,7 +70,7 @@
                 </div>
                 <div class="mb-2">
                     <div class="info-label">Masa Aktif</div>
-                    <div class="small">{{ $paket->masa_aktif }} hari</div>
+                    <div class="small">{{ $paket->masa_aktif }} {{ $paket->tipe_masa_aktif ?? 'hari' }}</div>
                 </div>
                 <div>
                     <div class="info-label">Radius Profile</div>
@@ -105,8 +105,16 @@
                             <input type="number" name="harga" class="form-control form-control-sm" value="{{ old('harga', $paket->harga) }}" required>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-label">Masa Aktif (hari)</div>
-                            <input type="number" name="masa_aktif" class="form-control form-control-sm" value="{{ old('masa_aktif', $paket->masa_aktif) }}" required>
+                            <div class="info-label">Masa Aktif <span class="text-danger">*</span></div>
+                            <div class="input-group input-group-sm">
+                                <input type="number" name="masa_aktif" id="masa_aktif" class="form-control form-control-sm" style="max-width:70px;" value="{{ old('masa_aktif', $paket->masa_aktif) }}" required min="1">
+                                <select name="tipe_masa_aktif" id="tipe_masa_aktif" class="form-select form-select-sm" style="max-width:110px;">
+                                    <option value="hari" {{ old('tipe_masa_aktif', $paket->tipe_masa_aktif) == 'hari' ? 'selected' : '' }}>Hari</option>
+                                    <option value="minggu" {{ old('tipe_masa_aktif', $paket->tipe_masa_aktif) == 'minggu' ? 'selected' : '' }}>Minggu</option>
+                                    <option value="bulan" {{ old('tipe_masa_aktif', $paket->tipe_masa_aktif) == 'bulan' ? 'selected' : '' }}>Bulan</option>
+                                    <option value="tahun" {{ old('tipe_masa_aktif', $paket->tipe_masa_aktif) == 'tahun' ? 'selected' : '' }}>Tahun</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <div class="info-label">Download (Mbps)</div>

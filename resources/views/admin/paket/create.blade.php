@@ -125,18 +125,14 @@
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="info-label">Masa Aktif (hari) <span class="text-danger">*</span></div>
+                            <div class="info-label">Masa Aktif <span class="text-danger">*</span></div>
                             <div class="input-group input-group-sm">
-                                <input type="number" name="masa_aktif" id="masa_aktif" class="form-control form-control-sm" style="max-width:70px;" value="{{ old('masa_aktif', 30) }}" required min="1" onchange="hitungTanggal();">
-                                <select class="form-select form-select-sm" style="max-width:90px;" onchange="document.getElementById('masa_aktif').value=this.value;hitungTanggal();">
-                                    <option value="">Pilih</option>
-                                    <option value="7">7 hari</option>
-                                    <option value="14">14 hari</option>
-                                    <option value="30">30 hari</option>
-                                    <option value="60">60 hari</option>
-                                    <option value="90">90 hari</option>
-                                    <option value="180">180 hari</option>
-                                    <option value="365">365 hari</option>
+                                <input type="number" name="masa_aktif" id="masa_aktif" class="form-control form-control-sm" style="max-width:70px;" value="{{ old('masa_aktif', 1) }}" required min="1" onchange="hitungTanggal();">
+                                <select name="tipe_masa_aktif" id="tipe_masa_aktif" class="form-select form-select-sm" style="max-width:110px;" onchange="hitungTanggal();">
+                                    <option value="hari" {{ old('tipe_masa_aktif') == 'hari' ? 'selected' : '' }}>Hari</option>
+                                    <option value="minggu" {{ old('tipe_masa_aktif') == 'minggu' ? 'selected' : '' }}>Minggu</option>
+                                    <option value="bulan" {{ old('tipe_masa_aktif', 'bulan') == 'bulan' ? 'selected' : '' }}>Bulan</option>
+                                    <option value="tahun" {{ old('tipe_masa_aktif') == 'tahun' ? 'selected' : '' }}>Tahun</option>
                                 </select>
                                 <input type="date" id="tgl_expired_preview" class="form-control form-control-sm" style="max-width:150px;" onchange="hitungHari();">
                             </div>
@@ -235,13 +231,18 @@ document.getElementById('ul').addEventListener('input', updatePreview);
 document.getElementById('radius_profile').addEventListener('input', updatePreview);
 document.querySelector('[name="jenis"]').addEventListener('change', updatePreview);
 document.querySelector('[name="masa_aktif"]').addEventListener('input', function(){ updatePreview(); hitungTanggal(); });
+document.getElementById('tipe_masa_aktif').addEventListener('change', function(){ hitungTanggal(); });
 document.querySelectorAll('[name="router_id"]').forEach(el => el.addEventListener('change', updatePreview));
 
 function hitungTanggal() {
-    var hari = parseInt(document.getElementById('masa_aktif').value) || 0;
-    if (hari > 0) {
+    var nilai = parseInt(document.getElementById('masa_aktif').value) || 0;
+    var tipe = document.getElementById('tipe_masa_aktif') ? document.getElementById('tipe_masa_aktif').value : 'hari';
+    if (nilai > 0) {
         var tgl = new Date();
-        tgl.setDate(tgl.getDate() + hari);
+        if (tipe === 'hari')   tgl.setDate(tgl.getDate() + nilai);
+        if (tipe === 'minggu') tgl.setDate(tgl.getDate() + (nilai * 7));
+        if (tipe === 'bulan')  tgl.setMonth(tgl.getMonth() + nilai);
+        if (tipe === 'tahun')  tgl.setFullYear(tgl.getFullYear() + nilai);
         document.getElementById('tgl_expired_preview').value = tgl.toISOString().split('T')[0];
     }
 }
