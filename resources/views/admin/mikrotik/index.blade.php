@@ -15,7 +15,6 @@
         <h5 class="fw-bold mb-0">Manajemen Router Mikrotik</h5>
         <small class="text-muted">Kelola koneksi router</small>
     </div>
-    <a href="/admin/wireguard" class="btn btn-sm text-white" style="background:#6f42c1;"><i class="fas fa-shield-alt"></i> WireGuard</a>
 </div>
 
 @if(session('success'))
@@ -387,41 +386,94 @@
             </div>
             <div class="modal-body">
                 <p class="text-muted small mb-3">Router: <strong id="wgRouterNama"></strong></p>
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold"><i class="fas fa-network-wired me-1"></i>Pilih Subnet WireGuard</label>
-                    <select id="wgSubnet" class="form-select form-select-sm">
-                        <option value="10.10.10">10.10.10.x (Default)</option>
-                        <option value="172.16.10">172.16.10.x (Non-Publik)</option>
-                    </select>
+
+                {{-- Step indicator --}}
+                <div class="d-flex align-items-center mb-3 gap-2">
+                    <span id="wgStep1Ind" class="badge rounded-pill text-white" style="background:#6f42c1;">1. Pilih Subnet</span>
+                    <span style="color:#ccc;">→</span>
+                    <span id="wgStep2Ind" class="badge rounded-pill bg-secondary">2. Paste ke Mikrotik</span>
+                    <span style="color:#ccc;">→</span>
+                    <span id="wgStep3Ind" class="badge rounded-pill bg-secondary">3. Input Public Key</span>
                 </div>
-                <div id="wgLoading" class="text-center py-3">
-                    <i class="fas fa-spinner fa-spin fa-2x" style="color:#6f42c1;"></i>
-                    <p class="mt-2 small">Membuat konfigurasi WireGuard...</p>
+
+                {{-- Step 1: Pilih subnet --}}
+                <div id="wgStep1">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold"><i class="fas fa-network-wired me-1"></i>Pilih Subnet WireGuard</label>
+                        <select id="wgSubnet" class="form-select form-select-sm">
+                            <option value="10.10.10">10.10.10.x (Default)</option>
+                            <option value="172.16.10">172.16.10.x (Non-Publik)</option>
+                            <option value="10.20.20">10.20.20.x</option>
+                            <option value="10.30.30">10.30.30.x</option>
+                        </select>
+                    </div>
                 </div>
-                <div id="wgResult" style="display:none;">
-                    <div class="alert alert-success py-2 small">
-                        <i class="fas fa-check-circle me-1"></i>
-                        WireGuard berhasil dikonfigurasi! IP Tunnel: <strong id="wgIp"></strong>
+
+                {{-- Step 2: Tampilkan config untuk di-paste ke Mikrotik --}}
+                <div id="wgStep2" style="display:none;">
+                    <div class="alert alert-info py-2 small mb-2">
+                        <i class="fas fa-info-circle me-1"></i>
+                        IP Tunnel yang akan dipakai: <strong id="wgIp"></strong>
+                    </div>
+                    <div class="alert alert-warning py-2 small mb-2">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        <strong>Jika sudah ada config WireGuard sebelumnya</strong>, jalankan perintah cleanup ini dulu di Mikrotik:<br>
+                        <textarea class="form-control form-control-sm font-monospace mt-1" rows="3" readonly style="font-size:0.72rem;background:#1e1e1e;color:#ffcc00;">/ip address remove [find interface=wg-billing]
+/ip route remove [find gateway=wg-billing]
+/interface wireguard peers remove [find interface=wg-billing]</textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold"><i class="fas fa-terminal me-1"></i>Paste command berikut di terminal Mikrotik (New Terminal di Winbox):</label>
-                        <textarea id="wgConfig" class="form-control form-control-sm font-monospace" rows="4" readonly style="font-size:0.75rem;background:#1e1e1e;color:#00ff00;"></textarea>
+                        <label class="form-label small fw-semibold"><i class="fas fa-terminal me-1"></i>Kemudian paste command berikut di terminal Mikrotik (Winbox → New Terminal):</label>
+                        <textarea id="wgConfig" class="form-control form-control-sm font-monospace" rows="5" readonly style="font-size:0.75rem;background:#1e1e1e;color:#00ff00;"></textarea>
                     </div>
-                    <div class="alert alert-info py-2 small">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Setelah paste di Mikrotik, update IP Address router ini di billing menjadi <strong id="wgIpInfo"></strong> dan port <strong>18728</strong>.
+                    <div class="alert alert-secondary py-2 small">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Setelah paste, jalankan perintah ini di Mikrotik untuk melihat public key:<br>
+                        <code style="background:#333;color:#0f0;padding:2px 6px;border-radius:3px;">/interface wireguard print</code><br>
+                        Salin nilai <strong>public-key</strong> dari interface <strong>wg-billing</strong>.
                     </div>
                 </div>
+
+                {{-- Step 3: Input public key dari Mikrotik --}}
+                <div id="wgStep3" style="display:none;">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold"><i class="fas fa-key me-1"></i>Paste Public Key dari Mikrotik:</label>
+                        <input type="text" id="wgPublicKey" class="form-control form-control-sm font-monospace" placeholder="Contoh: vCI13XAQ2Hpp4cuI...">
+                        <div class="form-text small text-muted">Ambil dari output <code>/interface wireguard print</code> di Mikrotik</div>
+                    </div>
+                    <div class="alert alert-secondary py-2 small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Port otomatis menggunakan <strong>18728</strong> (Mikrotik API port untuk WireGuard)
+                    </div>
+                </div>
+
+                {{-- Loading --}}
+                <div id="wgLoading" class="text-center py-3" style="display:none;">
+                    <i class="fas fa-spinner fa-spin fa-2x" style="color:#6f42c1;"></i>
+                    <p class="mt-2 small">Mendaftarkan peer WireGuard...</p>
+                </div>
+
+                {{-- Success --}}
+                <div id="wgSuccess" style="display:none;">
+                    <div class="alert alert-success py-2 small">
+                        <i class="fas fa-check-circle me-1"></i>
+                        WireGuard berhasil dikonfigurasi! IP Tunnel: <strong id="wgIpFinal"></strong><br>
+                        IP billing sudah diupdate otomatis.
+                    </div>
+                </div>
+
+                {{-- Error --}}
                 <div id="wgError" style="display:none;" class="text-center py-2">
                     <i class="fas fa-times-circle fa-2x text-danger"></i>
                     <p class="mt-2 small fw-semibold text-danger" id="wgErrorMsg"></p>
                 </div>
             </div>
-            <div class="modal-footer" id="wgFooter" style="display:none;">
+            <div class="modal-footer" id="wgFooter">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
-                <button type="button" class="btn btn-sm text-white" style="background:#6f42c1;" onclick="copyWgConfig()">
-                    <i class="fas fa-copy me-1"></i> Copy Config
-                </button>
+                <button type="button" class="btn btn-sm text-white" id="wgSetupBtn" style="background:#6f42c1;" onclick="doSetupWireguard()"><i class="fas fa-arrow-right me-1"></i> Generate Config</button>
+                <button type="button" class="btn btn-sm text-white" id="wgCopyBtn" style="background:#6f42c1;display:none;" onclick="copyWgConfig()"><i class="fas fa-copy me-1"></i> Copy Config</button>
+                <button type="button" class="btn btn-sm text-white" id="wgNextBtn" style="background:#6f42c1;display:none;" onclick="wgGoStep3()"><i class="fas fa-arrow-right me-1"></i> Lanjut Input Public Key</button>
+                <button type="button" class="btn btn-sm text-white" id="wgSaveBtn" style="background:#28a745;display:none;" onclick="wgSavePublicKey()"><i class="fas fa-save me-1"></i> Simpan & Daftarkan</button>
             </div>
         </div>
     </div>
@@ -436,11 +488,65 @@ let currentWgRouterId = null;
 function setupWireguard(id, nama) {
     currentWgRouterId = id;
     document.getElementById('wgRouterNama').textContent = nama;
-    document.getElementById('wgLoading').style.display = 'block';
-    document.getElementById('wgResult').style.display = 'none';
+    document.getElementById('wgLoading').style.display = 'none';
+    
     document.getElementById('wgError').style.display = 'none';
-    document.getElementById('wgFooter').style.display = 'none';
+    document.getElementById('wgFooter').style.display = 'flex';
+    document.getElementById('wgSetupBtn').style.display = 'inline-block';
+    document.getElementById('wgSubnet').value = '10.10.10';
     new bootstrap.Modal(document.getElementById('wgModal')).show();
+}
+
+function wgGoStep3() {
+    document.getElementById('wgStep2').style.display = 'none';
+    document.getElementById('wgStep3').style.display = 'block';
+    document.getElementById('wgNextBtn').style.display = 'none';
+    document.getElementById('wgCopyBtn').style.display = 'none';
+    document.getElementById('wgSaveBtn').style.display = 'inline-block';
+    document.getElementById('wgStep3Ind').className = 'badge rounded-pill text-white';
+    document.getElementById('wgStep3Ind').style.background = '#6f42c1';
+}
+
+function wgSavePublicKey() {
+    const publicKey = document.getElementById('wgPublicKey').value.trim();
+    if (!publicKey) {
+        alert('Masukkan public key dari Mikrotik!');
+        return;
+    }
+    document.getElementById('wgLoading').style.display = 'block';
+    document.getElementById('wgStep3').style.display = 'none';
+    document.getElementById('wgSaveBtn').style.display = 'none';
+    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    fetch('/admin/mikrotik/' + currentWgRouterId + '/wireguard/register', {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ public_key: publicKey, wg_ip: currentWgIp }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('wgLoading').style.display = 'none';
+        if (!data.status) {
+            document.getElementById('wgError').style.display = 'block';
+            document.getElementById('wgErrorMsg').textContent = data.message || 'Gagal mendaftarkan peer';
+            return;
+        }
+        document.getElementById('wgSuccess').style.display = 'block';
+        document.getElementById('wgIpFinal').textContent = data.wg_ip;
+        setTimeout(() => location.reload(), 2000);
+    })
+    .catch(() => {
+        document.getElementById('wgLoading').style.display = 'none';
+        document.getElementById('wgError').style.display = 'block';
+        document.getElementById('wgErrorMsg').textContent = 'Gagal koneksi ke server';
+    });
+}
+
+function doSetupWireguard() {
+    const id = currentWgRouterId;
+    document.getElementById('wgLoading').style.display = 'block';
+    
+    document.getElementById('wgError').style.display = 'none';
+    document.getElementById('wgSetupBtn').style.display = 'none';
     const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     fetch('/admin/mikrotik/' + id + '/wireguard/setup', {
         method: 'POST',
@@ -455,11 +561,15 @@ function setupWireguard(id, nama) {
             document.getElementById('wgErrorMsg').textContent = data.message || 'Gagal setup WireGuard';
             return;
         }
+        currentWgIp = data.wg_ip;
         document.getElementById('wgIp').textContent = data.wg_ip;
-        document.getElementById('wgIpInfo').textContent = data.wg_ip;
         document.getElementById('wgConfig').value = data.config;
-        document.getElementById('wgResult').style.display = 'block';
-        document.getElementById('wgFooter').style.display = 'flex';
+        document.getElementById('wgLoading').style.display = 'none';
+        document.getElementById('wgStep2').style.display = 'block';
+        document.getElementById('wgCopyBtn').style.display = 'inline-block';
+        document.getElementById('wgNextBtn').style.display = 'inline-block';
+        document.getElementById('wgStep2Ind').className = 'badge rounded-pill text-white';
+        document.getElementById('wgStep2Ind').style.background = '#6f42c1';
     })
     .catch(() => {
         document.getElementById('wgLoading').style.display = 'none';

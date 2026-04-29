@@ -125,6 +125,7 @@ Route::prefix('admin/csv')->middleware(['auth', 'role:admin,operator,superadmin'
 });
 Route::post('/admin/mikrotik/{router}/wireguard/setup', [App\Http\Controllers\Admin\MikrotikController::class, 'setupWireguard'])->name('mikrotik.wireguard.setup');
 Route::get('/admin/mikrotik/{router}/wireguard/config', [App\Http\Controllers\Admin\MikrotikController::class, 'getWireguardConfig'])->name('mikrotik.wireguard.config');
+Route::post('/admin/mikrotik/{router}/wireguard/register', [App\Http\Controllers\Admin\MikrotikController::class, 'registerWireguardPeer'])->name('mikrotik.wireguard.register');
 
 // Topologi OLT
 Route::prefix('admin/topologi')->middleware(['auth', 'role:admin,operator,superadmin'])->group(function () {

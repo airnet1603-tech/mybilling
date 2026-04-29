@@ -420,13 +420,15 @@ class MikrotikController extends Controller
         try {
             $wg        = new \App\Services\WireguardService();
             $vpsPublic = $wg->getVpsPublicKey();
-            if ($router->use_wireguard && $router->wg_ip && $router->wg_private_key) {
+            $subnet  = request()->input('subnet', '10.10.10');
+            if (!in_array($subnet, ['10.10.10', '172.16.10', '10.20.20', '10.30.30'])) $subnet = '10.10.10';
+            // Cek apakah subnet yang dipilih sama dengan yang sudah ada
+            $existingSubnet = $router->wg_ip ? implode('.', array_slice(explode('.', $router->wg_ip), 0, 3)) : null;
+            if ($router->use_wireguard && $router->wg_ip && $router->wg_private_key && $existingSubnet === $subnet) {
                 $config = $wg->getMikrotikConfig($router->wg_private_key, $router->wg_ip, $vpsPublic);
                 return response()->json(['status' => true, 'wg_ip' => $router->wg_ip, 'config' => $config, 'message' => "WireGuard sudah terkonfigurasi. IP tunnel: {$router->wg_ip}"]);
             }
             $keypair = $wg->generateKeypair();
-            $subnet  = request()->input('subnet', '10.10.10');
-            if (!in_array($subnet, ['10.10.10', '172.16.10'])) $subnet = '10.10.10';
             $wgIp    = $wg->getNextAvailableIp($subnet);
 
             $router->update([
@@ -456,4 +458,44 @@ class MikrotikController extends Controller
         $config = $wg->getMikrotikConfig($router->wg_private_key, $router->wg_ip, $wg->getVpsPublicKey());
         return response()->json(['status' => true, 'config' => $config, 'wg_ip' => $router->wg_ip]);
     }
+
+    public function registerWireguardPeer(Router $router)
+    {
+        try {
+            $publicKey = request()->input('public_key');
+            $wgIp      = request()->input('wg_ip');
+
+            if (!$publicKey || !$wgIp) {
+                return response()->json(['status' => false, 'message' => 'Public key dan WG IP wajib diisi']);
+            }
+
+            $wg = new \App\Services\WireguardService();
+
+            // Hapus peer lama jika ada
+            if ($router->wg_public_key && $router->wg_public_key !== $publicKey) {
+                $wg->removePeer($router->wg_public_key);
+            }
+
+            // Daftarkan peer baru dengan public key dari Mikrotik
+            $wg->addPeer($publicKey, $wgIp);
+
+            // Update database
+            $router->update([
+                'use_wireguard'  => true,
+                'wg_public_key'  => $publicKey,
+                'wg_ip'          => $wgIp,
+                'ip_address'     => $wgIp,
+                'port'           => 18728,
+            ]);
+
+            return response()->json([
+                'status' => true,
+                'wg_ip'  => $wgIp,
+                'message' => 'Peer WireGuard berhasil didaftarkan',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
 }

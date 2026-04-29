@@ -46,7 +46,6 @@
                     </form>
                 </div>
                 <div class="card-footer text-center py-3">
-                    <a href="/login" style="color:#6c757d;font-size:0.75rem;text-decoration:none"><i class="fas fa-shield-alt me-1"></i>Login Admin/Operator</a>
                 </div>
             </div>
         </div>
