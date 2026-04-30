@@ -402,7 +402,7 @@ class PelangganController extends Controller
                 try {
                     $mikrotik = new \App\Services\MikrotikService();
                     $ip = (!empty($router->use_wireguard) && !empty($router->wg_ip)) ? $router->wg_ip : $router->ip_address;
-                    $mikrotik->connect($ip, $router->username, $router->password, $router->port ?? 8728);
+                    $this->connectRouter($router, $mikrotik);
                     $sessions = $mikrotik->getActiveSessions();
                     $mikrotik->disconnect();
 

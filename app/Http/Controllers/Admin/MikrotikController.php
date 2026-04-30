@@ -485,7 +485,7 @@ class MikrotikController extends Controller
                 'wg_public_key'  => $publicKey,
                 'wg_ip'          => $wgIp,
                 'ip_address'     => $wgIp,
-                'port'           => 18728,
+                'port'           => $router->port ?? 8728,
             ]);
 
             return response()->json([
